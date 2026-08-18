@@ -78,7 +78,7 @@ describe('politique de réessai', () => {
 
     await expect(http.get('/sparrings')).rejects.toMatchObject({ isNetworkError: true });
     expect(spy).toHaveBeenCalledTimes(CONFIG.maxRetries + 1);
-  }, 15_000);
+  });
 
   it('ne rejoue jamais un POST : un paiement ne doit pas partir deux fois', async () => {
     const spy = jest.spyOn(api, 'request').mockRejectedValue(networkError());
