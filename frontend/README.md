@@ -16,7 +16,8 @@ publication et réservation de séances, paiement Stripe, avis modérés par IA.
 | Paiement | `@stripe/stripe-react-native` (Payment Sheet) |
 | Notifications | `react-native-toast-notifications` |
 | Dates | `date-fns` (locale `fr`) |
-| Tests | `jest-expo` |
+| Tests | `jest-expo` + `@testing-library/react-native` |
+| Qualité | ESLint (`eslint-config-expo`) + Prettier |
 
 ## Démarrage
 
@@ -64,7 +65,8 @@ frontend/
 ├── constants/              # endpoints, config, thème
 ├── types/                  # interfaces du domaine
 ├── utils/                  # storage, cache, validation, formatage, normalisation
-└── __tests__/              # tests unitaires
+├── assets/                 # icône, splash, favicon
+└── __tests__/              # tests unitaires et de composants
 ```
 
 ## Endpoints consommés
@@ -93,11 +95,44 @@ Un échec sur ces deux-là est absorbé sans casser l'écran.
   sur les `GET` — rejouer un `POST` créerait un doublon ou un double débit.
 - **États** : chaque écran gère chargement, erreur (avec relance) et vide.
 
-## Scripts
+## Qualité
+
+86 tests répartis en 10 suites, tous verts :
+
+| Suite | Ce qu'elle couvre |
+| --- | --- |
+| `validation` / `formatting` / `normalize` | règles de saisie, affichage FR, tolérance du contrat API |
+| `api` | messages d'erreur FastAPI, et la politique de réessai (GET seulement) |
+| `authService` | variantes de token, restauration hors ligne, purge sur 401 |
+| `sparringService` | écriture et lecture du cache, filtrage local hors ligne |
+| `AuthContext` | démarrage, connexion, déconnexion, 401 venu de l'intercepteur |
+| `components` | `Button`, `SparringCard`, `RatingStars`, `UserProfile` |
+| `PaymentForm` | PaymentIntent → Payment Sheet, annulation, carte refusée, clé absente |
+| `loginScreen` | validation du formulaire et normalisation de l'email |
 
 ```bash
 npm start           # serveur de développement Expo
+npm run lint        # eslint
 npm run typecheck   # tsc --noEmit
 npm test            # jest
+npm run format      # prettier
 npm run build:android / build:ios   # EAS (profil preview)
 ```
+
+La CI (`.github/workflows/frontend.yml`) rejoue lint, types, tests et un bundle
+Metro Android à chaque push touchant `frontend/`.
+
+## Builds iOS / Android
+
+Les binaires passent par EAS et demandent un compte Expo — non exécutable ici :
+
+```bash
+npm install -g eas-cli
+eas login
+eas build:configure          # renseigne le projectId dans app.json
+eas build --profile preview --platform android   # APK d'essai
+eas build --profile preview --platform ios       # build simulateur
+```
+
+Les profils `development`, `preview` et `production` sont déjà définis dans `eas.json`.
+Le `projectId` d'`app.json` est un espace réservé, remplacé par `eas build:configure`.

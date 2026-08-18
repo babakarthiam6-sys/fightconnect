@@ -82,7 +82,7 @@ export const sparringService = {
   },
 
   async readCache(options: ListOptions = {}): Promise<ListResult> {
-    const page = options.page ?? 1;
+    // Le cache ne contient que la première page : la pagination y est désactivée.
     const limit = options.limit ?? CONFIG.pageSize;
     const cached = await cache.read<Sparring[]>(STORAGE_KEYS.sparringsCache);
     const items = applyFiltersLocally(cached?.payload ?? [], options.filters);

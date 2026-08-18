@@ -8,10 +8,13 @@
     "userInterfaceStyle": "light",
     "backgroundColor": "#FAFAFA",
     "splash": {
-      "resizeMode": "contain",
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
       "backgroundColor": "#004E89"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fightconnect.app",
@@ -22,13 +25,18 @@
     "android": {
       "package": "com.fightconnect.app",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FF6B35"
       },
-      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "bundler": "metro",
-      "output": "static"
+      "output": "static",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -48,6 +56,7 @@
       "eas": {
         "projectId": "00000000-0000-0000-0000-000000000000"
       }
-    }
+    },
+    "icon": "./assets/icon.png"
   }
 }
