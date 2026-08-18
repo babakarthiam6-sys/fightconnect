@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "FightConnect",
+    "slug": "fightconnect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "fightconnect",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FAFAFA",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#004E89"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fightconnect.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Utilise l'appareil photo pour votre photo de profil."
+      }
+    },
+    "android": {
+      "package": "com.fightconnect.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FF6B35"
+      },
+      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.fightconnect.app",
+          "enableGooglePay": true
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiBaseUrl": "https://fightconnect-prod.up.railway.app/api/v1",
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
+  }
+}
