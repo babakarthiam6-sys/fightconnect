@@ -78,12 +78,11 @@ frontend/
 `POST /moderation/reviews` · `GET /moderation/user-risk/{user_id}` ·
 `GET /moderation/recommendations`
 
-Le client accepte indifféremment `snake_case` et `camelCase`, les enveloppes
+L'API correspondante vit dans [`../backend/`](../backend/). Le client accepte
+malgré tout indifféremment `snake_case` et `camelCase`, les enveloppes
 `{items|results|data}` ou un tableau nu, un prix en euros ou en centimes, et un `_id`
-Mongo (`{"$oid": …}`) — voir `utils/normalize.ts`. Deux routes ne figuraient pas dans
-la spécification initiale et sont supposées : `POST /sparrings/{id}/cancel`
-(annulation de participation) et `GET /sparrings/{id}/reviews` (liste des avis).
-Un échec sur ces deux-là est absorbé sans casser l'écran.
+Mongo (`{"$oid": …}`) — voir `utils/normalize.ts` : cette tolérance permet de brancher
+l'app sur une autre implémentation du même contrat sans toucher aux écrans.
 
 ## Comportements transverses
 
