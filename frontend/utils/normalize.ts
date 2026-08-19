@@ -1,5 +1,6 @@
 import type {
   Payment,
+  PayoutStatus,
   PaymentIntent,
   PaymentStatus,
   Review,
@@ -142,6 +143,17 @@ export function normalizeUser(input: unknown): User {
     averageRating: optionalNum(raw, ['average_rating', 'averageRating', 'rating']),
     ratingsCount: num(raw, ['ratings_count', 'ratingsCount', 'reviews_count'], 0),
     createdAt: optionalStr(raw, ['created_at', 'createdAt']),
+    payoutsEnabled: bool(raw, ['payouts_enabled', 'payoutsEnabled']),
+  };
+}
+
+export function normalizePayoutStatus(input: unknown): PayoutStatus {
+  const raw = asRecord(input);
+  return {
+    connected: bool(raw, ['connected']),
+    detailsSubmitted: bool(raw, ['details_submitted', 'detailsSubmitted']),
+    payoutsEnabled: bool(raw, ['payouts_enabled', 'payoutsEnabled']),
+    stripeConfigured: bool(raw, ['stripe_configured', 'stripeConfigured']),
   };
 }
 

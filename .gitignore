@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Carte du code générée par graphify (régénérable : `graphify update .`)
+graphify-out/
+
+# Hooks graphify : le chemin du binaire est propre à chaque machine, et les
+# hooks échouent chez qui n'a pas installé l'outil. Chacun lance
+# `graphify claude install` de son côté.
+.claude/settings.json

@@ -25,6 +25,10 @@ export const ENDPOINTS = {
   revenue: {
     stats: '/revenue/stats',
   },
+  payouts: {
+    status: '/payouts/status',
+    onboarding: '/payouts/onboarding',
+  },
   moderation: {
     reviews: '/moderation/reviews',
     userRisk: (userId: string) => `/moderation/user-risk/${userId}`,

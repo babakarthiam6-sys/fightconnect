@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_moderation_model: str = "omni-moderation-latest"
 
+    # --- Adresse publique ---
+    # Utilisée comme point de retour après l'inscription Stripe. Vide, l'adresse
+    # est déduite de la requête, ce qui suffit dans la plupart des cas.
+    public_base_url: str = ""
+
     # --- Application web ---
     # Dossier contenant l'export web du mobile. Servi par cette même API quand il
     # est présent : un seul déploiement suffit alors pour l'API et l'application.

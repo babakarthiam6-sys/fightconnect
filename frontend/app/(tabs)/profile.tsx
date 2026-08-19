@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import Button from '@/components/Button';
 import EmptyState from '@/components/EmptyState';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import PayoutCard from '@/components/PayoutCard';
 import OfflineBanner from '@/components/OfflineBanner';
 import SparringCard from '@/components/SparringCard';
 import StatCard from '@/components/StatCard';
@@ -14,9 +15,10 @@ import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { moderationService } from '@/services/moderation';
+import { payoutService } from '@/services/payout';
 import { sparringService } from '@/services/sparring';
 import { formatPrice, formatRating } from '@/utils/formatting';
-import type { Sparring, UserRiskProfile } from '@/types';
+import type { PayoutStatus, Sparring, UserRiskProfile } from '@/types';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -25,18 +27,21 @@ export default function ProfileScreen() {
 
   const [mySparrings, setMySparrings] = useState<Sparring[]>([]);
   const [risk, setRisk] = useState<UserRiskProfile | null>(null);
+  const [payouts, setPayouts] = useState<PayoutStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
     try {
-      const [list, riskProfile] = await Promise.all([
+      const [list, riskProfile, payoutStatus] = await Promise.all([
         sparringService.list({ page: 1, limit: 50, creatorId: user.id }),
         moderationService.userRisk(user.id),
+        payoutService.status(),
       ]);
       setMySparrings(list.items);
       setRisk(riskProfile);
+      setPayouts(payoutStatus);
     } catch {
       setMySparrings([]);
     }
@@ -74,6 +79,8 @@ export default function ProfileScreen() {
         }
       >
         <UserProfile user={user} riskProfile={risk} />
+
+        {payouts ? <PayoutCard status={payouts} onChanged={() => void load()} /> : null}
 
         <View style={styles.statsRow}>
           <StatCard

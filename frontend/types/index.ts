@@ -40,6 +40,8 @@ export interface User {
   averageRating: number | null;
   ratingsCount: number;
   createdAt: string | null;
+  /** Stripe accepte de verser l'argent des séances à cette personne. */
+  payoutsEnabled: boolean;
 }
 
 /** Version allégée d'un utilisateur telle qu'imbriquée dans un sparring. */
@@ -150,4 +152,14 @@ export interface AppError {
   /** `true` si l'échec vient de l'absence de réseau et non du serveur. */
   isNetworkError: boolean;
   fieldErrors: Record<string, string> | null;
+}
+
+/** État du compte de versement d'un organisateur. */
+export interface PayoutStatus {
+  /** Un compte Stripe existe, même incomplet. */
+  connected: boolean;
+  detailsSubmitted: boolean;
+  payoutsEnabled: boolean;
+  /** `false` si la plateforme elle-même n'a pas de clé Stripe. */
+  stripeConfigured: boolean;
 }

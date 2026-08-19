@@ -66,12 +66,29 @@ async def create_intent(
                 "publishable_key": settings.stripe_publishable_key or None,
             }
 
+    # L'organisateur doit pouvoir être payé avant qu'on encaisse quoi que ce
+    # soit. Sans cette vérification, la plateforme accumulerait des dettes
+    # envers des organisateurs sans moyen automatique de les régler.
+    organisateur = await database.users.find_one({"_id": sparring.get("creator_id")})
+    if organisateur is None or not organisateur.get("stripe_payouts_enabled"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "L’organisateur n’a pas encore configuré ses versements. "
+                "Cette séance n’est pas encore réservable."
+            ),
+        )
+
+    commission = round(price * settings.commission_rate, 2)
+
     intent = await create_payment_intent(
         amount=price,
         metadata={
             "sparring_id": str(sparring_id),
             "user_id": str(current_user["_id"]),
         },
+        destination_account=organisateur.get("stripe_account_id"),
+        application_fee=commission,
     )
 
     await database.payments.insert_one(
@@ -84,6 +101,7 @@ async def create_intent(
             "currency": intent["currency"],
             "status": "pending",
             "consumed": False,
+            "commission": commission,
             "created_at": datetime.now(timezone.utc),
         }
     )
@@ -145,8 +163,23 @@ async def stripe_webhook(request: Request, database: Database) -> dict[str, str]
         # Signature invalide : la requête ne vient pas de Stripe.
         raise HTTPException(status_code=400, detail="Signature Stripe invalide.") from error
 
-    intent = event["data"]["object"]
-    intent_id = intent.get("id")
+    objet = event["data"]["object"]
+
+    # Un compte Connect qui change d'état : l'organisateur vient peut-être de
+    # terminer son inscription, ou Stripe vient de suspendre ses versements.
+    if event["type"] == "account.updated":
+        await database.users.update_one(
+            {"stripe_account_id": objet.get("id")},
+            {
+                "$set": {
+                    "stripe_details_submitted": bool(objet.get("details_submitted")),
+                    "stripe_payouts_enabled": bool(objet.get("payouts_enabled")),
+                }
+            },
+        )
+        return {"status": "ok"}
+
+    intent_id = objet.get("id")
     if not intent_id:
         return {"status": "ignored"}
 
@@ -156,6 +189,13 @@ async def stripe_webhook(request: Request, database: Database) -> dict[str, str]
         "payment_intent.canceled": "cancelled",
         "payment_intent.processing": "processing",
     }.get(event["type"])
+
+    if event["type"] == "charge.refunded":
+        await database.payments.update_one(
+            {"payment_intent_id": objet.get("payment_intent")},
+            {"$set": {"status": "refunded"}},
+        )
+        return {"status": "ok"}
 
     if new_status is None:
         return {"status": "ignored"}

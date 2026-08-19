@@ -36,7 +36,7 @@ docker run -d -p 27017:27017 --name fightconnect-mongo mongo:7
 pytest
 ```
 
-74 tests. Stripe n'est jamais appelé : il est remplacé par un double. Les 62
+83 tests. Stripe n'est jamais appelé : il est remplacé par un double. Les 77
 tests unitaires tournent sur une base simulée en mémoire (`mongomock-motor`) et
 ne demandent aucun service.
 
@@ -60,6 +60,7 @@ MONGODB_TEST_URI=mongodb://127.0.0.1:27017 pytest -q
 | `test_config.py` | garde-fous de production et découpage des origines CORS |
 | `test_throttle.py` | blocage après échecs répétés, expiration, isolation entre comptes |
 | `test_integration_mongo.py` | vrai MongoDB : index unique, requêtes, parcours complet, et dix inscriptions simultanées sur une seule place |
+| `test_payouts.py` | inscription Stripe Connect, resynchronisation, panne de Stripe |
 | `test_webapp.py` | l'application web montée à la racine ne masque ni l'API, ni la documentation |
 
 ## Fixtures de contrat
@@ -94,6 +95,8 @@ Tous préfixés par `/api/v1`.
 | POST | `/payments/create-intent` | ✅ | Créer un PaymentIntent Stripe |
 | GET | `/payments/history` | ✅ | Historique personnel |
 | POST | `/payments/webhook` | — | Évènements Stripe (signature vérifiée) |
+| GET | `/payouts/status` | ✅ | État du compte de versement de l'organisateur |
+| POST | `/payouts/onboarding` | ✅ | Lien d'inscription Stripe Connect |
 | GET | `/revenue/stats` | ✅ | Gains, solde, note moyenne |
 | POST | `/moderation/reviews` | ✅ | Publier un avis (modéré) |
 | GET | `/moderation/user-risk/{id}` | ✅ | Profil de risque |
@@ -126,6 +129,17 @@ Tous préfixés par `/api/v1`.
   seul. Le paiement n'est marqué consommé
   qu'après l'inscription réussie, pour que le perdant de la course ne perde pas
   aussi son paiement.
+- **Un organisateur doit pouvoir être payé avant qu'on encaisse.** Réserver une
+  séance payante dont l'organisateur n'a pas terminé son inscription Stripe est
+  refusé (409). L'inverse — encaisser puis chercher comment reverser — ferait
+  accumuler des dettes sans moyen automatique de les régler.
+- **L'argent va directement à l'organisateur** (charge à destination) : sa part
+  arrive sur son compte Connect au moment du paiement, la commission reste à la
+  plateforme. Stripe se charge ensuite du virement bancaire.
+- **Annuler avant la séance rembourse**, transfert et commission compris — sans
+  quoi la plateforme rembourserait de sa poche. Le remboursement est demandé
+  **avant** de libérer la place : si Stripe échoue, la personne garde sa place
+  plutôt que de perdre les deux.
 - **Une intention de paiement encore ouverte est réutilisée** plutôt que
   dupliquée : deux intentions payables pour une même place, c'est un risque de
   double débit.

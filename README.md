@@ -39,9 +39,9 @@ déploiement.
 
 173 tests automatisés, rejoués par GitHub Actions à chaque push :
 
-- **frontend** — 105 tests (Jest + Testing Library), ESLint, vérification des
+- **frontend** — 115 tests (Jest + Testing Library), ESLint, vérification des
   types et bundle Metro.
-- **backend** — 74 tests (pytest) : 62 sur base simulée, 6 d'intégration sur un vrai
+- **backend** — 83 tests (pytest) : 62 sur base simulée, 6 d'intégration sur un vrai
   MongoDB fourni par la CI. Stripe est doublé partout.
 
 Parmi eux, 16 tests de contrat font tourner les normaliseurs du mobile sur des

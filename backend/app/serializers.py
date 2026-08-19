@@ -46,6 +46,7 @@ def serialize_user(document: dict[str, Any]) -> dict[str, Any]:
         "discharge_accepted": bool(document.get("discharge_accepted", False)),
         "ratings_count": int(document.get("ratings_count", 0)),
         "created_at": iso(document.get("created_at")),
+        "payouts_enabled": bool(document.get("stripe_payouts_enabled", False)),
     }
 
 

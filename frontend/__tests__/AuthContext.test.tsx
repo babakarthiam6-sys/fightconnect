@@ -31,6 +31,7 @@ const USER = {
   averageRating: null,
   ratingsCount: 0,
   createdAt: null,
+  payoutsEnabled: false,
 };
 
 function Probe() {
