@@ -41,7 +41,7 @@ déploiement.
 
 - **frontend** — 115 tests (Jest + Testing Library), ESLint, vérification des
   types et bundle Metro.
-- **backend** — 83 tests (pytest) : 62 sur base simulée, 6 d'intégration sur un vrai
+- **backend** — 86 tests (pytest) : 62 sur base simulée, 6 d'intégration sur un vrai
   MongoDB fourni par la CI. Stripe est doublé partout.
 
 Parmi eux, 16 tests de contrat font tourner les normaliseurs du mobile sur des

@@ -49,3 +49,23 @@ def test_l_application_web_est_facultative(tmp_path):
 
     (tmp_path / "index.html").write_text("<html></html>", encoding="utf-8")
     assert is_web_app_available(str(tmp_path)) is True
+
+
+def test_la_base_de_l_hebergeur_evite_un_compte_separe():
+    """Railway injecte MONGO_URL : l'accepter supprime le besoin d'Atlas."""
+    settings = make_settings(mongo_url="mongodb://interne:27017/app")
+
+    assert settings.database_uri == "mongodb://interne:27017/app"
+
+
+def test_une_uri_explicite_l_emporte_sur_celle_de_l_hebergeur():
+    settings = make_settings(
+        mongodb_uri="mongodb+srv://atlas.exemple.net",
+        mongo_url="mongodb://interne:27017/app",
+    )
+
+    assert settings.database_uri == "mongodb+srv://atlas.exemple.net"
+
+
+def test_sans_rien_on_vise_le_serveur_local():
+    assert make_settings().database_uri == "mongodb://localhost:27017"

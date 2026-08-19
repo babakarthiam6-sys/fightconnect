@@ -5,14 +5,21 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_JWT_SECRET = "changez-moi-en-production"
+DEFAULT_MONGODB_URI = "mongodb://localhost:27017"
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # --- Base de données ---
-    mongodb_uri: str = "mongodb://localhost:27017"
+    mongodb_uri: str = DEFAULT_MONGODB_URI
     mongodb_db: str = "fightconnect"
+
+    # Railway injecte `MONGO_URL` dès que sa base MongoDB est ajoutée au projet.
+    # L'accepter évite d'avoir à ouvrir un compte MongoDB Atlas séparé : la base
+    # vit dans le même projet que l'API et sa chaîne de connexion est renseignée
+    # toute seule.
+    mongo_url: str = ""
 
     # --- Environnement ---
     # « production » active les garde-fous : secret JWT par défaut refusé,
@@ -49,6 +56,17 @@ class Settings(BaseSettings):
     # --- Divers ---
     cors_origins: str = "*"
     commission_rate: float = 0.10
+
+    @property
+    def database_uri(self) -> str:
+        """Chaîne de connexion effective.
+
+        `MONGODB_URI` l'emporte quand elle est renseignée explicitement ; sinon on
+        se rabat sur le `MONGO_URL` de l'hébergeur, puis sur le serveur local.
+        """
+        if self.mongodb_uri != DEFAULT_MONGODB_URI:
+            return self.mongodb_uri
+        return self.mongo_url or self.mongodb_uri
 
     @property
     def is_production(self) -> bool:
