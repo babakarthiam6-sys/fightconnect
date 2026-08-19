@@ -28,6 +28,11 @@ cp .env.example .env      # renseignez l'URL de l'API et la clé publique Stripe
 npx expo start            # puis scannez le QR code avec Expo Go
 ```
 
+> **Après avoir modifié `.env`, relancez avec `-c`** (`npx expo start -c`, ou
+> `npx expo export --clear`). Metro met en cache les fichiers transformés, et les
+> variables `EXPO_PUBLIC_*` sont inlinées à la transformation : sans vider le
+> cache, l'ancienne valeur reste dans le bundle sans le moindre avertissement.
+
 > La Payment Sheet Stripe nécessite un module natif : elle ne fonctionne pas dans
 > Expo Go. Le reste de l'app (auth, sparrings, avis) s'y teste normalement. Pour le
 > paiement, utilisez un development build :
@@ -47,6 +52,28 @@ clé secrète ici, la clé secrète Stripe reste côté FastAPI).
 
 Sans clé Stripe valide, `StripeProvider` n'est pas monté et l'écran de détail affiche
 une erreur explicite au lieu de planter.
+
+## Version web
+
+Le même code produit une application web, servie par l'API elle-même :
+
+```bash
+EXPO_PUBLIC_API_BASE_URL=/api/v1 npx expo export --platform web --clear \
+  --output-dir ../backend/webapp
+```
+
+Deux composants ne peuvent pas exister tels quels dans un navigateur et ont une
+variante web :
+
+- `@stripe/stripe-react-native` importe des modules internes de React Native
+  absents du web — sa seule présence empêchait l'application de se construire.
+  `shims/stripe-web.js` le remplace (substitution déclarée dans `metro.config.js`)
+  et renvoie un message explicite : la feuille de paiement est native.
+- `@react-native-community/datetimepicker` n'a aucune implémentation web.
+  `DateTimeField.web.tsx` utilise le champ `datetime-local` du navigateur, qui
+  ouvre au passage le sélecteur du système sur iOS et Android.
+
+Le reste fonctionne à l'identique : comptes, séances, participation, avis.
 
 ## Structure
 

@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_moderation_model: str = "omni-moderation-latest"
 
+    # --- Application web ---
+    # Dossier contenant l'export web du mobile. Servi par cette même API quand il
+    # est présent : un seul déploiement suffit alors pour l'API et l'application.
+    web_dir: str = "webapp"
+
     # --- Divers ---
     cors_origins: str = "*"
     commission_rate: float = 0.10

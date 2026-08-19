@@ -39,3 +39,13 @@ def test_stripe_est_considere_absent_sans_cle_valide():
     assert make_settings(stripe_secret_key="").is_stripe_configured is False
     assert make_settings(stripe_secret_key="pas-une-cle").is_stripe_configured is False
     assert make_settings(stripe_secret_key="sk_test_123").is_stripe_configured is True
+
+
+def test_l_application_web_est_facultative(tmp_path):
+    """L'API doit démarrer sans export web : c'est le cas en développement."""
+    from app.webapp import is_web_app_available
+
+    assert is_web_app_available(str(tmp_path)) is False
+
+    (tmp_path / "index.html").write_text("<html></html>", encoding="utf-8")
+    assert is_web_app_available(str(tmp_path)) is True

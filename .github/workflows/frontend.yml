@@ -45,3 +45,11 @@ jobs:
         run: npx expo export --platform android --output-dir /tmp/expo-export
         env:
           EXPO_NO_TELEMETRY: '1'
+
+      - name: Bundle web
+        # La version web est celle que sert l'API : si elle cesse de se
+        # construire, l'application devient inaccessible depuis un navigateur.
+        run: npx expo export --platform web --output-dir /tmp/expo-web
+        env:
+          EXPO_NO_TELEMETRY: '1'
+          EXPO_PUBLIC_API_BASE_URL: /api/v1

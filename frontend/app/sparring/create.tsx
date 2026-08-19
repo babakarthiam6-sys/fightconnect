@@ -8,17 +8,15 @@ import {
   Text,
   View,
 } from 'react-native';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useToast } from 'react-native-toast-notifications';
 
 import Button from '@/components/Button';
+import DateTimeField from '@/components/DateTimeField';
 import Input from '@/components/Input';
 import { COLORS, LEVEL_LABELS, RADIUS, SPACING, STYLE_LABELS, TYPOGRAPHY } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import { sparringService } from '@/services/sparring';
-import { formatDateTime } from '@/utils/formatting';
 import {
   sparringSchema,
   validate,
@@ -74,7 +72,6 @@ export default function CreateSparringScreen() {
   const [price, setPrice] = useState('20');
   const [maxParticipants, setMaxParticipants] = useState('2');
 
-  const [pickerMode, setPickerMode] = useState<'date' | 'time' | null>(null);
   const [errors, setErrors] = useState<FieldErrors<SparringInput>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -93,16 +90,6 @@ export default function CreateSparringScreen() {
       maxParticipants: Number(maxParticipants),
     }),
     [description, duration, level, location, maxParticipants, price, scheduledAt, style, title],
-  );
-
-  const handleDateChange = useCallback(
-    (event: DateTimePickerEvent, selected?: Date) => {
-      // Sur Android le picker se ferme seul ; sur iOS il reste monté (spinner).
-      if (Platform.OS === 'android') setPickerMode(null);
-      if (event.type === 'dismissed' || !selected) return;
-      setScheduledAt(selected);
-    },
-    [],
   );
 
   const handleSubmit = useCallback(async () => {
@@ -174,32 +161,11 @@ export default function CreateSparringScreen() {
           testID="create-location"
         />
 
-        <Text style={styles.label}>Date et heure</Text>
-        <View style={styles.dateRow}>
-          <Pressable style={styles.dateButton} onPress={() => setPickerMode('date')}>
-            <Ionicons name="calendar-outline" size={18} color={COLORS.secondary} />
-            <Text style={styles.dateText}>{formatDateTime(scheduledAt.toISOString())}</Text>
-          </Pressable>
-          <Pressable style={styles.timeButton} onPress={() => setPickerMode('time')}>
-            <Ionicons name="time-outline" size={18} color={COLORS.secondary} />
-          </Pressable>
-        </View>
-        {errors.scheduledAt ? <Text style={styles.error}>{errors.scheduledAt}</Text> : null}
-
-        {pickerMode ? (
-          <View style={styles.pickerWrap}>
-            <DateTimePicker
-              value={scheduledAt}
-              mode={pickerMode}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              minimumDate={new Date()}
-              onChange={handleDateChange}
-            />
-            {Platform.OS === 'ios' ? (
-              <Button label="Valider" onPress={() => setPickerMode(null)} variant="ghost" />
-            ) : null}
-          </View>
-        ) : null}
+        <DateTimeField
+          value={scheduledAt}
+          onChange={setScheduledAt}
+          error={errors.scheduledAt}
+        />
 
         <Text style={styles.label}>Niveau</Text>
         <View style={styles.optionRow}>
@@ -280,30 +246,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     textTransform: 'uppercase',
   },
-  dateRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.lg },
-  dateButton: {
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    borderWidth: 1.5,
-    flex: 1,
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    minHeight: 50,
-    paddingHorizontal: SPACING.md,
-  },
-  dateText: { ...TYPOGRAPHY.body, color: COLORS.text, flex: 1 },
-  timeButton: {
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    width: 50,
-  },
-  pickerWrap: { backgroundColor: COLORS.surface, borderRadius: RADIUS.md, marginBottom: SPACING.lg },
   optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.lg },
   option: {
     backgroundColor: COLORS.surface,
@@ -318,6 +260,5 @@ const styles = StyleSheet.create({
   optionLabelActive: { color: COLORS.textInverse, fontWeight: '600' },
   row: { flexDirection: 'row', gap: SPACING.md },
   rowItem: { flex: 1 },
-  error: { ...TYPOGRAPHY.caption, color: COLORS.error, marginBottom: SPACING.md, marginTop: -SPACING.md },
   cancel: { marginTop: SPACING.sm },
 });
