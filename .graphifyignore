@@ -1,0 +1,21 @@
+# Secrets et matériel cryptographique — ne doivent jamais entrer dans la carte,
+# celle-ci étant lisible par tout assistant travaillant sur le dépôt.
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+
+# Données : un extrait de base peut contenir des informations personnelles.
+*.sql
+*.dump
+secrets/
+private/
+
+# Dépendances et artefacts de construction : volumineux et sans intérêt
+# architectural.
+node_modules/
+dist/
+build/
+.git/
