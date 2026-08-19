@@ -47,7 +47,10 @@ async def create_indexes(database: AsyncIOMotorDatabase) -> None:
     await database.sparrings.create_index([("scheduled_at", 1)])
     await database.sparrings.create_index([("creator_id", 1)])
     await database.reviews.create_index([("sparring_id", 1)])
+    await database.reviews.create_index([("author_id", 1)])
     await database.payments.create_index([("user_id", 1), ("created_at", -1)])
+    # Le webhook Stripe retrouve un paiement par son identifiant d'intention.
+    await database.payments.create_index("payment_intent_id")
 
 
 async def ping() -> bool:

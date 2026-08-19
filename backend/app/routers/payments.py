@@ -13,6 +13,7 @@ from app.serializers import serialize_payment, to_object_id
 from app.services.payments import (
     create_payment_intent,
     map_stripe_status,
+    retrieve_payment_intent,
     retrieve_payment_status,
 )
 
@@ -41,6 +42,30 @@ async def create_intent(
     if current_user["_id"] in sparring.get("participant_ids", []):
         raise HTTPException(status_code=409, detail="Vous participez déjà à ce sparring.")
 
+    settings = get_settings()
+
+    # Une intention encore ouverte pour cette même séance est réutilisée : sans
+    # cela, chaque retour sur l'écran de paiement en créerait une nouvelle, et
+    # deux intentions payées signifieraient deux débits pour une seule place.
+    existing = await database.payments.find_one(
+        {
+            "user_id": current_user["_id"],
+            "sparring_id": sparring_id,
+            "status": {"$in": ["pending", "processing"]},
+            "consumed": {"$ne": True},
+        }
+    )
+    if existing and existing.get("payment_intent_id"):
+        reusable = await retrieve_payment_intent(existing["payment_intent_id"])
+        if reusable is not None and reusable["status"] not in {"succeeded", "canceled"}:
+            return {
+                "client_secret": reusable["client_secret"],
+                "payment_intent_id": reusable["id"],
+                "amount": reusable["amount"],
+                "currency": reusable["currency"],
+                "publishable_key": settings.stripe_publishable_key or None,
+            }
+
     intent = await create_payment_intent(
         amount=price,
         metadata={
@@ -49,7 +74,6 @@ async def create_intent(
         },
     )
 
-    settings = get_settings()
     await database.payments.insert_one(
         {
             "user_id": current_user["_id"],

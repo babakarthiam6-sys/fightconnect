@@ -160,3 +160,63 @@ async def test_annuler_sans_participer_est_refuse(client):
     response = await client.post(f"{BASE}/{sparring['id']}/cancel", headers=autre["headers"])
 
     assert response.status_code == 409
+
+
+async def test_filtre_par_organisateur(client):
+    ada = await register(client, "ada@exemple.com", "Ada")
+    lea = await register(client, "lea@exemple.com", "Léa")
+    await create_sparring(client, ada["headers"], title="Séance d’Ada")
+    await create_sparring(client, lea["headers"], title="Séance de Léa")
+
+    response = await client.get(BASE, params={"creator_id": ada["user"]["id"]})
+
+    assert response.json()["total"] == 1
+    assert response.json()["items"][0]["title"] == "Séance d’Ada"
+
+
+async def test_filtre_par_organisateur_illisible_renvoie_une_liste_vide(client):
+    session = await register(client)
+    await create_sparring(client, session["headers"])
+
+    response = await client.get(BASE, params={"creator_id": "pas-un-id"})
+
+    # Une liste filtrée sur un identifiant absurde est vide, elle n'est pas en erreur.
+    assert response.status_code == 200
+    assert response.json()["total"] == 0
+
+
+async def test_la_garde_atomique_refuse_une_place_quand_le_quota_est_atteint(client, database):
+    """Vérifie la condition Mongo sur laquelle repose l'inscription.
+
+    L'inscription ne s'appuie pas sur le `len()` lu en amont — deux requêtes
+    simultanées le liraient toutes les deux avant que l'une écrive — mais sur une
+    condition évaluée au moment de l'écriture. C'est cette condition qui est
+    testée ici, directement au niveau de la base : le simulateur utilisé par les
+    tests n'entrelace pas les coroutines et ne peut donc pas reproduire la course.
+    """
+    organisateur = await register(client, "orga@exemple.com", "Ada")
+    sparring = await create_sparring(
+        client, organisateur["headers"], price=0, max_participants=2
+    )
+    document = await database.sparrings.find_one({"title": "Sparring boxe technique"})
+    garde = {"participant_ids.1": {"$exists": False}}
+
+    libre = await database.sparrings.update_one(
+        {"_id": document["_id"], **garde}, {"$addToSet": {"participant_ids": "premier"}}
+    )
+    assert libre.modified_count == 1
+
+    seconde = await database.sparrings.update_one(
+        {"_id": document["_id"], **garde}, {"$addToSet": {"participant_ids": "second"}}
+    )
+    assert seconde.modified_count == 1
+
+    # Le quota est atteint : toute écriture supplémentaire est rejetée par la base.
+    troisieme = await database.sparrings.update_one(
+        {"_id": document["_id"], **garde}, {"$addToSet": {"participant_ids": "troisieme"}}
+    )
+    assert troisieme.modified_count == 0
+
+    final = await database.sparrings.find_one({"_id": document["_id"]})
+    assert len(final["participant_ids"]) == 2
+    assert sparring["id"] == str(document["_id"])

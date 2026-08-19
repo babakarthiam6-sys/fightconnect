@@ -21,6 +21,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    settings.check_production_safety()
 
     app = FastAPI(
         title="FightConnect API",
@@ -29,10 +30,14 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Un navigateur rejette la combinaison « origine * » + credentials : le
+    # middleware renverrait alors des en-têtes que le client refuse. L'app mobile
+    # n'utilise pas de cookies, seulement un en-tête Authorization, donc couper
+    # les credentials avec le joker est sans effet sur elle.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
-        allow_credentials=True,
+        allow_credentials=not settings.allows_any_origin,
         allow_methods=["*"],
         allow_headers=["*"],
     )

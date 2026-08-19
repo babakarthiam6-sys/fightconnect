@@ -135,3 +135,92 @@ async def test_le_paiement_confirme_ouvre_l_acces_puis_est_consomme(client, stri
 async def test_webhook_refuse_sans_secret_configure(client):
     response = await client.post(f"{BASE}/webhook", content=b"{}")
     assert response.status_code == 503
+
+
+async def test_une_intention_ouverte_est_reutilisee(client, monkeypatch):
+    """Revenir sur l'écran de paiement ne doit pas empiler les intentions.
+
+    Deux intentions ouvertes pour une même place, c'est un risque de double débit.
+    """
+    appels = {"create": 0}
+
+    async def compte_les_creations(amount: float, metadata: dict[str, str]) -> dict[str, object]:
+        appels["create"] += 1
+        return {
+            "id": f"pi_{appels['create']}",
+            "client_secret": f"pi_{appels['create']}_secret",
+            "amount": amount,
+            "currency": "EUR",
+        }
+
+    async def intention_encore_ouverte(payment_intent_id: str) -> dict[str, object]:
+        return {
+            "id": payment_intent_id,
+            "client_secret": f"{payment_intent_id}_secret",
+            "amount": 25.0,
+            "currency": "EUR",
+            "status": "requires_payment_method",
+        }
+
+    monkeypatch.setattr(payments_router, "create_payment_intent", compte_les_creations)
+    monkeypatch.setattr(payments_router, "retrieve_payment_intent", intention_encore_ouverte)
+
+    organisateur = await register(client, "orga@exemple.com", "Ada")
+    sparring = await create_paid_sparring(client, organisateur["headers"])
+    acheteur = await register(client, "acheteur@exemple.com", "Léa")
+
+    premiere = await client.post(
+        f"{BASE}/create-intent",
+        json={"sparring_id": sparring["id"]},
+        headers=acheteur["headers"],
+    )
+    seconde = await client.post(
+        f"{BASE}/create-intent",
+        json={"sparring_id": sparring["id"]},
+        headers=acheteur["headers"],
+    )
+
+    assert premiere.json()["client_secret"] == seconde.json()["client_secret"]
+    assert appels["create"] == 1
+
+    historique = await client.get(f"{BASE}/history", headers=acheteur["headers"])
+    assert historique.json()["total"] == 1
+
+
+async def test_une_intention_perimee_est_remplacee(client, monkeypatch):
+    appels = {"create": 0}
+
+    async def compte_les_creations(amount: float, metadata: dict[str, str]) -> dict[str, object]:
+        appels["create"] += 1
+        return {
+            "id": f"pi_{appels['create']}",
+            "client_secret": f"pi_{appels['create']}_secret",
+            "amount": amount,
+            "currency": "EUR",
+        }
+
+    async def intention_annulee(payment_intent_id: str) -> dict[str, object]:
+        return {
+            "id": payment_intent_id,
+            "client_secret": f"{payment_intent_id}_secret",
+            "amount": 25.0,
+            "currency": "EUR",
+            "status": "canceled",
+        }
+
+    monkeypatch.setattr(payments_router, "create_payment_intent", compte_les_creations)
+    monkeypatch.setattr(payments_router, "retrieve_payment_intent", intention_annulee)
+
+    organisateur = await register(client, "orga@exemple.com", "Ada")
+    sparring = await create_paid_sparring(client, organisateur["headers"])
+    acheteur = await register(client, "acheteur@exemple.com", "Léa")
+
+    for _ in range(2):
+        await client.post(
+            f"{BASE}/create-intent",
+            json={"sparring_id": sparring["id"]},
+            headers=acheteur["headers"],
+        )
+
+    # Une intention annulée chez Stripe n'est plus payable : il en faut une neuve.
+    assert appels["create"] == 2

@@ -96,14 +96,14 @@ l'app sur une autre implémentation du même contrat sans toucher aux écrans.
 
 ## Qualité
 
-86 tests répartis en 10 suites, tous verts :
+89 tests répartis en 10 suites, tous verts :
 
 | Suite | Ce qu'elle couvre |
 | --- | --- |
 | `validation` / `formatting` / `normalize` | règles de saisie, affichage FR, tolérance du contrat API |
 | `api` | messages d'erreur FastAPI, et la politique de réessai (GET seulement) |
 | `authService` | variantes de token, restauration hors ligne, purge sur 401 |
-| `sparringService` | écriture et lecture du cache, filtrage local hors ligne |
+| `sparringService` | écriture et lecture du cache, filtrage local hors ligne, filtre organisateur |
 | `AuthContext` | démarrage, connexion, déconnexion, 401 venu de l'intercepteur |
 | `components` | `Button`, `SparringCard`, `RatingStars`, `UserProfile` |
 | `PaymentForm` | PaymentIntent → Payment Sheet, annulation, carte refusée, clé absente |

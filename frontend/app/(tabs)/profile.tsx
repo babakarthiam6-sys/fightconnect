@@ -32,11 +32,10 @@ export default function ProfileScreen() {
     if (!user) return;
     try {
       const [list, riskProfile] = await Promise.all([
-        sparringService.list({ page: 1, limit: 50 }),
+        sparringService.list({ page: 1, limit: 50, creatorId: user.id }),
         moderationService.userRisk(user.id),
       ]);
-      // L'API n'expose pas de filtre « mes sparrings » : on filtre côté client.
-      setMySparrings(list.items.filter((item) => item.creator?.id === user.id));
+      setMySparrings(list.items);
       setRisk(riskProfile);
     } catch {
       setMySparrings([]);

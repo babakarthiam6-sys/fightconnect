@@ -68,8 +68,19 @@ async def list_sparrings(
     style: str | None = None,
     min_price: float | None = None,
     max_price: float | None = None,
+    creator_id: Annotated[
+        str | None, Query(description="Ne renvoyer que les séances de cet organisateur.")
+    ] = None,
 ) -> dict[str, Any]:
     query: dict[str, Any] = {"status": {"$nin": ["cancelled"]}}
+
+    if creator_id is not None:
+        creator_object_id = to_object_id(creator_id)
+        # Un identifiant illisible ne doit renvoyer aucun résultat plutôt qu'une
+        # erreur : c'est une liste filtrée, pas l'accès à une ressource précise.
+        if creator_object_id is None:
+            return {"items": [], "total": 0, "page": page, "limit": limit}
+        query["creator_id"] = creator_object_id
 
     if search:
         # Recherche insensible à la casse sur les champs que l'utilisateur voit.
@@ -168,11 +179,17 @@ async def join_sparring(
         raise HTTPException(status_code=409, detail="Vous participez déjà à ce sparring.")
     if document.get("status") in {"completed", "cancelled"}:
         raise HTTPException(status_code=409, detail="Ce sparring n’accepte plus d’inscription.")
-    if len(document.get("participant_ids", [])) >= int(document.get("max_participants", 2)):
+
+    max_participants = int(document.get("max_participants", 2))
+    if len(document.get("participant_ids", [])) >= max_participants:
         raise HTTPException(status_code=409, detail="Toutes les places sont prises.")
 
     # Séance payante : la place n'est accordée qu'une fois le paiement confirmé
     # par Stripe. Sans cette vérification, l'endpoint donnerait accès gratuitement.
+    # Le paiement n'est repéré ici que pour être consommé *après* l'inscription :
+    # le consommer avant ferait perdre sa place ET son paiement à quelqu'un qui
+    # perdrait la course pour la dernière place.
+    payment = None
     if float(document.get("price", 0)) > 0:
         payment = await database.payments.find_one(
             {
@@ -187,11 +204,24 @@ async def join_sparring(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail="Le paiement doit être confirmé avant de rejoindre ce sparring.",
             )
-        await database.payments.update_one({"_id": payment["_id"]}, {"$set": {"consumed": True}})
 
-    await database.sparrings.update_one(
-        {"_id": document["_id"]}, {"$addToSet": {"participant_ids": user_id}}
+    # Inscription atomique : la condition sur l'index `max_participants - 1`
+    # n'est vraie que s'il reste une place au moment exact de l'écriture. Deux
+    # requêtes simultanées sur la dernière place ne peuvent donc pas réussir
+    # toutes les deux, ce qu'un simple `len()` en amont ne garantit pas.
+    result = await database.sparrings.update_one(
+        {
+            "_id": document["_id"],
+            f"participant_ids.{max_participants - 1}": {"$exists": False},
+            "participant_ids": {"$ne": user_id},
+        },
+        {"$addToSet": {"participant_ids": user_id}},
     )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=409, detail="Toutes les places sont prises.")
+
+    if payment is not None:
+        await database.payments.update_one({"_id": payment["_id"]}, {"$set": {"consumed": True}})
 
     refreshed = await database.sparrings.find_one({"_id": document["_id"]})
     assert refreshed is not None

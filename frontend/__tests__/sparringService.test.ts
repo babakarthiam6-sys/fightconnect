@@ -127,3 +127,45 @@ describe('service sparrings', () => {
     await expect(sparringService.join('s1')).resolves.toBeNull();
   });
 });
+
+describe('filtre par organisateur', () => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    await AsyncStorage.clear();
+    mockedIsOnline.mockResolvedValue(true);
+  });
+
+  it('transmet creator_id au serveur', async () => {
+    mockedHttp.get.mockResolvedValue({ items: [API_SPARRING] });
+
+    await sparringService.list({ page: 1, creatorId: 'u1' });
+
+    expect(mockedHttp.get).toHaveBeenCalledWith(
+      '/sparrings',
+      expect.objectContaining({ params: expect.objectContaining({ creator_id: 'u1' }) }),
+    );
+  });
+
+  it('n’écrase pas le cache général avec une liste restreinte', async () => {
+    mockedHttp.get.mockResolvedValue({ items: [API_SPARRING] });
+
+    await sparringService.list({ page: 1, creatorId: 'u1' });
+
+    expect(await AsyncStorage.getItem(STORAGE_KEYS.sparringsCache)).toBeNull();
+  });
+
+  it('applique le filtre organisateur au cache hors ligne', async () => {
+    mockedHttp.get.mockResolvedValue({
+      items: [
+        { ...API_SPARRING, _id: 's1', creator: { _id: 'u1', first_name: 'Ada' } },
+        { ...API_SPARRING, _id: 's2', creator: { _id: 'u2', first_name: 'Léa' } },
+      ],
+    });
+    await sparringService.list({ page: 1 });
+
+    mockedIsOnline.mockResolvedValue(false);
+    const mine = await sparringService.list({ creatorId: 'u1' });
+
+    expect(mine.items.map((item) => item.id)).toEqual(['s1']);
+  });
+});

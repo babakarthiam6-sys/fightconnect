@@ -10,6 +10,8 @@ interface ListOptions {
   page?: number;
   limit?: number;
   filters?: Partial<SparringFilters>;
+  /** Restreint la liste aux séances d'un organisateur (écran Profil). */
+  creatorId?: string;
 }
 
 export interface ListResult extends Paginated<Sparring> {
@@ -18,9 +20,10 @@ export interface ListResult extends Paginated<Sparring> {
 }
 
 function buildParams(options: ListOptions): Record<string, string | number> {
-  const { page = 1, limit = CONFIG.pageSize, filters } = options;
+  const { page = 1, limit = CONFIG.pageSize, filters, creatorId } = options;
   const params: Record<string, string | number> = { page, limit, skip: (page - 1) * limit };
 
+  if (creatorId) params.creator_id = creatorId;
   if (filters?.search) params.search = filters.search;
   if (filters?.level) params.level = filters.level;
   if (filters?.style) params.style = filters.style;
@@ -36,11 +39,17 @@ function buildParams(options: ListOptions): Record<string, string | number> {
  * En ligne, c'est le backend qui filtre ; hors ligne, on reproduit le même
  * comportement sur la dernière page mise en cache.
  */
-function applyFiltersLocally(items: Sparring[], filters?: Partial<SparringFilters>): Sparring[] {
-  if (!filters) return items;
-  const search = filters.search?.trim().toLowerCase() ?? '';
+function applyFiltersLocally(
+  items: Sparring[],
+  filters?: Partial<SparringFilters>,
+  creatorId?: string,
+): Sparring[] {
+  if (!filters && !creatorId) return items;
+  const search = filters?.search?.trim().toLowerCase() ?? '';
 
   return items.filter((item) => {
+    if (creatorId && item.creator?.id !== creatorId) return false;
+    if (!filters) return true;
     if (search && !`${item.title} ${item.location} ${item.description}`.toLowerCase().includes(search)) {
       return false;
     }
@@ -68,8 +77,10 @@ export const sparringService = {
       const items = extractList(payload).map(normalizeSparring);
       const total = extractTotal(payload, (page - 1) * limit + items.length);
 
-      // Seule la première page non filtrée sert de cache hors ligne.
-      if (page === 1 && !options.filters) {
+      // Seule la première page non filtrée sert de cache hors ligne : une liste
+      // restreinte à un organisateur écraserait le cache général avec un
+      // sous-ensemble.
+      if (page === 1 && !options.filters && !options.creatorId) {
         await cache.write(STORAGE_KEYS.sparringsCache, items);
       }
 
@@ -85,7 +96,7 @@ export const sparringService = {
     // Le cache ne contient que la première page : la pagination y est désactivée.
     const limit = options.limit ?? CONFIG.pageSize;
     const cached = await cache.read<Sparring[]>(STORAGE_KEYS.sparringsCache);
-    const items = applyFiltersLocally(cached?.payload ?? [], options.filters);
+    const items = applyFiltersLocally(cached?.payload ?? [], options.filters, options.creatorId);
 
     return { items, page: 1, limit, total: items.length, hasMore: false, fromCache: true };
   },
