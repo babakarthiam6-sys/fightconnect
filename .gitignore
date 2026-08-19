@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Carte du code générée par graphify (régénérable : `graphify update .`)
+graphify-out/
