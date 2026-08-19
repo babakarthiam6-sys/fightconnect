@@ -1,0 +1,396 @@
+{
+  "auth_signup": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YTg1NDVkMTg1ODgxYWNhZjJmNDJlZmUiLCJpYXQiOjE3ODcxMTkwNTcsImV4cCI6MTc4OTcxMTA1N30.dkdaq3oQvWZQMsruqvWR4TfKzqOYwYocvs4EikPgjmY",
+    "token_type": "bearer",
+    "user": {
+      "id": "6a8545d185881acaf2f42efe",
+      "first_name": "Ada",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": null,
+      "email": "ada@exemple.com",
+      "discharge_accepted": true,
+      "ratings_count": 0,
+      "created_at": "2026-08-19T05:57:37.278863+00:00"
+    }
+  },
+  "auth_login": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YTg1NDVkMTg1ODgxYWNhZjJmNDJlZmUiLCJpYXQiOjE3ODcxMTkwNTcsImV4cCI6MTc4OTcxMTA1N30.dkdaq3oQvWZQMsruqvWR4TfKzqOYwYocvs4EikPgjmY",
+    "token_type": "bearer",
+    "user": {
+      "id": "6a8545d185881acaf2f42efe",
+      "first_name": "Ada",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": null,
+      "email": "ada@exemple.com",
+      "discharge_accepted": true,
+      "ratings_count": 0,
+      "created_at": "2026-08-19T05:57:37.278000+00:00"
+    }
+  },
+  "auth_me": {
+    "id": "6a8545d185881acaf2f42efe",
+    "first_name": "Ada",
+    "last_name": "Dupont",
+    "avatar_url": null,
+    "average_rating": null,
+    "email": "ada@exemple.com",
+    "discharge_accepted": true,
+    "ratings_count": 0,
+    "created_at": "2026-08-19T05:57:37.278000+00:00"
+  },
+  "sparring_create": {
+    "id": "6a8545d185881acaf2f42eff",
+    "title": "Sparring boxe technique",
+    "description": "Séance technique à intensité modérée, gants 14 oz obligatoires.",
+    "location": "Paris 11e",
+    "scheduled_at": "2026-08-26T05:57:37.562181+00:00",
+    "duration_minutes": 90,
+    "level": "intermediate",
+    "style": "muay_thai",
+    "price": 25.5,
+    "currency": "EUR",
+    "max_participants": 4,
+    "participants": [],
+    "creator": {
+      "id": "6a8545d185881acaf2f42efe",
+      "first_name": "Ada",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": null
+    },
+    "status": "open",
+    "created_at": "2026-08-19T05:57:37.564523+00:00"
+  },
+  "sparring_join": {
+    "id": "6a8545d185881acaf2f42f00",
+    "title": "Sparring découverte gratuit",
+    "description": "Séance d’initiation ouverte à toutes et tous, matériel prêté.",
+    "location": "Lyon 3e",
+    "scheduled_at": "2026-08-26T05:57:37.562000+00:00",
+    "duration_minutes": 60,
+    "level": "beginner",
+    "style": "boxing",
+    "price": 0.0,
+    "currency": "EUR",
+    "max_participants": 6,
+    "participants": [
+      {
+        "id": "6a8545d185881acaf2f42f01",
+        "first_name": "Léa",
+        "last_name": "Dupont",
+        "avatar_url": null,
+        "average_rating": null
+      }
+    ],
+    "creator": {
+      "id": "6a8545d185881acaf2f42efe",
+      "first_name": "Ada",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": null
+    },
+    "status": "open",
+    "created_at": "2026-08-19T05:57:37.574000+00:00"
+  },
+  "sparrings_list": {
+    "items": [
+      {
+        "id": "6a8545d185881acaf2f42eff",
+        "title": "Sparring boxe technique",
+        "description": "Séance technique à intensité modérée, gants 14 oz obligatoires.",
+        "location": "Paris 11e",
+        "scheduled_at": "2026-08-26T05:57:37.562000+00:00",
+        "duration_minutes": 90,
+        "level": "intermediate",
+        "style": "muay_thai",
+        "price": 25.5,
+        "currency": "EUR",
+        "max_participants": 4,
+        "participants": [],
+        "creator": {
+          "id": "6a8545d185881acaf2f42efe",
+          "first_name": "Ada",
+          "last_name": "Dupont",
+          "avatar_url": null,
+          "average_rating": null
+        },
+        "status": "open",
+        "created_at": "2026-08-19T05:57:37.564000+00:00"
+      },
+      {
+        "id": "6a8545d185881acaf2f42f00",
+        "title": "Sparring découverte gratuit",
+        "description": "Séance d’initiation ouverte à toutes et tous, matériel prêté.",
+        "location": "Lyon 3e",
+        "scheduled_at": "2026-08-26T05:57:37.562000+00:00",
+        "duration_minutes": 60,
+        "level": "beginner",
+        "style": "boxing",
+        "price": 0.0,
+        "currency": "EUR",
+        "max_participants": 6,
+        "participants": [
+          {
+            "id": "6a8545d185881acaf2f42f01",
+            "first_name": "Léa",
+            "last_name": "Dupont",
+            "avatar_url": null,
+            "average_rating": null
+          }
+        ],
+        "creator": {
+          "id": "6a8545d185881acaf2f42efe",
+          "first_name": "Ada",
+          "last_name": "Dupont",
+          "avatar_url": null,
+          "average_rating": null
+        },
+        "status": "open",
+        "created_at": "2026-08-19T05:57:37.574000+00:00"
+      }
+    ],
+    "total": 2,
+    "page": 1,
+    "limit": 20
+  },
+  "sparring_detail": {
+    "id": "6a8545d185881acaf2f42f00",
+    "title": "Sparring découverte gratuit",
+    "description": "Séance d’initiation ouverte à toutes et tous, matériel prêté.",
+    "location": "Lyon 3e",
+    "scheduled_at": "2026-08-26T05:57:37.562000+00:00",
+    "duration_minutes": 60,
+    "level": "beginner",
+    "style": "boxing",
+    "price": 0.0,
+    "currency": "EUR",
+    "max_participants": 6,
+    "participants": [
+      {
+        "id": "6a8545d185881acaf2f42f01",
+        "first_name": "Léa",
+        "last_name": "Dupont",
+        "avatar_url": null,
+        "average_rating": null
+      }
+    ],
+    "creator": {
+      "id": "6a8545d185881acaf2f42efe",
+      "first_name": "Ada",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": null
+    },
+    "status": "open",
+    "created_at": "2026-08-19T05:57:37.574000+00:00"
+  },
+  "moderation_review": {
+    "id": "6a8545d185881acaf2f42f02",
+    "sparring_id": "6a8545d185881acaf2f42f00",
+    "author": {
+      "id": "6a8545d185881acaf2f42f01",
+      "first_name": "Léa",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": null
+    },
+    "rating": 5,
+    "comment": "Excellente séance, très pédagogue.",
+    "created_at": "2026-08-19T05:57:37.862968+00:00",
+    "flagged": false,
+    "flag_reason": null,
+    "moderation_score": null
+  },
+  "moderation_review_flagged": {
+    "id": "6a8545d185881acaf2f42f03",
+    "sparring_id": "6a8545d185881acaf2f42f00",
+    "author": {
+      "id": "6a8545d185881acaf2f42efe",
+      "first_name": "Ada",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": 5.0
+    },
+    "rating": 1,
+    "comment": "Quel connard, séance dangereuse.",
+    "created_at": "2026-08-19T05:57:37.873478+00:00",
+    "flagged": true,
+    "flag_reason": "harassment",
+    "moderation_score": 1.0
+  },
+  "sparring_reviews": {
+    "items": [
+      {
+        "id": "6a8545d185881acaf2f42f03",
+        "sparring_id": "6a8545d185881acaf2f42f00",
+        "author": {
+          "id": "6a8545d185881acaf2f42efe",
+          "first_name": "Ada",
+          "last_name": "Dupont",
+          "avatar_url": null,
+          "average_rating": 5.0
+        },
+        "rating": 1,
+        "comment": "Quel connard, séance dangereuse.",
+        "created_at": "2026-08-19T05:57:37.873000+00:00",
+        "flagged": true,
+        "flag_reason": "harassment",
+        "moderation_score": 1.0
+      },
+      {
+        "id": "6a8545d185881acaf2f42f02",
+        "sparring_id": "6a8545d185881acaf2f42f00",
+        "author": {
+          "id": "6a8545d185881acaf2f42f01",
+          "first_name": "Léa",
+          "last_name": "Dupont",
+          "avatar_url": null,
+          "average_rating": null
+        },
+        "rating": 5,
+        "comment": "Excellente séance, très pédagogue.",
+        "created_at": "2026-08-19T05:57:37.862000+00:00",
+        "flagged": false,
+        "flag_reason": null,
+        "moderation_score": null
+      }
+    ],
+    "total": 2
+  },
+  "moderation_user_risk": {
+    "user_id": "6a8545d185881acaf2f42f01",
+    "risk_level": "low",
+    "score": 0.0,
+    "reasons": [
+      "Aucun avis signalé."
+    ]
+  },
+  "moderation_recommendations": {
+    "items": [
+      {
+        "id": "6a8545d185881acaf2f42eff",
+        "title": "Sparring boxe technique",
+        "description": "Séance technique à intensité modérée, gants 14 oz obligatoires.",
+        "location": "Paris 11e",
+        "scheduled_at": "2026-08-26T05:57:37.562000+00:00",
+        "duration_minutes": 90,
+        "level": "intermediate",
+        "style": "muay_thai",
+        "price": 25.5,
+        "currency": "EUR",
+        "max_participants": 4,
+        "participants": [],
+        "creator": {
+          "id": "6a8545d185881acaf2f42efe",
+          "first_name": "Ada",
+          "last_name": "Dupont",
+          "avatar_url": null,
+          "average_rating": 5.0
+        },
+        "status": "open",
+        "created_at": "2026-08-19T05:57:37.564000+00:00"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 1
+  },
+  "revenue_stats": {
+    "total_earnings": 0.0,
+    "balance": 0.0,
+    "completed_sparrings": 0,
+    "total_sparrings": 2,
+    "average_rating": 5.0,
+    "currency": "EUR"
+  },
+  "payments_history": {
+    "items": [
+      {
+        "id": "6a8545d194487670134974a0",
+        "sparring_id": "6a8545d185881acaf2f42eff",
+        "sparring_title": "Sparring boxe technique",
+        "amount": 25.5,
+        "currency": "EUR",
+        "status": "succeeded",
+        "created_at": "2026-08-19T05:57:37.897000+00:00",
+        "receipt_url": null
+      }
+    ],
+    "total": 1
+  },
+  "error_401": {
+    "status": 401,
+    "body": {
+      "detail": "Email ou mot de passe incorrect."
+    }
+  },
+  "error_422": {
+    "status": 422,
+    "body": {
+      "detail": [
+        {
+          "type": "value_error",
+          "loc": [
+            "body",
+            "email"
+          ],
+          "msg": "value is not a valid email address: An email address must have an @-sign.",
+          "input": "pas-un-email",
+          "ctx": {
+            "reason": "An email address must have an @-sign."
+          }
+        },
+        {
+          "type": "string_too_short",
+          "loc": [
+            "body",
+            "password"
+          ],
+          "msg": "String should have at least 8 characters",
+          "input": "x",
+          "ctx": {
+            "min_length": 8
+          }
+        },
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "first_name"
+          ],
+          "msg": "Field required",
+          "input": {
+            "email": "pas-un-email",
+            "password": "x"
+          }
+        },
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "last_name"
+          ],
+          "msg": "Field required",
+          "input": {
+            "email": "pas-un-email",
+            "password": "x"
+          }
+        },
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "discharge_accepted"
+          ],
+          "msg": "Field required",
+          "input": {
+            "email": "pas-un-email",
+            "password": "x"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -61,6 +61,20 @@ MONGODB_TEST_URI=mongodb://127.0.0.1:27017 pytest -q
 | `test_throttle.py` | blocage après échecs répétés, expiration, isolation entre comptes |
 | `test_integration_mongo.py` | vrai MongoDB : index unique, requêtes, parcours complet, et dix inscriptions simultanées sur une seule place |
 
+## Fixtures de contrat
+
+Les tests du mobile vérifient qu'il sait lire ce que cette API envoie vraiment.
+Après toute modification d'un schéma de sortie, régénérez les réponses de
+référence, sinon le test de contrat validerait un contrat périmé :
+
+```bash
+uvicorn app.main:app --port 8123        # dans un terminal
+python scripts/capture_fixtures.py      # dans un autre
+```
+
+Le script écrit dans `frontend/__tests__/fixtures/api-responses.json`. Les
+données produites sont entièrement synthétiques.
+
 ## Endpoints
 
 Tous préfixés par `/api/v1`.

@@ -96,7 +96,7 @@ l'app sur une autre implémentation du même contrat sans toucher aux écrans.
 
 ## Qualité
 
-89 tests répartis en 10 suites, tous verts :
+105 tests répartis en 11 suites, tous verts :
 
 | Suite | Ce qu'elle couvre |
 | --- | --- |
@@ -108,6 +108,7 @@ l'app sur une autre implémentation du même contrat sans toucher aux écrans.
 | `components` | `Button`, `SparringCard`, `RatingStars`, `UserProfile` |
 | `PaymentForm` | PaymentIntent → Payment Sheet, annulation, carte refusée, clé absente |
 | `loginScreen` | validation du formulaire et normalisation de l'email |
+| `contract` | les normaliseurs face aux **vraies** réponses de l'API (voir ci-dessous) |
 
 ```bash
 npm start           # serveur de développement Expo
@@ -116,6 +117,21 @@ npm run typecheck   # tsc --noEmit
 npm test            # jest
 npm run format      # prettier
 npm run build:android / build:ios   # EAS (profil preview)
+```
+
+### Test de contrat
+
+Les autres suites utilisent des payloads écrits à la main : ils décrivent ce que
+l'on *croit* que l'API renvoie. `__tests__/contract.test.ts` fait tourner les
+normaliseurs sur des réponses réellement capturées sur l'API de `backend/`,
+tournant contre un vrai MongoDB. Un champ renommé côté serveur casse donc un
+test, au lieu de casser en silence dans l'application.
+
+Les fixtures se régénèrent depuis le backend :
+
+```bash
+cd backend && uvicorn app.main:app --port 8123      # dans un terminal
+python scripts/capture_fixtures.py                   # dans un autre
 ```
 
 La CI (`.github/workflows/frontend.yml`) rejoue lint, types, tests et un bundle
