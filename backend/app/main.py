@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.database import connect, disconnect, ping
 from app.routers import auth, moderation, payments, revenue, sparrings
+from app.webapp import is_web_app_available, mount_web_app
 
 API_PREFIX = "/api/v1"
 
@@ -45,6 +46,8 @@ def create_app() -> FastAPI:
     for router in (auth.router, sparrings.router, payments.router, revenue.router, moderation.router):
         app.include_router(router, prefix=API_PREFIX)
 
+    web_disponible = is_web_app_available(settings.web_dir)
+
     @app.get("/health", tags=["système"])
     async def health() -> dict[str, object]:
         """Sonde de disponibilité, utilisée par l'hébergeur et pour diagnostiquer."""
@@ -54,7 +57,13 @@ def create_app() -> FastAPI:
             "database": database_ready,
             "stripe_configured": settings.is_stripe_configured,
             "moderation_configured": settings.is_openai_configured,
+            "web_app": web_disponible,
         }
+
+    # En dernier, impérativement : un montage sur « / » placé plus haut
+    # intercepterait /api, /health et /docs.
+    if web_disponible:
+        mount_web_app(app, settings.web_dir)
 
     return app
 

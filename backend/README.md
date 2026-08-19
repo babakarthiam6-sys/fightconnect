@@ -36,7 +36,7 @@ docker run -d -p 27017:27017 --name fightconnect-mongo mongo:7
 pytest
 ```
 
-68 tests. Stripe n'est jamais appelé : il est remplacé par un double. Les 62
+74 tests. Stripe n'est jamais appelé : il est remplacé par un double. Les 62
 tests unitaires tournent sur une base simulée en mémoire (`mongomock-motor`) et
 ne demandent aucun service.
 
@@ -60,6 +60,7 @@ MONGODB_TEST_URI=mongodb://127.0.0.1:27017 pytest -q
 | `test_config.py` | garde-fous de production et découpage des origines CORS |
 | `test_throttle.py` | blocage après échecs répétés, expiration, isolation entre comptes |
 | `test_integration_mongo.py` | vrai MongoDB : index unique, requêtes, parcours complet, et dix inscriptions simultanées sur une seule place |
+| `test_webapp.py` | l'application web montée à la racine ne masque ni l'API, ni la documentation |
 
 ## Fixtures de contrat
 
@@ -148,9 +149,33 @@ Tous préfixés par `/api/v1`.
   La navigation masque les séances déjà commencées ; l'historique d'un
   organisateur (`creator_id`) les conserve.
 
+## L'application web
+
+Quand le dossier `WEB_DIR` (par défaut `webapp/`) contient un export web du
+mobile, l'API le sert à la racine : `/` rend l'application, `/api/v1/…` et
+`/docs` restent inchangés. `/health` indique `"web_app": true`.
+
+Le montage intervient **après** toutes les routes de l'API — placé avant, il les
+masquerait toutes. C'est ce que vérifie `tests/test_webapp.py`.
+
+Pour l'essayer en local :
+
+```bash
+cd ../frontend
+EXPO_PUBLIC_API_BASE_URL=/api/v1 npx expo export --platform web --clear \
+  --output-dir ../backend/webapp
+cd ../backend && uvicorn app.main:app   # l'application est sur http://localhost:8000
+```
+
+L'adresse d'API relative supprime toute configuration côté navigateur et écarte
+la question du CORS, l'application et l'API partageant la même origine.
+
 ## Déploiement
 
-Le `Dockerfile` et `railway.json` sont prêts (sonde `/health`). Variables à
-définir sur l'hébergeur : `ENVIRONMENT=production`, `MONGODB_URI`, `MONGODB_DB`,
+Le `Dockerfile` à la **racine du dépôt** construit les deux en une fois : une
+première étape bâtit la version web, la seconde la copie dans l'image de l'API.
+L'hébergeur doit donc pointer sur la racine du dépôt, pas sur `backend/`.
+
+Variables à définir : `ENVIRONMENT=production`, `MONGODB_URI`, `MONGODB_DB`,
 `JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`,
 `STRIPE_WEBHOOK_SECRET`, et `OPENAI_API_KEY` si vous voulez la modération IA.

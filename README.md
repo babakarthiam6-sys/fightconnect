@@ -5,13 +5,20 @@ séance, on la trouve, on la paie, on la note.
 
 | Dossier | Contenu |
 | --- | --- |
-| [`frontend/`](frontend/) | Application React Native (Expo, TypeScript) |
+| [`frontend/`](frontend/) | Application React Native (Expo, TypeScript) — mobile **et** web |
 | [`backend/`](backend/) | API FastAPI (MongoDB, Stripe, modération IA) |
+
+L'application existe en deux formes issues du même code : l'application mobile
+installée, et une **version web** que l'API sert elle-même. Un seul déploiement
+suffit donc pour tout mettre en ligne, et l'application est utilisable depuis un
+navigateur sans rien installer — utile quand on n'a pas d'ordinateur sous la
+main. Seul le paiement par carte reste réservé à l'application installée : la
+feuille de paiement Stripe est un composant natif.
 
 ## Démarrage rapide
 
 ```bash
-# 1. L'API
+# 1. L'API (sert aussi la version web si elle a été construite)
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
@@ -34,7 +41,7 @@ déploiement.
 
 - **frontend** — 105 tests (Jest + Testing Library), ESLint, vérification des
   types et bundle Metro.
-- **backend** — 68 tests (pytest) : 62 sur base simulée, 6 d'intégration sur un vrai
+- **backend** — 74 tests (pytest) : 62 sur base simulée, 6 d'intégration sur un vrai
   MongoDB fourni par la CI. Stripe est doublé partout.
 
 Parmi eux, 16 tests de contrat font tourner les normaliseurs du mobile sur des
