@@ -1,0 +1,61 @@
+name: Backend
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  tests:
+    name: Tests API
+    runs-on: ubuntu-latest
+
+    services:
+      # Les tests unitaires n'en ont pas besoin, mais les tests d'intégration
+      # valident sur le vrai moteur ce que le simulateur ne fait qu'approcher —
+      # à commencer par la course entre deux inscriptions.
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MONGODB_TEST_URI: mongodb://127.0.0.1:27017
+      # Ici, un MongoDB injoignable est une erreur, pas une raison d'ignorer les
+      # tests : sans ce drapeau, une panne du service rendrait la CI verte tout
+      # en escamotant les tests les plus importants.
+      REQUIRE_MONGO: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - run: pip install -r requirements-dev.txt
+
+      - name: Tests
+        # Stripe n'est jamais appelé : il est remplacé par un double. La majorité
+        # des tests tourne sur une base simulée ; ceux d'intégration utilisent le
+        # service MongoDB ci-dessus et s'ignorent d'eux-mêmes s'il est absent.
+        # -rs affiche la raison de chaque test ignoré, pour qu'un escamotage se
+        # voie dans le journal.
+        run: pytest -q -rs
