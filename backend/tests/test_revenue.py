@@ -53,3 +53,27 @@ async def test_les_gains_sont_nets_de_commission(client, database):
 
 async def test_statistiques_exigent_une_authentification(client):
     assert (await client.get("/api/v1/revenue/stats")).status_code == 401
+
+
+async def test_une_seance_passee_compte_comme_terminee(client, database):
+    from datetime import datetime, timedelta, timezone
+
+    organisateur = await register(client)
+    await client.post(
+        "/api/v1/sparrings",
+        json=sparring_payload(price=0),
+        headers=organisateur["headers"],
+    )
+
+    avant = await client.get("/api/v1/revenue/stats", headers=organisateur["headers"])
+    assert avant.json()["completed_sparrings"] == 0
+
+    # La séance a eu lieu hier : aucune tâche planifiée ne la marque terminée,
+    # le statut est déduit de l'horaire.
+    await database.sparrings.update_one(
+        {"title": "Sparring boxe technique"},
+        {"$set": {"scheduled_at": datetime.now(timezone.utc) - timedelta(days=1)}},
+    )
+
+    apres = await client.get("/api/v1/revenue/stats", headers=organisateur["headers"])
+    assert apres.json()["completed_sparrings"] == 1

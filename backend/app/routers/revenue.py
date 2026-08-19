@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from app.config import get_settings
 from app.dependencies import CurrentUser, Database
+from app.routers.sparrings import compute_status
 from app.schemas import RevenueStatsOut
 
 router = APIRouter(prefix="/revenue", tags=["revenue"])
@@ -36,8 +37,10 @@ async def stats(database: Database, current_user: CurrentUser) -> dict[str, Any]
         # Pas de système de virement pour l'instant : le solde disponible est
         # égal au cumul des gains.
         "balance": net,
+        # Même calcul que sur la fiche : une séance dont l'horaire est passé est
+        # terminée, sans qu'aucune tâche planifiée n'ait à la marquer.
         "completed_sparrings": sum(
-            1 for document in my_sparrings if document.get("status") == "completed"
+            1 for document in my_sparrings if compute_status(document) == "completed"
         ),
         "total_sparrings": len(my_sparrings),
         "average_rating": current_user.get("average_rating"),

@@ -220,3 +220,46 @@ async def test_la_garde_atomique_refuse_une_place_quand_le_quota_est_atteint(cli
     final = await database.sparrings.find_one({"_id": document["_id"]})
     assert len(final["participant_ids"]) == 2
     assert sparring["id"] == str(document["_id"])
+
+
+async def test_une_seance_passee_est_marquee_terminee_et_fermee(client, database):
+    from datetime import datetime, timedelta, timezone
+
+    organisateur = await register(client, "orga@exemple.com", "Ada")
+    sparring = await create_sparring(client, organisateur["headers"], price=0)
+
+    await database.sparrings.update_one(
+        {"_id": {"$exists": True}, "title": "Sparring boxe technique"},
+        {"$set": {"scheduled_at": datetime.now(timezone.utc) - timedelta(days=1)}},
+    )
+
+    detail = await client.get(f"{BASE}/{sparring['id']}")
+    assert detail.json()["status"] == "completed"
+
+    retardataire = await register(client, "retard@exemple.com", "Retard")
+    refus = await client.post(f"{BASE}/{sparring['id']}/join", headers=retardataire["headers"])
+    assert refus.status_code == 409
+
+
+async def test_la_navigation_masque_les_seances_passees_mais_pas_l_historique(client, database):
+    from datetime import datetime, timedelta, timezone
+
+    organisateur = await register(client, "orga@exemple.com", "Ada")
+    await create_sparring(client, organisateur["headers"], title="Séance à venir")
+    await create_sparring(client, organisateur["headers"], title="Séance passée")
+
+    await database.sparrings.update_one(
+        {"title": "Séance passée"},
+        {"$set": {"scheduled_at": datetime.now(timezone.utc) - timedelta(days=2)}},
+    )
+
+    navigation = await client.get(BASE)
+    assert [item["title"] for item in navigation.json()["items"]] == ["Séance à venir"]
+
+    # L'organisateur garde la trace de ce qu'il a organisé.
+    historique = await client.get(BASE, params={"creator_id": organisateur["user"]["id"]})
+    titres = sorted(item["title"] for item in historique.json()["items"])
+    assert titres == ["Séance passée", "Séance à venir"]
+    assert [item["status"] for item in historique.json()["items"] if item["title"] == "Séance passée"] == [
+        "completed"
+    ]

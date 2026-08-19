@@ -1,6 +1,6 @@
 """Publication, recherche et participation aux sparrings."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from bson import ObjectId
@@ -48,13 +48,34 @@ async def fetch_sparring(database: AsyncIOMotorDatabase, sparring_id: str) -> di
 
 
 def compute_status(document: dict[str, Any]) -> str:
-    """Le statut « complet » est dérivé du remplissage, jamais stocké en dur."""
+    """Statut dérivé de l'état réel, jamais stocké en dur.
+
+    « complet » vient du remplissage et « terminé » de l'horaire : les calculer à
+    la lecture évite qu'ils se désynchronisent, et surtout évite d'avoir besoin
+    d'une tâche planifiée pour clore les séances passées.
+    """
     current = document.get("status", "open")
     if current in {"completed", "cancelled"}:
         return current
+
+    if has_ended(document):
+        return "completed"
     if len(document.get("participant_ids", [])) >= int(document.get("max_participants", 2)):
         return "full"
     return "open"
+
+
+def has_ended(document: dict[str, Any]) -> bool:
+    """Vrai si l'horaire de fin de la séance est dépassé."""
+    scheduled_at = document.get("scheduled_at")
+    if not isinstance(scheduled_at, datetime):
+        return False
+
+    if scheduled_at.tzinfo is None:
+        scheduled_at = scheduled_at.replace(tzinfo=timezone.utc)
+
+    end = scheduled_at + timedelta(minutes=int(document.get("duration_minutes", 60)))
+    return end < datetime.now(timezone.utc)
 
 
 @router.get("", response_model=SparringList)
@@ -81,6 +102,12 @@ async def list_sparrings(
         if creator_object_id is None:
             return {"items": [], "total": 0, "page": page, "limit": limit}
         query["creator_id"] = creator_object_id
+    else:
+        # En navigation, une séance déjà commencée n'a plus d'intérêt : on ne
+        # peut plus la rejoindre. Filtrée sur l'heure de début, pas sur la fin,
+        # pour rester une simple comparaison indexable côté base. L'historique
+        # d'un organisateur, lui, reste complet.
+        query["scheduled_at"] = {"$gte": datetime.now(timezone.utc)}
 
     if search:
         # Recherche insensible à la casse sur les champs que l'utilisateur voit.
@@ -177,7 +204,9 @@ async def join_sparring(
         raise HTTPException(status_code=409, detail="Vous êtes l’organisateur de ce sparring.")
     if user_id in document.get("participant_ids", []):
         raise HTTPException(status_code=409, detail="Vous participez déjà à ce sparring.")
-    if document.get("status") in {"completed", "cancelled"}:
+    # Le statut stocké reste « open » : c'est le statut calculé qui sait qu'une
+    # séance dont l'horaire est passé n'accepte plus personne.
+    if compute_status(document) in {"completed", "cancelled"}:
         raise HTTPException(status_code=409, detail="Ce sparring n’accepte plus d’inscription.")
 
     max_participants = int(document.get("max_participants", 2))

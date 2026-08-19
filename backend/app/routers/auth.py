@@ -8,6 +8,7 @@ from app.dependencies import CurrentUser, Database
 from app.schemas import AuthResponse, LoginRequest, SignupRequest, UserOut
 from app.security import create_access_token, hash_password, verify_password
 from app.serializers import serialize_user
+from app.services import throttle
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -50,15 +51,29 @@ async def signup(payload: SignupRequest, database: Database) -> dict:
 
 @router.post("/login", response_model=AuthResponse)
 async def login(payload: LoginRequest, database: Database) -> dict:
-    user = await database.users.find_one({"email": payload.email.lower()})
+    email = payload.email.lower()
+
+    # Un mot de passe se teste par millions si rien ne freine les tentatives.
+    remaining = await throttle.seconds_until_unlock(database, email)
+    if remaining > 0:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Trop de tentatives. Réessayez dans quelques minutes.",
+            headers={"Retry-After": str(remaining)},
+        )
+
+    user = await database.users.find_one({"email": email})
 
     # Message volontairement identique dans les deux cas : distinguer « email
     # inconnu » de « mot de passe faux » permettrait d'énumérer les comptes.
     if user is None or not verify_password(payload.password, user.get("password_hash", "")):
+        await throttle.register_failure(database, email)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou mot de passe incorrect.",
         )
+
+    await throttle.clear(database, email)
 
     return {
         "access_token": create_access_token(str(user["_id"])),

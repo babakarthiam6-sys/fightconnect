@@ -36,7 +36,7 @@ docker run -d -p 27017:27017 --name fightconnect-mongo mongo:7
 pytest
 ```
 
-52 tests, sans MongoDB ni Stripe : la base est simulée en mémoire
+62 tests, sans MongoDB ni Stripe : la base est simulée en mémoire
 (`mongomock-motor`) et Stripe est remplacé par un double dans les tests de
 paiement.
 
@@ -48,6 +48,7 @@ paiement.
 | `test_moderation.py` | droit de laisser un avis, signalement, note de l'organisateur, profil de risque |
 | `test_revenue.py` | statistiques et commission |
 | `test_config.py` | garde-fous de production et découpage des origines CORS |
+| `test_throttle.py` | blocage après échecs répétés, expiration, isolation entre comptes |
 
 ## Endpoints
 
@@ -109,6 +110,16 @@ Tous préfixés par `/api/v1`.
 - **CORS : `*` désactive les credentials.** Les navigateurs rejettent cette
   combinaison ; l'app mobile n'utilise que l'en-tête `Authorization`, donc elle
   n'est pas concernée.
+- **La connexion est freinée après 8 échecs** (blocage 10 minutes, compteur
+  remis à zéro après 30 minutes sans échec ou après une réussite). Le compteur
+  vit en base et non en mémoire, pour que plusieurs instances partagent le même
+  verrou. Il porte sur l'email, l'adresse IP étant peu fiable derrière un proxy
+  et partagée par des utilisateurs légitimes.
+- **Les statuts « complet » et « terminé » sont déduits à la lecture**, du
+  remplissage et de l'horaire. Aucune tâche planifiée n'est nécessaire pour
+  clore les séances passées, et les deux ne peuvent pas se désynchroniser.
+  La navigation masque les séances déjà commencées ; l'historique d'un
+  organisateur (`creator_id`) les conserve.
 
 ## Déploiement
 
