@@ -30,8 +30,9 @@ déploiement.
 
 ## Qualité
 
-151 tests automatisés, rejoués par GitHub Actions à chaque push :
+157 tests automatisés, rejoués par GitHub Actions à chaque push :
 
 - **frontend** — 89 tests (Jest + Testing Library), ESLint, vérification des
   types et bundle Metro.
-- **backend** — 62 tests (pytest), base MongoDB simulée en mémoire, Stripe doublé.
+- **backend** — 68 tests (pytest) : 62 sur base simulée, 6 d'intégration sur un vrai
+  MongoDB fourni par la CI. Stripe est doublé partout.
