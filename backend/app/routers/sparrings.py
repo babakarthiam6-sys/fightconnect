@@ -11,6 +11,7 @@ from app.dependencies import CurrentUser, Database
 from app.repositories import expand_sparring, expand_sparrings
 from app.schemas import LEVELS, STYLES, ReviewList, SparringCreate, SparringList, SparringOut
 from app.serializers import serialize_review, to_object_id
+from app.services.payments import refund_payment
 
 router = APIRouter(prefix="/sparrings", tags=["sparrings"])
 
@@ -269,6 +270,18 @@ async def cancel_participation(
 
     if user_id not in document.get("participant_ids", []):
         raise HTTPException(status_code=409, detail="Vous ne participez pas à ce sparring.")
+
+    # Annuler avant la séance rend l'argent. Le remboursement est demandé
+    # **avant** de libérer la place : si Stripe échoue, la personne garde sa
+    # place plutôt que de perdre les deux.
+    paiement = await database.payments.find_one(
+        {"user_id": user_id, "sparring_id": document["_id"], "status": "succeeded"}
+    )
+    if paiement is not None and not has_ended(document) and paiement.get("payment_intent_id"):
+        await refund_payment(paiement["payment_intent_id"])
+        await database.payments.update_one(
+            {"_id": paiement["_id"]}, {"$set": {"status": "refunded"}}
+        )
 
     await database.sparrings.update_one(
         {"_id": document["_id"]}, {"$pull": {"participant_ids": user_id}}

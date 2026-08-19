@@ -123,7 +123,7 @@ l'app sur une autre implémentation du même contrat sans toucher aux écrans.
 
 ## Qualité
 
-105 tests répartis en 11 suites, tous verts :
+115 tests répartis en 12 suites, tous verts :
 
 | Suite | Ce qu'elle couvre |
 | --- | --- |
@@ -135,6 +135,7 @@ l'app sur une autre implémentation du même contrat sans toucher aux écrans.
 | `components` | `Button`, `SparringCard`, `RatingStars`, `UserProfile` |
 | `PaymentForm` | PaymentIntent → Payment Sheet, annulation, carte refusée, clé absente |
 | `loginScreen` | validation du formulaire et normalisation de l'email |
+| `payout` | inscription Stripe des organisateurs, états de la carte, erreurs |
 | `contract` | les normaliseurs face aux **vraies** réponses de l'API (voir ci-dessous) |
 
 ```bash

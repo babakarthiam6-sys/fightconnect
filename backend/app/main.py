@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import connect, disconnect, ping
-from app.routers import auth, moderation, payments, revenue, sparrings
+from app.routers import auth, moderation, payments, payouts, revenue, sparrings
 from app.webapp import is_web_app_available, mount_web_app
 
 API_PREFIX = "/api/v1"
@@ -43,7 +43,14 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    for router in (auth.router, sparrings.router, payments.router, revenue.router, moderation.router):
+    for router in (
+        auth.router,
+        sparrings.router,
+        payments.router,
+        payouts.router,
+        revenue.router,
+        moderation.router,
+    ):
         app.include_router(router, prefix=API_PREFIX)
 
     web_disponible = is_web_app_available(settings.web_dir)

@@ -37,6 +37,7 @@ const USER: User = {
   averageRating: 4.5,
   ratingsCount: 12,
   createdAt: null,
+  payoutsEnabled: false,
 };
 
 describe('Button', () => {

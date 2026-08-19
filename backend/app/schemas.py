@@ -38,6 +38,9 @@ class UserOut(UserSummary):
     discharge_accepted: bool
     ratings_count: int = 0
     created_at: str | None = None
+    # Un organisateur ne peut encaisser une séance payante qu'une fois Stripe
+    # en mesure de lui verser l'argent.
+    payouts_enabled: bool = False
 
 
 class AuthResponse(BaseModel):
@@ -148,3 +151,16 @@ class UserRiskOut(BaseModel):
     risk_level: str
     score: float
     reasons: list[str]
+
+
+class PayoutStatusOut(BaseModel):
+    """État du compte de versement d'un organisateur."""
+
+    connected: bool
+    details_submitted: bool
+    payouts_enabled: bool
+    stripe_configured: bool
+
+
+class OnboardingLinkOut(BaseModel):
+    url: str
