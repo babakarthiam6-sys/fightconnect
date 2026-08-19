@@ -36,6 +36,10 @@ jobs:
 
     env:
       MONGODB_TEST_URI: mongodb://127.0.0.1:27017
+      # Ici, un MongoDB injoignable est une erreur, pas une raison d'ignorer les
+      # tests : sans ce drapeau, une panne du service rendrait la CI verte tout
+      # en escamotant les tests les plus importants.
+      REQUIRE_MONGO: '1'
 
     steps:
       - uses: actions/checkout@v4
@@ -52,4 +56,6 @@ jobs:
         # Stripe n'est jamais appelé : il est remplacé par un double. La majorité
         # des tests tourne sur une base simulée ; ceux d'intégration utilisent le
         # service MongoDB ci-dessus et s'ignorent d'eux-mêmes s'il est absent.
-        run: pytest -q
+        # -rs affiche la raison de chaque test ignoré, pour qu'un escamotage se
+        # voie dans le journal.
+        run: pytest -q -rs

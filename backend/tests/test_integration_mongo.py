@@ -6,7 +6,10 @@ comportements dont le code dépend réellement — l'index unique, la sémantiqu
 requêtes, et surtout la course entre deux inscriptions, qu'un simulateur
 synchrone ne peut pas reproduire.
 
-Ignorés automatiquement si aucun MongoDB n'écoute (`MONGODB_TEST_URI`).
+Ignorés automatiquement si aucun MongoDB n'écoute (`MONGODB_TEST_URI`), sauf si
+`REQUIRE_MONGO=1` : la CI pose ce drapeau pour que la disparition du service
+fasse rougir la CI au lieu d'escamoter silencieusement ces tests. Une CI verte
+qui saute ses tests les plus importants ne prouve rien.
 """
 
 import asyncio
@@ -23,6 +26,7 @@ from app.database import create_indexes
 from tests.conftest import register, sparring_payload
 
 MONGODB_TEST_URI = os.environ.get("MONGODB_TEST_URI", "mongodb://127.0.0.1:27017")
+REQUIRE_MONGO = os.environ.get("REQUIRE_MONGO") == "1"
 BASE = "/api/v1/sparrings"
 
 
@@ -32,7 +36,9 @@ async def database():
     client = AsyncIOMotorClient(MONGODB_TEST_URI, serverSelectionTimeoutMS=1500)
     try:
         await client.admin.command("ping")
-    except Exception:
+    except Exception as error:
+        if REQUIRE_MONGO:
+            pytest.fail(f"MongoDB exigé mais injoignable sur {MONGODB_TEST_URI} : {error}")
         pytest.skip(f"Aucun MongoDB joignable sur {MONGODB_TEST_URI}")
 
     # Une base jetable par test : les tests restent indépendants et parallélisables.

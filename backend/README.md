@@ -41,7 +41,9 @@ tests unitaires tournent sur une base simulée en mémoire (`mongomock-motor`) e
 ne demandent aucun service.
 
 Les 6 tests d'intégration valident sur un **vrai MongoDB** ce que le simulateur
-ne fait qu'approcher, et s'ignorent d'eux-mêmes si aucun serveur n'écoute :
+ne fait qu'approcher, et s'ignorent d'eux-mêmes si aucun serveur n'écoute — sauf
+avec `REQUIRE_MONGO=1`, que la CI pose pour qu'une panne du service fasse rougir
+la CI plutôt que d'escamoter ces tests en silence :
 
 ```bash
 docker run -d -p 27017:27017 --name fightconnect-mongo mongo:7
