@@ -19,7 +19,7 @@ async def connect() -> AsyncIOMotorDatabase:
     settings = get_settings()
     # Délai court : une base injoignable doit produire une erreur nette plutôt
     # qu'une requête qui pend pendant 30 secondes.
-    _client = AsyncIOMotorClient(settings.mongodb_uri, serverSelectionTimeoutMS=5000)
+    _client = AsyncIOMotorClient(settings.database_uri, serverSelectionTimeoutMS=5000)
     _database = _client[settings.mongodb_db]
 
     try:

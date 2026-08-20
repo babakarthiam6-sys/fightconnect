@@ -36,7 +36,7 @@ docker run -d -p 27017:27017 --name fightconnect-mongo mongo:7
 pytest
 ```
 
-83 tests. Stripe n'est jamais appelé : il est remplacé par un double. Les 77
+86 tests. Stripe n'est jamais appelé : il est remplacé par un double. Les 80
 tests unitaires tournent sur une base simulée en mémoire (`mongomock-motor`) et
 ne demandent aucun service.
 
@@ -190,6 +190,11 @@ Le `Dockerfile` à la **racine du dépôt** construit les deux en une fois : une
 première étape bâtit la version web, la seconde la copie dans l'image de l'API.
 L'hébergeur doit donc pointer sur la racine du dépôt, pas sur `backend/`.
 
-Variables à définir : `ENVIRONMENT=production`, `MONGODB_URI`, `MONGODB_DB`,
+**La base peut vivre dans le même projet.** Ajoutez la base MongoDB proposée par
+l'hébergeur : il injecte alors `MONGO_URL`, que l'API utilise sans configuration.
+Aucun compte MongoDB Atlas n'est nécessaire.
+
+Variables à définir : `ENVIRONMENT=production`, `MONGODB_URI` (inutile si
+`MONGO_URL` est fourni par l'hébergeur), `MONGODB_DB`,
 `JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`,
 `STRIPE_WEBHOOK_SECRET`, et `OPENAI_API_KEY` si vous voulez la modération IA.
