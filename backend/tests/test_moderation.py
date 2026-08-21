@@ -1,62 +1,102 @@
-from tests.conftest import register, sparring_payload
+"""Avis, modération et recommandations, sur le modèle des réservations."""
+
+from datetime import datetime, timedelta, timezone
+
+from bson import ObjectId
+
+from tests.conftest import booking_payload, make_partner, register
 
 BASE = "/api/v1/moderation"
 
 
-async def setup_participation(client, price: float = 0):
-    """Un organisateur, une séance et un partenaire déjà inscrit."""
-    organisateur = await register(client, "orga@exemple.com", "Ada")
-    response = await client.post(
-        "/api/v1/sparrings", json=sparring_payload(price=price), headers=organisateur["headers"]
+async def setup_seance_passee(client, database):
+    """Un partenaire, une personne qui a réservé, et une séance déjà passée.
+
+    Un avis n'est recevable qu'après la séance : on avance donc la demande dans
+    son cycle de vie jusqu'à « terminée ».
+    """
+    luis = await make_partner(client)
+    ana = await register(client, "ana@exemple.com", "Ana")
+
+    creation = await client.post(
+        "/api/v1/bookings",
+        json=booking_payload(luis["user"]["id"]),
+        headers=ana["headers"],
     )
-    sparring = response.json()
+    booking = creation.json()
+    await client.post(f"/api/v1/bookings/{booking['id']}/accept", headers=luis["headers"])
 
-    partenaire = await register(client, "partenaire@exemple.com", "Léa")
-    await client.post(
-        f"/api/v1/sparrings/{sparring['id']}/join", headers=partenaire["headers"]
+    await database.bookings.update_one(
+        {"_id": ObjectId(booking["id"])},
+        {"$set": {"scheduled_at": datetime.now(timezone.utc) - timedelta(days=1)}},
     )
-    return organisateur, sparring, partenaire
+    await client.post(f"/api/v1/bookings/{booking['id']}/complete", headers=ana["headers"])
+
+    return luis, booking, ana
 
 
-async def test_avis_refuse_aux_non_participants(client):
-    _, sparring, _ = await setup_participation(client)
+async def test_avis_refuse_a_un_tiers(client, database):
+    _, booking, _ = await setup_seance_passee(client, database)
     intrus = await register(client, "intrus@exemple.com", "Intrus")
 
     response = await client.post(
         f"{BASE}/reviews",
-        json={"sparring_id": sparring["id"], "rating": 5, "comment": "Super séance de boxe."},
+        json={"booking_id": booking["id"], "rating": 5, "comment": "Super séance de boxe."},
         headers=intrus["headers"],
     )
 
     assert response.status_code == 403
 
 
-async def test_avis_publie_par_un_participant(client):
-    _, sparring, partenaire = await setup_participation(client)
+async def test_avis_refuse_avant_la_seance(client):
+    """Noter une séance qui n'a pas eu lieu n'a aucune valeur informative."""
+    luis = await make_partner(client)
+    ana = await register(client, "ana@exemple.com", "Ana")
+    creation = await client.post(
+        "/api/v1/bookings",
+        json=booking_payload(luis["user"]["id"]),
+        headers=ana["headers"],
+    )
 
     response = await client.post(
         f"{BASE}/reviews",
-        json={"sparring_id": sparring["id"], "rating": 5, "comment": "Très bonne séance, merci."},
-        headers=partenaire["headers"],
+        json={
+            "booking_id": creation.json()["id"],
+            "rating": 5,
+            "comment": "Très bonne séance, merci.",
+        },
+        headers=ana["headers"],
+    )
+
+    assert response.status_code == 409
+
+
+async def test_avis_publie_apres_la_seance(client, database):
+    _, booking, ana = await setup_seance_passee(client, database)
+
+    response = await client.post(
+        f"{BASE}/reviews",
+        json={"booking_id": booking["id"], "rating": 5, "comment": "Très bonne séance, merci."},
+        headers=ana["headers"],
     )
 
     assert response.status_code == 201
     body = response.json()
     assert body["flagged"] is False
-    assert body["author"]["id"] == partenaire["user"]["id"]
+    assert body["author"]["id"] == ana["user"]["id"]
 
 
-async def test_avis_abusif_est_signale(client):
-    _, sparring, partenaire = await setup_participation(client)
+async def test_avis_abusif_est_signale(client, database):
+    _, booking, ana = await setup_seance_passee(client, database)
 
     response = await client.post(
         f"{BASE}/reviews",
         json={
-            "sparring_id": sparring["id"],
+            "booking_id": booking["id"],
             "rating": 1,
             "comment": "Quel connard, séance nulle et dangereuse.",
         },
-        headers=partenaire["headers"],
+        headers=ana["headers"],
     )
 
     assert response.status_code == 201
@@ -64,60 +104,60 @@ async def test_avis_abusif_est_signale(client):
     assert response.json()["flag_reason"] == "harassment"
 
 
-async def test_un_seul_avis_par_personne_et_par_sparring(client):
-    _, sparring, partenaire = await setup_participation(client)
-    avis = {"sparring_id": sparring["id"], "rating": 4, "comment": "Bonne séance technique."}
+async def test_un_seul_avis_par_demande(client, database):
+    _, booking, ana = await setup_seance_passee(client, database)
+    avis = {"booking_id": booking["id"], "rating": 4, "comment": "Bonne séance technique."}
 
-    await client.post(f"{BASE}/reviews", json=avis, headers=partenaire["headers"])
-    doublon = await client.post(f"{BASE}/reviews", json=avis, headers=partenaire["headers"])
+    await client.post(f"{BASE}/reviews", json=avis, headers=ana["headers"])
+    doublon = await client.post(f"{BASE}/reviews", json=avis, headers=ana["headers"])
 
     assert doublon.status_code == 409
 
 
-async def test_avis_met_a_jour_la_note_de_l_organisateur(client):
-    organisateur, sparring, partenaire = await setup_participation(client)
+async def test_avis_met_a_jour_la_note_du_partenaire(client, database):
+    luis, booking, ana = await setup_seance_passee(client, database)
 
     await client.post(
         f"{BASE}/reviews",
-        json={"sparring_id": sparring["id"], "rating": 4, "comment": "Bonne séance technique."},
-        headers=partenaire["headers"],
+        json={"booking_id": booking["id"], "rating": 4, "comment": "Bonne séance technique."},
+        headers=ana["headers"],
     )
 
-    profil = await client.get("/api/v1/auth/me", headers=organisateur["headers"])
+    profil = await client.get("/api/v1/auth/me", headers=luis["headers"])
     assert profil.json()["average_rating"] == 4
     assert profil.json()["ratings_count"] == 1
 
 
-async def test_un_avis_signale_ne_compte_pas_dans_la_note(client):
-    organisateur, sparring, partenaire = await setup_participation(client)
+async def test_un_avis_signale_ne_compte_pas_dans_la_note(client, database):
+    luis, booking, ana = await setup_seance_passee(client, database)
 
     await client.post(
         f"{BASE}/reviews",
-        json={"sparring_id": sparring["id"], "rating": 1, "comment": "Sale race, à éviter."},
-        headers=partenaire["headers"],
+        json={"booking_id": booking["id"], "rating": 1, "comment": "Sale race, à éviter."},
+        headers=ana["headers"],
     )
 
-    profil = await client.get("/api/v1/auth/me", headers=organisateur["headers"])
+    profil = await client.get("/api/v1/auth/me", headers=luis["headers"])
     assert profil.json()["average_rating"] is None
 
 
-async def test_profil_de_risque(client):
-    _, sparring, partenaire = await setup_participation(client)
+async def test_profil_de_risque(client, database):
+    _, booking, ana = await setup_seance_passee(client, database)
     lecteur = await register(client, "lecteur@exemple.com", "Lecteur")
 
     vierge = await client.get(
-        f"{BASE}/user-risk/{partenaire['user']['id']}", headers=lecteur["headers"]
+        f"{BASE}/user-risk/{ana['user']['id']}", headers=lecteur["headers"]
     )
     assert vierge.json()["risk_level"] == "low"
 
     await client.post(
         f"{BASE}/reviews",
-        json={"sparring_id": sparring["id"], "rating": 1, "comment": "Ta gueule, séance nulle."},
-        headers=partenaire["headers"],
+        json={"booking_id": booking["id"], "rating": 1, "comment": "Ta gueule, séance nulle."},
+        headers=ana["headers"],
     )
 
     apres = await client.get(
-        f"{BASE}/user-risk/{partenaire['user']['id']}", headers=lecteur["headers"]
+        f"{BASE}/user-risk/{ana['user']['id']}", headers=lecteur["headers"]
     )
     assert apres.json()["risk_level"] == "high"
     assert apres.json()["reasons"]
@@ -131,19 +171,16 @@ async def test_profil_de_risque_utilisateur_inconnu(client):
     assert response.status_code == 404
 
 
-async def test_recommandations_excluent_mes_seances_et_celles_deja_rejointes(client):
-    organisateur, sparring, partenaire = await setup_participation(client)
+async def test_les_recommandations_privilegient_la_meme_discipline(client):
+    await make_partner(client, email="boxeur@exemple.com", first_name="Luis", style="boxing")
+    await make_partner(client, email="judoka@exemple.com", first_name="Maria", style="judo")
 
-    # Une autre séance, dans la discipline déjà pratiquée par le partenaire.
-    await client.post(
-        "/api/v1/sparrings",
-        json=sparring_payload(title="Autre séance de boxe", price=0),
-        headers=organisateur["headers"],
+    ana = await make_partner(
+        client, email="ana@exemple.com", first_name="Ana", style="judo", city="Lyon"
     )
 
-    pour_partenaire = await client.get(f"{BASE}/recommendations", headers=partenaire["headers"])
-    titres = [item["title"] for item in pour_partenaire.json()["items"]]
-    assert titres == ["Autre séance de boxe"]
+    response = await client.get(f"{BASE}/recommendations", headers=ana["headers"])
 
-    pour_organisateur = await client.get(f"{BASE}/recommendations", headers=organisateur["headers"])
-    assert pour_organisateur.json()["items"] == []
+    prenoms = [item["first_name"] for item in response.json()["items"]]
+    assert prenoms[0] == "Maria"
+    assert "Ana" not in prenoms

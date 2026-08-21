@@ -12,9 +12,9 @@ interface AppContextValue {
   isLoadingStats: boolean;
   statsFromCache: boolean;
   refreshStats: () => Promise<void>;
-  /** Incrémenté après une création / inscription : les listes s'y abonnent. */
-  sparringsVersion: number;
-  invalidateSparrings: () => void;
+  /** Incrémenté après une demande envoyée ou traitée : les listes s'y abonnent. */
+  bookingsVersion: number;
+  invalidateBookings: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -25,7 +25,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [stats, setStats] = useState<RevenueStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [statsFromCache, setStatsFromCache] = useState(false);
-  const [sparringsVersion, setSparringsVersion] = useState(0);
+  const [bookingsVersion, setBookingsVersion] = useState(0);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -51,8 +51,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     void refreshStats();
   }, [isAuthenticated, refreshStats]);
 
-  const invalidateSparrings = useCallback(() => {
-    setSparringsVersion((version) => version + 1);
+  const invalidateBookings = useCallback(() => {
+    setBookingsVersion((version) => version + 1);
   }, []);
 
   const value = useMemo<AppContextValue>(
@@ -62,10 +62,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isLoadingStats,
       statsFromCache,
       refreshStats,
-      sparringsVersion,
-      invalidateSparrings,
+      bookingsVersion,
+      invalidateBookings,
     }),
-    [isConnected, stats, isLoadingStats, statsFromCache, refreshStats, sparringsVersion, invalidateSparrings],
+    [isConnected, stats, isLoadingStats, statsFromCache, refreshStats, bookingsVersion, invalidateBookings],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

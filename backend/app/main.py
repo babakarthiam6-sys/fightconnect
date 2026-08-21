@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import connect, disconnect, ping
-from app.routers import auth, moderation, payments, payouts, revenue, sparrings
+from app.routers import auth, bookings, moderation, partners, payments, payouts, revenue
 from app.webapp import is_web_app_available, mount_web_app
 
 API_PREFIX = "/api/v1"
@@ -27,7 +27,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="FightConnect API",
         version="1.0.0",
-        description="Mise en relation de partenaires de sparring : comptes, séances, paiements et modération.",
+        description="Mise en relation de partenaires de sparring : profils, réservations, paiements et modération.",
         lifespan=lifespan,
     )
 
@@ -45,7 +45,8 @@ def create_app() -> FastAPI:
 
     for router in (
         auth.router,
-        sparrings.router,
+        partners.router,
+        bookings.router,
         payments.router,
         payouts.router,
         revenue.router,

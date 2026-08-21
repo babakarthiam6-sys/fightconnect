@@ -3,7 +3,7 @@ import { http, restoreAuthToken, setAuthToken } from '@/services/api';
 import { asRecord, normalizeUser } from '@/utils/normalize';
 import { storage } from '@/utils/storage';
 import type { AuthSession, User } from '@/types';
-import type { LoginInput, SignupInput } from '@/utils/validation';
+import type { LoginInput, ProfileInput, SignupInput } from '@/utils/validation';
 
 function extractToken(payload: unknown): string {
   const raw = asRecord(payload);
@@ -109,12 +109,46 @@ export const authService = {
     }
   },
 
+  /**
+   * Met à jour le profil sportif.
+   *
+   * Seules les clés présentes sont envoyées : le serveur n'écrase que ce qu'il
+   * reçoit, ce qui permet d'enregistrer une ligne à la fois sans avoir à
+   * renvoyer tout le profil.
+   */
+  async updateProfile(changes: ProfileInput): Promise<User> {
+    const body: Record<string, unknown> = {};
+    const wire: Record<keyof ProfileInput, string> = {
+      firstName: 'first_name',
+      lastName: 'last_name',
+      city: 'city',
+      bio: 'bio',
+      level: 'level',
+      style: 'style',
+      weightClass: 'weight_class',
+      heightCm: 'height_cm',
+      fightsCount: 'fights_count',
+      experienceYears: 'experience_years',
+      pricePerRound: 'price_per_round',
+      available: 'available',
+    };
+
+    for (const [key, value] of Object.entries(changes)) {
+      if (value !== undefined) body[wire[key as keyof ProfileInput]] = value;
+    }
+
+    const user = normalizeUser(await http.patch<unknown>(ENDPOINTS.auth.updateMe, body));
+    await storage.setObject(STORAGE_KEYS.user, user);
+    return user;
+  },
+
   async logout(): Promise<void> {
     setAuthToken(null);
     await storage.removeMany([
       STORAGE_KEYS.token,
       STORAGE_KEYS.user,
-      STORAGE_KEYS.sparringsCache,
+      STORAGE_KEYS.partnersCache,
+      STORAGE_KEYS.bookingsCache,
       STORAGE_KEYS.paymentsCache,
       STORAGE_KEYS.statsCache,
     ]);

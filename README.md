@@ -1,7 +1,8 @@
 # FightConnect
 
-Application mobile de mise en relation de partenaires de sparring : on publie une
-séance, on la trouve, on la paie, on la note.
+Application mobile de mise en relation de partenaires de sparring : on cherche
+quelqu'un à son niveau et dans sa catégorie de poids, on lui demande une séance
+au round, on paie, on note.
 
 | Dossier | Contenu |
 | --- | --- |

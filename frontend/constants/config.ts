@@ -84,6 +84,16 @@ export const IS_STRIPE_CONFIGURED = STRIPE_PUBLISHABLE_KEY.startsWith('pk_');
 
 export const CONFIG = {
   pageSize: 20,
+  /**
+   * Part de la plateforme, prélevée sur le versement au partenaire.
+   *
+   * Recopiée depuis `backend/app/config.py` : l'écran de réservation affiche le
+   * décompte **avant** que la demande n'existe côté serveur, il n'a donc rien à
+   * interroger. `__tests__/commission.test.ts` échoue si les deux valeurs
+   * divergent — un décompte annoncé puis démenti à la facturation est la pire
+   * des surprises.
+   */
+  commissionRate: 0.15,
   /** Durée de validité du cache hors ligne. */
   cacheTtlMs: 1000 * 60 * 30,
   /** Nombre de tentatives supplémentaires sur erreur réseau ou 5xx. */

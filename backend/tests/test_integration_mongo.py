@@ -2,9 +2,9 @@
 
 Le reste de la suite tourne sur un simulateur : rapide, mais il n'implémente
 qu'une approximation du moteur. Ces tests-là valident sur le vrai serveur les
-comportements dont le code dépend réellement — l'index unique, la sémantique des
-requêtes, et surtout la course entre deux inscriptions, qu'un simulateur
-synchrone ne peut pas reproduire.
+comportements dont le code dépend réellement — les index uniques, la sémantique
+des requêtes, et surtout la course entre deux envois simultanés, qu'un
+simulateur synchrone ne peut pas reproduire.
 
 Ignorés automatiquement si aucun MongoDB n'écoute (`MONGODB_TEST_URI`), sauf si
 `REQUIRE_MONGO=1` : la CI pose ce drapeau pour que la disparition du service
@@ -20,14 +20,15 @@ from datetime import datetime, timedelta, timezone
 import pytest
 import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
+from bson import ObjectId
 from pymongo.errors import DuplicateKeyError
 
 from app.database import create_indexes
-from tests.conftest import register, sparring_payload
+from tests.conftest import booking_payload, make_partner, register
 
 MONGODB_TEST_URI = os.environ.get("MONGODB_TEST_URI", "mongodb://127.0.0.1:27017")
 REQUIRE_MONGO = os.environ.get("REQUIRE_MONGO") == "1"
-BASE = "/api/v1/sparrings"
+BASE = "/api/v1/bookings"
 
 
 @pytest_asyncio.fixture
@@ -59,130 +60,122 @@ async def test_l_index_email_est_bien_unique(database):
         await database.users.insert_one({"email": "jean@exemple.com"})
 
 
-async def test_deux_inscriptions_reellement_simultanees(client):
+async def test_dix_envois_reellement_simultanes_ne_font_qu_une_demande(client):
     """La course que le simulateur ne peut pas produire.
 
-    Avec un vrai serveur, les deux requêtes rendent la main sur chaque
-    aller-retour réseau : elles peuvent lire toutes les deux « il reste une
-    place » avant que l'une n'écrive. À deux, l'entrelacement dépend du timing —
-    c'est le test à dix candidats qui détecte la régression de façon fiable.
+    Avec un vrai serveur, les requêtes rendent la main sur chaque aller-retour
+    réseau : elles peuvent toutes lire « aucune demande en attente » avant que
+    l'une n'écrive. Seul l'index unique partiel tranche. À dix candidats, la
+    régression se détecte de façon fiable — à deux, l'entrelacement dépend du
+    timing et le test passerait parfois sans le garde-fou.
     """
-    organisateur = await register(client, "orga@exemple.com", "Ada")
-    creation = await client.post(
-        BASE, json=sparring_payload(price=0, max_participants=2), headers=organisateur["headers"]
-    )
-    sparring = creation.json()
+    luis = await make_partner(client)
+    ana = await register(client, "ana@exemple.com", "Ana")
 
-    premier = await register(client, "premier@exemple.com", "Premier")
-    await client.post(f"{BASE}/{sparring['id']}/join", headers=premier["headers"])
-
-    second = await register(client, "second@exemple.com", "Second")
-    troisieme = await register(client, "troisieme@exemple.com", "Troisieme")
-
+    payload = booking_payload(luis["user"]["id"])
     reponses = await asyncio.gather(
-        client.post(f"{BASE}/{sparring['id']}/join", headers=second["headers"]),
-        client.post(f"{BASE}/{sparring['id']}/join", headers=troisieme["headers"]),
+        *(client.post(BASE, json=payload, headers=ana["headers"]) for _ in range(10)),
+        return_exceptions=True,
     )
 
-    assert sorted(reponse.status_code for reponse in reponses) == [200, 409]
+    for reponse in reponses:
+        assert not isinstance(reponse, Exception), reponse
+        assert reponse.status_code in {200, 201}, reponse.text
 
-    detail = await client.get(f"{BASE}/{sparring['id']}")
-    assert len(detail.json()["participants"]) == 2
-    assert detail.json()["status"] == "full"
+    liste = await client.get(BASE, params={"direction": "sent"}, headers=ana["headers"])
+    assert liste.json()["total"] == 1
 
 
-async def test_dix_inscriptions_simultanees_sur_une_seule_place(client):
-    """Cas extrême : une place, dix candidats en même temps."""
-    organisateur = await register(client, "orga@exemple.com", "Ada")
-    creation = await client.post(
-        BASE, json=sparring_payload(price=0, max_participants=2), headers=organisateur["headers"]
-    )
-    sparring = creation.json()
+async def test_un_creneau_refuse_reste_redemandable(client):
+    """L'unicité ne vaut que pour les demandes en attente.
 
-    premier = await register(client, "premier@exemple.com", "Premier")
-    await client.post(f"{BASE}/{sparring['id']}/join", headers=premier["headers"])
+    Sans le filtre partiel de l'index, un refus fermerait définitivement ce
+    créneau entre ces deux personnes.
+    """
+    luis = await make_partner(client)
+    ana = await register(client, "ana@exemple.com", "Ana")
+    payload = booking_payload(luis["user"]["id"])
 
-    candidats = [
-        await register(client, f"candidat{index}@exemple.com", f"C{index}") for index in range(10)
-    ]
-    reponses = await asyncio.gather(
-        *(
-            client.post(f"{BASE}/{sparring['id']}/join", headers=candidat["headers"])
-            for candidat in candidats
-        )
+    premiere = await client.post(BASE, json=payload, headers=ana["headers"])
+    await client.post(
+        f"{BASE}/{premiere.json()['id']}/decline", headers=luis["headers"]
     )
 
-    codes = [reponse.status_code for reponse in reponses]
-    assert codes.count(200) == 1
-    assert codes.count(409) == 9
+    seconde = await client.post(BASE, json=payload, headers=ana["headers"])
 
-    detail = await client.get(f"{BASE}/{sparring['id']}")
-    assert len(detail.json()["participants"]) == 2
+    assert seconde.status_code == 201
+    assert seconde.json()["id"] != premiere.json()["id"]
 
 
 async def test_recherche_et_filtres_sur_le_vrai_moteur(client, database):
-    organisateur = await register(client)
-    await client.post(
-        BASE, json=sparring_payload(title="Boxe à Paris", price=20), headers=organisateur["headers"]
+    await make_partner(
+        client, email="luis@exemple.com", first_name="Luis", style="boxing", city="Paris"
     )
-    await client.post(
-        BASE,
-        json=sparring_payload(title="MMA à Lyon", location="Lyon", style="mma", price=60),
-        headers=organisateur["headers"],
+    await make_partner(
+        client, email="maria@exemple.com", first_name="Maria", style="mma", city="Lyon"
     )
+    chercheur = await register(client, "chercheur@exemple.com", "Ana")
 
-    # Recherche insensible à la casse et aux accents de casse.
-    recherche = await client.get(BASE, params={"search": "LYON"})
-    assert [item["title"] for item in recherche.json()["items"]] == ["MMA à Lyon"]
+    # La ville se cherche par préfixe, sans tenir compte de la casse.
+    recherche = await client.get(
+        "/api/v1/partners", params={"city": "LYO"}, headers=chercheur["headers"]
+    )
+    assert [item["first_name"] for item in recherche.json()["items"]] == ["Maria"]
 
-    fourchette = await client.get(BASE, params={"min_price": 10, "max_price": 30})
-    assert [item["title"] for item in fourchette.json()["items"]] == ["Boxe à Paris"]
-
-    discipline = await client.get(BASE, params={"style": "mma"})
+    discipline = await client.get(
+        "/api/v1/partners", params={"style": "mma"}, headers=chercheur["headers"]
+    )
     assert discipline.json()["total"] == 1
 
-    # Une séance passée disparaît de la navigation.
-    await database.sparrings.update_one(
-        {"title": "MMA à Lyon"},
-        {"$set": {"scheduled_at": datetime.now(timezone.utc) - timedelta(days=1)}},
-    )
-    navigation = await client.get(BASE)
-    assert [item["title"] for item in navigation.json()["items"]] == ["Boxe à Paris"]
+    # Un partenaire qui se met en pause disparaît de la recherche.
+    await database.users.update_one({"email": "maria@exemple.com"}, {"$set": {"available": False}})
+    apres = await client.get("/api/v1/partners", headers=chercheur["headers"])
+    assert [item["first_name"] for item in apres.json()["items"]] == ["Luis"]
 
 
-async def test_parcours_complet_de_bout_en_bout(client):
-    """Inscription, publication, participation, avis, statistiques."""
-    organisateur = await register(client, "orga@exemple.com", "Ada")
+async def test_parcours_complet_de_bout_en_bout(client, database):
+    """Profil, recherche, demande, accord, séance passée, avis, statistiques."""
+    luis = await make_partner(client, price_per_round=0)
+    ana = await register(client, "ana@exemple.com", "Ana")
+
+    trouves = await client.get("/api/v1/partners", headers=ana["headers"])
+    assert trouves.json()["total"] == 1
+
     creation = await client.post(
-        BASE, json=sparring_payload(price=0), headers=organisateur["headers"]
+        BASE, json=booking_payload(luis["user"]["id"], rounds=3), headers=ana["headers"]
     )
     assert creation.status_code == 201
-    sparring = creation.json()
+    booking = creation.json()
+    assert booking["rounds"] == 3
 
-    partenaire = await register(client, "partenaire@exemple.com", "Léa")
-    assert (
-        await client.post(f"{BASE}/{sparring['id']}/join", headers=partenaire["headers"])
-    ).status_code == 200
+    accord = await client.post(f"{BASE}/{booking['id']}/accept", headers=luis["headers"])
+    assert accord.json()["status"] == "accepted"
+
+    # La séance a eu lieu : aucune tâche planifiée ne le fait, on avance l'horaire.
+    await database.bookings.update_one(
+        {"_id": ObjectId(booking["id"])},
+        {"$set": {"scheduled_at": datetime.now(timezone.utc) - timedelta(days=1)}},
+    )
+    cloture = await client.post(f"{BASE}/{booking['id']}/complete", headers=ana["headers"])
+    assert cloture.json()["status"] == "completed"
 
     avis = await client.post(
         "/api/v1/moderation/reviews",
-        json={"sparring_id": sparring["id"], "rating": 5, "comment": "Excellente séance, merci."},
-        headers=partenaire["headers"],
+        json={"booking_id": booking["id"], "rating": 5, "comment": "Excellente séance, merci."},
+        headers=ana["headers"],
     )
     assert avis.status_code == 201
     assert avis.json()["flagged"] is False
 
-    liste_avis = await client.get(f"{BASE}/{sparring['id']}/reviews")
+    liste_avis = await client.get(f"{BASE}/{booking['id']}/reviews")
     assert liste_avis.json()["total"] == 1
 
-    profil = await client.get("/api/v1/auth/me", headers=organisateur["headers"])
+    profil = await client.get("/api/v1/auth/me", headers=luis["headers"])
     assert profil.json()["average_rating"] == 5.0
 
-    stats = await client.get("/api/v1/revenue/stats", headers=organisateur["headers"])
-    assert stats.json()["total_sparrings"] == 1
-
-    historique = await client.get(BASE, params={"creator_id": organisateur["user"]["id"]})
-    assert historique.json()["total"] == 1
+    stats = await client.get("/api/v1/revenue/stats", headers=luis["headers"])
+    assert stats.json()["total_bookings"] == 1
+    assert stats.json()["completed_bookings"] == 1
 
 
 async def test_le_freinage_de_connexion_fonctionne_sur_le_vrai_moteur(client):

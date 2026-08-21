@@ -87,9 +87,26 @@ export const SHADOW = {
 
 export const LEVEL_LABELS: Record<string, string> = {
   beginner: 'Débutant',
-  intermediate: 'Intermédiaire',
-  advanced: 'Avancé',
+  amateur: 'Amateur',
   pro: 'Professionnel',
+};
+
+/**
+ * Catégories de poids de la boxe amateur.
+ *
+ * Les bornes font partie du libellé : « Moyen » seul ne dit rien à quelqu'un qui
+ * débute, et c'est précisément la personne qui a le plus besoin de savoir avec
+ * qui elle peut monter sur le ring sans danger.
+ */
+export const WEIGHT_LABELS: Record<string, string> = {
+  flyweight: 'Mouche (−52 kg)',
+  bantamweight: 'Coq (52–57 kg)',
+  featherweight: 'Plume (57–61 kg)',
+  lightweight: 'Léger (61–66 kg)',
+  welterweight: 'Welter (66–70 kg)',
+  middleweight: 'Moyen (70–77 kg)',
+  light_heavyweight: 'Mi-lourd (77–84 kg)',
+  heavyweight: 'Lourd (+84 kg)',
 };
 
 export const STYLE_LABELS: Record<string, string> = {
@@ -104,11 +121,11 @@ export const STYLE_LABELS: Record<string, string> = {
 };
 
 export const STATUS_LABELS: Record<string, string> = {
-  open: 'Ouvert',
-  full: 'Complet',
-  completed: 'Terminé',
-  cancelled: 'Annulé',
   pending: 'En attente',
+  accepted: 'Acceptée',
+  declined: 'Refusée',
+  completed: 'Terminée',
+  cancelled: 'Annulée',
   processing: 'En cours',
   succeeded: 'Payé',
   failed: 'Échoué',

@@ -30,7 +30,7 @@ describe('formatage', () => {
   });
 
   it('traduit niveaux et disciplines, et retombe sur la valeur brute', () => {
-    expect(formatLevel('advanced')).toBe('Avancé');
+    expect(formatLevel('amateur')).toBe('Amateur');
     expect(formatStyle('muay_thai')).toBe('Muay-thaï');
     expect(formatStyle('sumo')).toBe('sumo');
     expect(formatLevel(null)).toBe('—');

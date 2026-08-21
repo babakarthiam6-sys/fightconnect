@@ -10,6 +10,7 @@ export default function TabsLayout() {
       // `sceneContainerStyle` est une prop du navigateur, pas une screenOption.
       sceneContainerStyle={{ backgroundColor: COLORS.background }}
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: {
@@ -21,38 +22,27 @@ export default function TabsLayout() {
           paddingTop: 6,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        headerStyle: { backgroundColor: COLORS.background },
-        headerTitleStyle: { color: COLORS.text, fontWeight: '700' },
-        headerTintColor: COLORS.text,
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="search"
         options={{
-          title: 'Accueil',
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          title: 'Recherche',
+          tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="sparrings"
+        name="bookings"
         options={{
-          title: 'Sparrings',
-          tabBarIcon: ({ color, size }) => <Ionicons name="flame-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="payments"
-        options={{
-          title: 'Paiements',
-          tabBarIcon: ({ color, size }) => <Ionicons name="card-outline" size={size} color={color} />,
+          title: 'Réservations',
+          tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profil',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />
     </Tabs>

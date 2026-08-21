@@ -1,9 +1,10 @@
 import {
   extractList,
   extractTotal,
+  normalizeBooking,
+  normalizePartner,
   normalizePayment,
   normalizeReview,
-  normalizeSparring,
   normalizeUser,
 } from '@/utils/normalize';
 
@@ -16,39 +17,66 @@ describe('normalisation des réponses API', () => {
       last_name: 'Dupont',
       discharge_accepted: true,
       average_rating: 4.5,
+      price_per_round: 20,
+      weight_class: 'middleweight',
+      height_cm: 178,
     });
 
     expect(user.id).toBe('64f0');
     expect(user.firstName).toBe('Jean');
     expect(user.dischargeAccepted).toBe(true);
     expect(user.averageRating).toBe(4.5);
+    expect(user.pricePerRound).toBe(20);
+    expect(user.weightClass).toBe('middleweight');
+    expect(user.heightCm).toBe(178);
   });
 
   it('lit un ObjectId Mongo sérialisé', () => {
     expect(normalizeUser({ id: { $oid: 'abc123' } }).id).toBe('abc123');
   });
 
-  it('donne des valeurs sûres quand les champs manquent', () => {
-    const sparring = normalizeSparring({});
-    expect(sparring.title).toBe('Sparring');
-    expect(sparring.participants).toEqual([]);
-    expect(sparring.level).toBe('beginner');
-    expect(sparring.maxParticipants).toBe(2);
-    expect(sparring.creator).toBeNull();
+  it('distingue « pas encore renseigné » de « valeur par défaut »', () => {
+    // C'est ce qui permet à l'écran de profil d'afficher « Non défini » plutôt
+    // qu'une discipline et un tarif que personne n'a choisis.
+    const vierge = normalizePartner({ id: 'p1' });
+
+    expect(vierge.style).toBeNull();
+    expect(vierge.level).toBeNull();
+    expect(vierge.weightClass).toBeNull();
+    expect(vierge.pricePerRound).toBeNull();
+    expect(vierge.city).toBeNull();
+    expect(vierge.available).toBe(false);
+    expect(vierge.fightsCount).toBe(0);
+  });
+
+  it('donne des valeurs sûres quand les champs d’une demande manquent', () => {
+    const booking = normalizeBooking({});
+
+    expect(booking.rounds).toBe(1);
+    expect(booking.total).toBe(0);
+    expect(booking.status).toBe('pending');
+    expect(booking.partner).toBeNull();
+    expect(booking.paid).toBe(false);
+  });
+
+  it('recalcule le total seulement quand le serveur ne le donne pas', () => {
+    // Le serveur fait foi puisque c'est lui qui facture ; le calcul local n'est
+    // qu'un filet, et ne doit jamais écraser une valeur reçue.
+    expect(normalizeBooking({ rounds: 3, price_per_round: 20 }).total).toBe(60);
+    expect(normalizeBooking({ rounds: 3, price_per_round: 20, total: 55 }).total).toBe(55);
+  });
+
+  it('déduit la part du partenaire quand elle est absente', () => {
+    const booking = normalizeBooking({ total: 40, commission: 6 });
+    expect(booking.payout).toBe(34);
   });
 
   it('reconvertit un prix exprimé en centimes', () => {
-    expect(normalizeSparring({ price_cents: 2500 }).price).toBe(25);
     expect(normalizePayment({ amount_cents: 1990 }).amount).toBe(19.9);
   });
 
-  it('accepte une liste de participants sous forme d’identifiants', () => {
-    const sparring = normalizeSparring({ participants: ['u1', { id: 'u2', first_name: 'Ada' }] });
-    expect(sparring.participants.map((participant) => participant.id)).toEqual(['u1', 'u2']);
-  });
-
   it('replie un statut inconnu sur une valeur par défaut', () => {
-    expect(normalizeSparring({ status: 'archived' }).status).toBe('open');
+    expect(normalizeBooking({ status: 'archivée' }).status).toBe('pending');
     expect(normalizePayment({ status: 'SUCCEEDED' }).status).toBe('succeeded');
   });
 

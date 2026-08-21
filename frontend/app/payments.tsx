@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -33,23 +33,23 @@ const STATUS_ICONS: Record<PaymentStatus, keyof typeof Ionicons.glyphMap> = {
   refunded: 'return-down-back-outline',
 };
 
-function PaymentRow({ payment, onPress }: { payment: Payment; onPress: () => void }) {
+function PaymentRow({ payment }: { payment: Payment }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
+    <View style={styles.row}>
       <View style={styles.rowIcon}>
         <Ionicons name={STATUS_ICONS[payment.status]} size={20} color={COLORS.primary} />
       </View>
 
       <View style={styles.rowBody}>
         <Text style={styles.rowTitle} numberOfLines={1}>
-          {payment.sparringTitle ?? 'Participation à un sparring'}
+          {payment.partnerName ?? 'Séance de sparring'}
         </Text>
         <Text style={styles.rowDate}>{formatDateTime(payment.createdAt)}</Text>
         <Badge label={formatStatus(payment.status)} tone={STATUS_TONES[payment.status]} />
       </View>
 
       <Text style={styles.rowAmount}>{formatPrice(payment.amount, payment.currency)}</Text>
-    </Pressable>
+    </View>
   );
 }
 
@@ -115,12 +115,7 @@ export default function PaymentsScreen() {
           data={payments}
           keyExtractor={(item, index) => item.id || `payment-${index}`}
           renderItem={({ item }) => (
-            <PaymentRow
-              payment={item}
-              onPress={() => {
-                if (item.sparringId) router.push(`/sparring/${item.sparringId}`);
-              }}
-            />
+            <PaymentRow payment={item} />
           )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
@@ -133,7 +128,7 @@ export default function PaymentsScreen() {
               title="Aucun paiement"
               message="Vos règlements de sparrings apparaîtront ici."
               actionLabel="Voir les sparrings"
-              onAction={() => router.push('/(tabs)/sparrings')}
+              onAction={() => router.push('/(tabs)/search')}
             />
           }
         />

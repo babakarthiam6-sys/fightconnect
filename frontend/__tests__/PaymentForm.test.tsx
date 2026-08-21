@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import PaymentForm from '@/components/PaymentForm';
 import { paymentService } from '@/services/payment';
-import type { Sparring } from '@/types';
+import type { Booking } from '@/types';
 
 const mockStripe = {
   configured: true,
@@ -33,21 +33,28 @@ jest.mock('@/services/payment', () => ({
 
 const mockedPayment = paymentService as jest.Mocked<typeof paymentService>;
 
-const SPARRING: Sparring = {
-  id: 's1',
-  title: 'Sparring boxe',
-  description: '',
-  location: 'Paris',
+const BOOKING: Booking = {
+  id: 'b1',
+  requester: null,
+  partner: {
+    id: 'p1',
+    firstName: 'Luis',
+    lastName: 'Dupont',
+    avatarUrl: null,
+    averageRating: null,
+    city: 'Valence',
+    pricePerRound: 25,
+  },
   scheduledAt: '2030-05-12T18:30:00.000Z',
-  durationMinutes: 60,
-  level: 'beginner',
-  style: 'boxing',
-  price: 25,
+  rounds: 1,
+  pricePerRound: 25,
+  total: 25,
+  commission: 3.75,
+  payout: 21.25,
   currency: 'EUR',
-  maxParticipants: 2,
-  participants: [],
-  creator: null,
-  status: 'open',
+  status: 'accepted',
+  paid: false,
+  reviewed: false,
   createdAt: null,
 };
 
@@ -71,18 +78,18 @@ describe('PaymentForm', () => {
   });
 
   it('affiche le montant à régler', () => {
-    render(<PaymentForm sparring={SPARRING} onSuccess={jest.fn()} />);
+    render(<PaymentForm booking={BOOKING} onSuccess={jest.fn()} />);
     expect(screen.getByText(/25/)).toBeTruthy();
   });
 
   it('enchaîne PaymentIntent puis Payment Sheet, et confirme', async () => {
     const onSuccess = jest.fn();
-    render(<PaymentForm sparring={SPARRING} onSuccess={onSuccess} />);
+    render(<PaymentForm booking={BOOKING} onSuccess={onSuccess} />);
 
     fireEvent.press(screen.getByText('Payer et rejoindre'));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
-    expect(mockedPayment.createIntent).toHaveBeenCalledWith('s1');
+    expect(mockedPayment.createIntent).toHaveBeenCalledWith('b1');
     expect(mockStripe.init).toHaveBeenCalledWith(
       expect.objectContaining({ paymentIntentClientSecret: 'pi_secret' }),
     );
@@ -93,7 +100,7 @@ describe('PaymentForm', () => {
     const onError = jest.fn();
     mockStripe.present.mockResolvedValue({ error: { code: 'Canceled', message: 'annulé' } });
 
-    render(<PaymentForm sparring={SPARRING} onSuccess={onSuccess} onError={onError} />);
+    render(<PaymentForm booking={BOOKING} onSuccess={onSuccess} onError={onError} />);
     fireEvent.press(screen.getByText('Payer et rejoindre'));
 
     await waitFor(() => expect(mockStripe.present).toHaveBeenCalled());
@@ -105,7 +112,7 @@ describe('PaymentForm', () => {
     const onError = jest.fn();
     mockStripe.present.mockResolvedValue({ error: { code: 'Failed', message: 'Carte refusée' } });
 
-    render(<PaymentForm sparring={SPARRING} onSuccess={jest.fn()} onError={onError} />);
+    render(<PaymentForm booking={BOOKING} onSuccess={jest.fn()} onError={onError} />);
     fireEvent.press(screen.getByText('Payer et rejoindre'));
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
@@ -121,7 +128,7 @@ describe('PaymentForm', () => {
       fieldErrors: null,
     });
 
-    render(<PaymentForm sparring={SPARRING} onSuccess={jest.fn()} onError={onError} />);
+    render(<PaymentForm booking={BOOKING} onSuccess={jest.fn()} onError={onError} />);
     fireEvent.press(screen.getByText('Payer et rejoindre'));
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
@@ -132,7 +139,7 @@ describe('PaymentForm', () => {
     mockStripe.configured = false;
     const onError = jest.fn();
 
-    render(<PaymentForm sparring={SPARRING} onSuccess={jest.fn()} onError={onError} />);
+    render(<PaymentForm booking={BOOKING} onSuccess={jest.fn()} onError={onError} />);
     fireEvent.press(screen.getByText('Payer et rejoindre'));
 
     await waitFor(() => expect(onError).toHaveBeenCalled());

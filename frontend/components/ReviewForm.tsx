@@ -11,13 +11,13 @@ import { reviewSchema, validate, type FieldErrors, type ReviewInput } from '@/ut
 import type { AppError, Review } from '@/types';
 
 interface Props {
-  sparringId: string;
+  bookingId: string;
   /** Reçoit l'avis créé, éventuellement signalé par la modération IA. */
   onSubmitted: (review: Review) => void;
   onError?: (error: AppError) => void;
 }
 
-export function ReviewForm({ sparringId, onSubmitted, onError }: Props) {
+export function ReviewForm({ bookingId, onSubmitted, onError }: Props) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [errors, setErrors] = useState<FieldErrors<ReviewInput>>({});
@@ -30,7 +30,7 @@ export function ReviewForm({ sparringId, onSubmitted, onError }: Props) {
 
     setIsSubmitting(true);
     try {
-      const review = await moderationService.postReview(sparringId, result.data);
+      const review = await moderationService.postReview(bookingId, result.data);
       setRating(0);
       setComment('');
       setErrors({});
@@ -45,7 +45,7 @@ export function ReviewForm({ sparringId, onSubmitted, onError }: Props) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [comment, onError, onSubmitted, rating, sparringId]);
+  }, [bookingId, comment, onError, onSubmitted, rating]);
 
   return (
     <View style={styles.card}>

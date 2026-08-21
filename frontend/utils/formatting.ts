@@ -1,7 +1,7 @@
 import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-import { LEVEL_LABELS, STATUS_LABELS, STYLE_LABELS } from '@/constants/theme';
+import { LEVEL_LABELS, STATUS_LABELS, STYLE_LABELS, WEIGHT_LABELS } from '@/constants/theme';
 
 function toDate(value: string | number | Date | null | undefined): Date | null {
   if (value === null || value === undefined) return null;
@@ -64,6 +64,11 @@ export function formatLevel(level: string | null | undefined): string {
 export function formatStyle(style: string | null | undefined): string {
   if (!style) return '—';
   return STYLE_LABELS[style] ?? style;
+}
+
+export function formatWeightClass(weightClass: string | null | undefined): string {
+  if (!weightClass) return '—';
+  return WEIGHT_LABELS[weightClass] ?? weightClass;
 }
 
 export function formatStatus(status: string | null | undefined): string {

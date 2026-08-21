@@ -1,61 +1,111 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useToast } from 'react-native-toast-notifications';
 
+import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
-import EmptyState from '@/components/EmptyState';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import PayoutCard from '@/components/PayoutCard';
 import OfflineBanner from '@/components/OfflineBanner';
-import SparringCard from '@/components/SparringCard';
+import PayoutCard from '@/components/PayoutCard';
+import ProfileField from '@/components/ProfileField';
+import RatingStars from '@/components/RatingStars';
 import StatCard from '@/components/StatCard';
-import UserProfile from '@/components/UserProfile';
-import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import {
+  COLORS,
+  LEVEL_LABELS,
+  RADIUS,
+  SHADOW,
+  SPACING,
+  STYLE_LABELS,
+  TYPOGRAPHY,
+  WEIGHT_LABELS,
+} from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { moderationService } from '@/services/moderation';
 import { payoutService } from '@/services/payout';
-import { sparringService } from '@/services/sparring';
-import { formatPrice, formatRating } from '@/utils/formatting';
-import type { PayoutStatus, Sparring, UserRiskProfile } from '@/types';
+import {
+  formatLevel,
+  formatPrice,
+  formatStyle,
+  formatUserName,
+  formatWeightClass,
+} from '@/utils/formatting';
+import type { AppError, PayoutStatus } from '@/types';
+import type { ProfileInput } from '@/utils/validation';
+
+/**
+ * React Native Web ignore `thumbColor` à l'état actif et repeint le curseur en
+ * vert, ce qui jure avec la piste orange. `activeThumbColor` est la prop qu'il
+ * lit — elle n'existe pas dans les types de React Native, d'où l'objet à part.
+ */
+const WEB_SWITCH_THUMB: Record<string, unknown> =
+  Platform.OS === 'web' ? { activeThumbColor: COLORS.textInverse } : {};
 
 export default function ProfileScreen() {
-  const router = useRouter();
-  const { user, logout, refreshUser } = useAuth();
-  const { stats, isConnected, refreshStats, sparringsVersion } = useApp();
+  const { user, logout, refreshUser, updateProfile } = useAuth();
+  const { stats, isConnected, refreshStats } = useApp();
+  const toast = useToast();
 
-  const [mySparrings, setMySparrings] = useState<Sparring[]>([]);
-  const [risk, setRisk] = useState<UserRiskProfile | null>(null);
   const [payouts, setPayouts] = useState<PayoutStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    if (!user) return;
     try {
-      const [list, riskProfile, payoutStatus] = await Promise.all([
-        sparringService.list({ page: 1, limit: 50, creatorId: user.id }),
-        moderationService.userRisk(user.id),
-        payoutService.status(),
-      ]);
-      setMySparrings(list.items);
-      setRisk(riskProfile);
-      setPayouts(payoutStatus);
+      setPayouts(await payoutService.status());
     } catch {
-      setMySparrings([]);
+      // Les versements sont un complément : leur absence ne doit pas vider
+      // l'écran de profil.
+      setPayouts(null);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     void load().finally(() => setIsLoading(false));
-  }, [load, sparringsVersion]);
+  }, [load]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await Promise.all([load(), refreshStats(), refreshUser()]);
     setIsRefreshing(false);
   }, [load, refreshStats, refreshUser]);
+
+  /** Enregistre un champ et remonte l'erreur du serveur telle quelle. */
+  const save = useCallback(
+    async (changes: ProfileInput) => {
+      try {
+        await updateProfile(changes);
+      } catch (caught) {
+        toast.show((caught as AppError).message, { type: 'danger' });
+        throw caught;
+      }
+    },
+    [toast, updateProfile],
+  );
+
+  const toggleAvailable = useCallback(
+    async (available: boolean) => {
+      try {
+        await updateProfile({ available });
+      } catch (caught) {
+        // Le serveur refuse la disponibilité tant que discipline et tarif
+        // manquent : son message dit exactement quoi remplir.
+        toast.show((caught as AppError).message, { type: 'danger' });
+      }
+    },
+    [toast, updateProfile],
+  );
 
   const confirmLogout = useCallback(() => {
     Alert.alert('Déconnexion', 'Voulez-vous vraiment vous déconnecter ?', [
@@ -64,8 +114,10 @@ export default function ProfileScreen() {
     ]);
   }, [logout]);
 
-  if (!user) return <LoadingSpinner fullScreen />;
-  if (isLoading) return <LoadingSpinner fullScreen label="Chargement de votre profil…" />;
+  if (!user) return <LoadingSpinner fullScreen label="Chargement du profil…" />;
+  if (isLoading) return <LoadingSpinner fullScreen label="Chargement du profil…" />;
+
+  const isNew = user.ratingsCount === 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -75,69 +127,168 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+          />
         }
       >
-        <UserProfile user={user} riskProfile={risk} />
+        <Text style={styles.title}>Mon profil</Text>
 
-        {payouts ? <PayoutCard status={payouts} onChanged={() => void load()} /> : null}
+        <View style={styles.header}>
+          <Avatar user={user} size={112} />
+          <Text style={styles.name}>{formatUserName(user)}</Text>
+          <Text style={styles.email}>{user.email}</Text>
 
+          <View style={styles.ratingRow}>
+            <RatingStars value={user.averageRating ?? 0} size={15} />
+            <Text style={styles.ratingLabel}>
+              {isNew ? 'Nouveau' : user.averageRating?.toFixed(1)}
+            </Text>
+            <Text style={styles.meta}>({user.ratingsCount} avis)</Text>
+          </View>
+        </View>
+
+        <View style={styles.availability}>
+          <Ionicons
+            name={user.available ? 'checkmark-circle' : 'pause-circle-outline'}
+            size={22}
+            color={user.available ? COLORS.success : COLORS.textMuted}
+          />
+          <Text style={styles.availabilityLabel}>
+            {user.available ? 'Disponible pour sparring' : 'En pause'}
+          </Text>
+          <Switch
+            value={user.available}
+            onValueChange={(value) => void toggleAvailable(value)}
+            trackColor={{ true: COLORS.primary, false: COLORS.disabled }}
+            thumbColor={COLORS.textInverse}
+            {...WEB_SWITCH_THUMB}
+          />
+        </View>
+
+        <Text style={styles.sectionTitle}>Informations sportives</Text>
+
+        <ProfileField
+          icon="pulse"
+          label="Sport"
+          value={user.style ? formatStyle(user.style) : null}
+          kind="choice"
+          options={STYLE_LABELS}
+          current={user.style}
+          onSave={(value) => save({ style: (value as ProfileInput['style']) ?? undefined })}
+        />
+        <ProfileField
+          icon="barbell"
+          label="Catégorie de poids"
+          value={user.weightClass ? formatWeightClass(user.weightClass) : null}
+          kind="choice"
+          options={WEIGHT_LABELS}
+          current={user.weightClass}
+          onSave={(value) =>
+            save({ weightClass: (value as ProfileInput['weightClass']) ?? undefined })
+          }
+        />
+        <ProfileField
+          icon="trophy"
+          label="Niveau"
+          value={user.level ? formatLevel(user.level) : null}
+          kind="choice"
+          options={LEVEL_LABELS}
+          current={user.level}
+          onSave={(value) => save({ level: (value as ProfileInput['level']) ?? undefined })}
+        />
+        <ProfileField
+          icon="resize"
+          label="Taille"
+          value={user.heightCm ? String(user.heightCm) : null}
+          suffix="cm"
+          kind="number"
+          current={user.heightCm}
+          placeholder="178"
+          onSave={(value) => save({ heightCm: (value as number) ?? undefined })}
+        />
+        <ProfileField
+          icon="medal"
+          label="Combats"
+          value={String(user.fightsCount)}
+          kind="number"
+          current={user.fightsCount}
+          placeholder="0"
+          onSave={(value) => save({ fightsCount: (value as number) ?? 0 })}
+        />
+        <ProfileField
+          icon="time"
+          label="Expérience"
+          value={String(user.experienceYears)}
+          suffix={user.experienceYears > 1 ? 'ans' : 'an'}
+          kind="number"
+          current={user.experienceYears}
+          placeholder="0"
+          onSave={(value) => save({ experienceYears: (value as number) ?? 0 })}
+        />
+
+        <Text style={styles.sectionTitle}>Localisation et tarif</Text>
+
+        <ProfileField
+          icon="location"
+          label="Ville"
+          value={user.city}
+          current={user.city}
+          placeholder="Valence"
+          onSave={(value) => save({ city: (value as string) ?? '' })}
+        />
+        <ProfileField
+          icon="cash"
+          label="Prix par round"
+          value={user.pricePerRound !== null ? formatPrice(user.pricePerRound, user.currency) : null}
+          kind="number"
+          current={user.pricePerRound}
+          placeholder="20"
+          onSave={(value) => save({ pricePerRound: (value as number) ?? undefined })}
+        />
+
+        <Text style={styles.sectionTitle}>Description</Text>
+        <ProfileField
+          icon="document-text"
+          label="Présentation"
+          value={user.bio}
+          current={user.bio}
+          multiline
+          placeholder="Boxeur amateur, toujours prêt pour un bon sparring."
+          onSave={(value) => save({ bio: (value as string) ?? '' })}
+        />
+
+        <Text style={styles.sectionTitle}>Mes revenus</Text>
         <View style={styles.statsRow}>
           <StatCard
-            label="Gains totaux"
+            label="Gains"
             value={formatPrice(stats?.totalEarnings ?? 0, stats?.currency)}
             icon="cash-outline"
             tint={COLORS.success}
           />
           <StatCard
-            label="Solde"
-            value={formatPrice(stats?.balance ?? 0, stats?.currency)}
-            icon="wallet-outline"
+            label="Séances"
+            value={String(stats?.completedBookings ?? 0)}
+            icon="checkmark-done-outline"
+          />
+          <StatCard
+            label="Demandes"
+            value={String(stats?.totalBookings ?? 0)}
+            icon="calendar-outline"
             tint={COLORS.secondary}
           />
         </View>
 
-        <View style={styles.statsRow}>
-          <StatCard
-            label="Sparrings terminés"
-            value={String(stats?.completedSparrings ?? 0)}
-            icon="checkmark-done-outline"
-            tint={COLORS.primary}
-          />
-          <StatCard
-            label="Note moyenne"
-            value={formatRating(stats?.averageRating ?? user.averageRating)}
-            icon="star-outline"
-            tint={COLORS.accent}
-          />
-        </View>
-
-        <Text style={styles.sectionTitle}>Mes sparrings</Text>
-
-        {mySparrings.length === 0 ? (
-          <EmptyState
-            icon="flame-outline"
-            title="Vous n’avez rien créé"
-            message="Proposez une séance pour commencer à générer des revenus."
-            actionLabel="Créer un sparring"
-            onAction={() => router.push('/sparring/create')}
-          />
-        ) : (
-          mySparrings.map((sparring) => (
-            <SparringCard
-              key={sparring.id}
-              sparring={sparring}
-              onPress={(item) => router.push(`/sparring/${item.id}`)}
-            />
-          ))
-        )}
+        {payouts ? <PayoutCard status={payouts} onChanged={load} /> : null}
 
         <Button
-          label="Se déconnecter"
-          onPress={confirmLogout}
+          label="Déconnexion"
           variant="danger"
+          onPress={confirmLogout}
           style={styles.logout}
-          testID="profile-logout"
+          icon={<Ionicons name="log-out-outline" size={18} color={COLORS.textInverse} />}
         />
       </ScrollView>
     </SafeAreaView>
@@ -146,8 +297,30 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   safe: { backgroundColor: COLORS.background, flex: 1 },
-  content: { paddingBottom: SPACING.xxl, paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
-  statsRow: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.md },
-  sectionTitle: { ...TYPOGRAPHY.title, color: COLORS.text, marginBottom: SPACING.md, marginTop: SPACING.xl },
+  content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
+  title: { ...TYPOGRAPHY.display, color: COLORS.text },
+  header: { alignItems: 'center', gap: SPACING.xs, marginVertical: SPACING.xl },
+  name: { ...TYPOGRAPHY.headline, color: COLORS.text, marginTop: SPACING.md },
+  email: { ...TYPOGRAPHY.body, color: COLORS.textMuted },
+  ratingRow: { alignItems: 'center', flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.xs },
+  ratingLabel: { ...TYPOGRAPHY.subtitle, color: COLORS.text },
+  meta: { ...TYPOGRAPHY.caption, color: COLORS.textMuted },
+  availability: {
+    ...SHADOW,
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    flexDirection: 'row',
+    gap: SPACING.md,
+    padding: SPACING.lg,
+  },
+  availabilityLabel: { ...TYPOGRAPHY.body, color: COLORS.text, flex: 1, fontSize: 15 },
+  sectionTitle: {
+    ...TYPOGRAPHY.title,
+    color: COLORS.text,
+    marginBottom: SPACING.md,
+    marginTop: SPACING.xl,
+  },
+  statsRow: { flexDirection: 'row', gap: SPACING.sm },
   logout: { marginTop: SPACING.xl },
 });

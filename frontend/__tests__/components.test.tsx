@@ -3,27 +3,61 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import Button from '@/components/Button';
 import RatingStars from '@/components/RatingStars';
-import SparringCard from '@/components/SparringCard';
+import BookingCard from '@/components/BookingCard';
+import PartnerCard from '@/components/PartnerCard';
 import UserProfile from '@/components/UserProfile';
-import type { Sparring, User } from '@/types';
+import type { Booking, Partner, User } from '@/types';
 
-const SPARRING: Sparring = {
-  id: 's1',
-  title: 'Sparring boxe technique',
-  description: 'Séance technique à intensité modérée.',
-  location: 'Paris 11e',
-  scheduledAt: '2030-05-12T18:30:00.000Z',
-  durationMinutes: 90,
-  level: 'advanced',
+const PARTNER: Partner = {
+  id: 'p1',
+  firstName: 'Luis',
+  lastName: 'Dupont',
+  avatarUrl: null,
+  averageRating: null,
+  ratingsCount: 0,
+  city: 'Valence',
+  bio: 'Boxeur amateur.',
   style: 'muay_thai',
-  price: 25,
+  level: 'amateur',
+  weightClass: 'middleweight',
+  heightCm: 178,
+  fightsCount: 15,
+  experienceYears: 5,
+  pricePerRound: 20,
   currency: 'EUR',
-  maxParticipants: 4,
-  participants: [
-    { id: 'u2', firstName: 'Ada', lastName: 'Lovelace', avatarUrl: null, averageRating: 5 },
-  ],
-  creator: { id: 'u1', firstName: 'Jean', lastName: 'Dupont', avatarUrl: null, averageRating: 4.5 },
-  status: 'open',
+  available: true,
+};
+
+const BOOKING: Booking = {
+  id: 'b1',
+  requester: {
+    id: 'u2',
+    firstName: 'Ana',
+    lastName: 'Martin',
+    avatarUrl: null,
+    averageRating: null,
+    city: null,
+    pricePerRound: null,
+  },
+  partner: {
+    id: 'p1',
+    firstName: 'Luis',
+    lastName: 'Dupont',
+    avatarUrl: null,
+    averageRating: null,
+    city: 'Valence',
+    pricePerRound: 20,
+  },
+  scheduledAt: '2030-05-12T18:30:00.000Z',
+  rounds: 2,
+  pricePerRound: 20,
+  total: 40,
+  commission: 6,
+  payout: 34,
+  currency: 'EUR',
+  status: 'pending',
+  paid: false,
+  reviewed: false,
   createdAt: null,
 };
 
@@ -38,6 +72,17 @@ const USER: User = {
   ratingsCount: 12,
   createdAt: null,
   payoutsEnabled: false,
+  city: 'Valence',
+  bio: null,
+  style: 'boxing',
+  level: 'amateur',
+  weightClass: 'middleweight',
+  heightCm: 178,
+  fightsCount: 3,
+  experienceYears: 2,
+  pricePerRound: 20,
+  currency: 'EUR',
+  available: true,
 };
 
 describe('Button', () => {
@@ -68,41 +113,86 @@ describe('Button', () => {
   });
 });
 
-describe('SparringCard', () => {
-  it('affiche le prix, la discipline et le niveau traduits', () => {
-    render(<SparringCard sparring={SPARRING} onPress={jest.fn()} />);
+describe('PartnerCard', () => {
+  it('affiche le tarif, la discipline et le niveau traduits', () => {
+    render(<PartnerCard partner={PARTNER} onPress={jest.fn()} />);
 
-    expect(screen.getByText(/25/)).toBeTruthy();
+    expect(screen.getByText(/20/)).toBeTruthy();
     expect(screen.getByText('Muay-thaï')).toBeTruthy();
-    expect(screen.getByText('Avancé')).toBeTruthy();
+    expect(screen.getByText('Amateur')).toBeTruthy();
   });
 
-  it('indique les places restantes', () => {
-    render(<SparringCard sparring={SPARRING} onPress={jest.fn()} />);
-    expect(screen.getByText('3 places')).toBeTruthy();
+  it('signale un profil sans avis plutôt qu’une note de zéro', () => {
+    // Afficher « 0,0 » ferait passer un nouveau venu pour un mauvais partenaire.
+    render(<PartnerCard partner={PARTNER} onPress={jest.fn()} />);
+    expect(screen.getByText('Nouveau')).toBeTruthy();
   });
 
-  it('bascule sur « Complet » quand le quota est atteint', () => {
-    const full: Sparring = {
-      ...SPARRING,
-      maxParticipants: 1,
-    };
-    render(<SparringCard sparring={full} onPress={jest.fn()} />);
-
-    expect(screen.getByText('Complet')).toBeTruthy();
+  it('affiche la note dès qu’il y a des avis', () => {
+    render(
+      <PartnerCard
+        partner={{ ...PARTNER, averageRating: 4.5, ratingsCount: 12 }}
+        onPress={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('4.5 (12)')).toBeTruthy();
   });
 
-  it('abrège le nom de l’organisateur', () => {
-    render(<SparringCard sparring={SPARRING} onPress={jest.fn()} />);
-    expect(screen.getByText('Jean D.')).toBeTruthy();
+  it('abrège le nom du partenaire', () => {
+    render(<PartnerCard partner={PARTNER} onPress={jest.fn()} />);
+    expect(screen.getByText('Luis D.')).toBeTruthy();
   });
 
-  it('transmet le sparring au callback', () => {
+  it('transmet le partenaire au callback', () => {
     const onPress = jest.fn();
-    render(<SparringCard sparring={SPARRING} onPress={onPress} />);
+    render(<PartnerCard partner={PARTNER} onPress={onPress} />);
 
-    fireEvent.press(screen.getByLabelText('Sparring Sparring boxe technique'));
-    expect(onPress).toHaveBeenCalledWith(SPARRING);
+    fireEvent.press(screen.getByLabelText('Partenaire Luis D.'));
+    expect(onPress).toHaveBeenCalledWith(PARTNER);
+  });
+});
+
+describe('BookingCard', () => {
+  it('propose d’accepter ou refuser une demande reçue', () => {
+    const onAccept = jest.fn();
+    render(<BookingCard booking={BOOKING} direction="received" onAccept={onAccept} />);
+
+    fireEvent.press(screen.getByText('Accepter'));
+    expect(onAccept).toHaveBeenCalledWith(BOOKING);
+    expect(screen.getByText('Refuser')).toBeTruthy();
+  });
+
+  it('ne propose pas d’accepter sa propre demande', () => {
+    render(<BookingCard booking={BOOKING} direction="sent" />);
+    expect(screen.queryByText('Accepter')).toBeNull();
+  });
+
+  it('propose de payer une demande acceptée et impayée', () => {
+    render(
+      <BookingCard booking={{ ...BOOKING, status: 'accepted' }} direction="sent" onPay={jest.fn()} />,
+    );
+    expect(screen.getByText('Payer')).toBeTruthy();
+  });
+
+  it('ne repropose pas de payer une demande déjà réglée', () => {
+    render(
+      <BookingCard booking={{ ...BOOKING, status: 'accepted', paid: true }} direction="sent" />,
+    );
+
+    expect(screen.queryByText('Payer')).toBeNull();
+    expect(screen.getByText('Payée')).toBeTruthy();
+  });
+
+  it('n’offre plus aucune action sur une demande close', () => {
+    render(<BookingCard booking={{ ...BOOKING, status: 'declined' }} direction="sent" />);
+
+    expect(screen.queryByText('Annuler')).toBeNull();
+    expect(screen.getByText('Refusée')).toBeTruthy();
+  });
+
+  it('affiche le décompte de la demande', () => {
+    render(<BookingCard booking={BOOKING} direction="sent" />);
+    expect(screen.getByText(/2 rounds/)).toBeTruthy();
   });
 });
 

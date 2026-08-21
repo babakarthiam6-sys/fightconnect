@@ -8,10 +8,10 @@ import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { IS_STRIPE_CONFIGURED } from '@/constants/config';
 import { paymentService } from '@/services/payment';
 import { formatPrice } from '@/utils/formatting';
-import type { AppError, Sparring } from '@/types';
+import type { AppError, Booking } from '@/types';
 
 interface Props {
-  sparring: Sparring;
+  booking: Booking;
   /** Appelé après un paiement confirmé par Stripe. */
   onSuccess: () => void;
   onError?: (error: AppError) => void;
@@ -25,7 +25,7 @@ interface Props {
  * Le flux est : PaymentIntent créé par le backend -> feuille Stripe native ->
  * confirmation. Aucune donnée de carte ne transite par ce composant.
  */
-export function PaymentForm({ sparring, onSuccess, onError, disabled = false, label }: Props) {
+export function PaymentForm({ booking, onSuccess, onError, disabled = false, label }: Props) {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export function PaymentForm({ sparring, onSuccess, onError, disabled = false, la
     setMessage(null);
 
     try {
-      const intent = await paymentService.createIntent(sparring.id);
+      const intent = await paymentService.createIntent(booking.id);
 
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: 'FightConnect',
@@ -100,13 +100,13 @@ export function PaymentForm({ sparring, onSuccess, onError, disabled = false, la
     } finally {
       setIsProcessing(false);
     }
-  }, [fail, initPaymentSheet, onSuccess, presentPaymentSheet, sparring.id]);
+  }, [booking.id, fail, initPaymentSheet, onSuccess, presentPaymentSheet]);
 
   return (
     <View style={styles.container}>
       <View style={styles.summary}>
         <Text style={styles.summaryLabel}>Montant à régler</Text>
-        <Text style={styles.summaryValue}>{formatPrice(sparring.price, sparring.currency)}</Text>
+        <Text style={styles.summaryValue}>{formatPrice(booking.total, booking.currency)}</Text>
       </View>
 
       <Button

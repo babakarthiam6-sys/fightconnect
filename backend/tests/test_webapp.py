@@ -40,8 +40,8 @@ async def test_les_fichiers_du_bundle_sont_servis(client_avec_web):
 
 
 async def test_un_chemin_inconnu_retombe_sur_l_application(client_avec_web):
-    """Le routage se fait dans le navigateur : /sparring/abc doit rendre la page."""
-    response = await client_avec_web.get("/sparring/abc")
+    """Le routage se fait dans le navigateur : /partner/abc doit rendre la page."""
+    response = await client_avec_web.get("/partner/abc")
 
     assert response.status_code == 200
     assert "application" in response.text
@@ -53,11 +53,9 @@ async def test_l_api_reste_prioritaire_sur_le_montage(client_avec_web):
     assert sante.status_code == 200
     assert sante.json()["web_app"] is True
 
-    sparrings = await client_avec_web.get("/api/v1/sparrings")
-    assert sparrings.status_code == 200
-    assert "items" in sparrings.json()
-
-    # Une route protégée doit toujours répondre 401, et non l'application web.
+    # Une route d'API protégée doit répondre 401, et non servir l'application
+    # web : c'est le signe que le montage n'a pas avalé /api.
+    assert (await client_avec_web.get("/api/v1/partners")).status_code == 401
     assert (await client_avec_web.get("/api/v1/auth/me")).status_code == 401
 
 

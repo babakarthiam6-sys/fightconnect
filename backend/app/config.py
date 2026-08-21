@@ -55,7 +55,12 @@ class Settings(BaseSettings):
 
     # --- Divers ---
     cors_origins: str = "*"
-    commission_rate: float = 0.10
+    # Part de la plateforme, prélevée sur le versement au partenaire. Elle ne
+    # s'ajoute pas au total : celui qui réserve paie le tarif annoncé.
+    # `frontend/constants/config.ts` reprend cette valeur pour afficher le
+    # décompte avant la création de la demande ; un test de cohérence échoue si
+    # les deux divergent.
+    commission_rate: float = 0.15
 
     @property
     def database_uri(self) -> str:

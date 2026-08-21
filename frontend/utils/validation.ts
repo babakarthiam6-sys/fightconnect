@@ -38,14 +38,7 @@ export const signupSchema = z.object({
   }),
 });
 
-export const sparringSchema = z.object({
-  title: z.string().trim().min(5, 'Au moins 5 caractères.').max(80, 'Au plus 80 caractères.'),
-  description: z
-    .string()
-    .trim()
-    .min(20, 'Décrivez la séance en 20 caractères minimum.')
-    .max(1000, 'Au plus 1000 caractères.'),
-  location: z.string().trim().min(3, 'Indiquez un lieu.').max(120, 'Au plus 120 caractères.'),
+export const bookingSchema = z.object({
   scheduledAt: z
     .string()
     .min(1, 'Choisissez une date.')
@@ -53,26 +46,64 @@ export const sparringSchema = z.object({
       const time = Date.parse(value);
       return Number.isFinite(time) && time > Date.now();
     }, 'La séance doit être programmée dans le futur.'),
-  durationMinutes: z
-    .number({ invalid_type_error: 'Durée invalide.' })
-    .int('Durée en minutes entières.')
-    .min(15, 'Au moins 15 minutes.')
-    .max(480, 'Au plus 8 heures.'),
-  level: z.enum(['beginner', 'intermediate', 'advanced', 'pro'], {
-    errorMap: () => ({ message: 'Choisissez un niveau.' }),
-  }),
-  style: z.enum(['boxing', 'muay_thai', 'kickboxing', 'mma', 'bjj', 'wrestling', 'karate', 'judo'], {
-    errorMap: () => ({ message: 'Choisissez une discipline.' }),
-  }),
-  price: z
-    .number({ invalid_type_error: 'Prix invalide.' })
-    .min(0, 'Le prix ne peut pas être négatif.')
-    .max(1000, 'Au plus 1000 €.'),
-  maxParticipants: z
+  rounds: z
     .number({ invalid_type_error: 'Nombre invalide.' })
     .int('Nombre entier attendu.')
-    .min(2, 'Au moins 2 participants.')
-    .max(50, 'Au plus 50 participants.'),
+    .min(1, 'Au moins 1 round.')
+    .max(20, 'Au plus 20 rounds.'),
+});
+
+/**
+ * Profil sportif.
+ *
+ * Tous les champs sont facultatifs : l'écran enregistre une ligne à la fois, et
+ * un compte tout juste créé n'en a encore aucun.
+ */
+export const profileSchema = z.object({
+  firstName: nameSchema.optional(),
+  lastName: nameSchema.optional(),
+  city: z.string().trim().max(80, 'Au plus 80 caractères.').optional(),
+  bio: z.string().trim().max(600, 'Au plus 600 caractères.').optional(),
+  level: z.enum(['beginner', 'amateur', 'pro']).optional(),
+  style: z
+    .enum(['boxing', 'muay_thai', 'kickboxing', 'mma', 'bjj', 'wrestling', 'karate', 'judo'])
+    .optional(),
+  weightClass: z
+    .enum([
+      'flyweight',
+      'bantamweight',
+      'featherweight',
+      'lightweight',
+      'welterweight',
+      'middleweight',
+      'light_heavyweight',
+      'heavyweight',
+    ])
+    .optional(),
+  heightCm: z
+    .number({ invalid_type_error: 'Taille invalide.' })
+    .int('Nombre entier attendu.')
+    .min(120, 'Au moins 120 cm.')
+    .max(250, 'Au plus 250 cm.')
+    .optional(),
+  fightsCount: z
+    .number({ invalid_type_error: 'Nombre invalide.' })
+    .int('Nombre entier attendu.')
+    .min(0, 'Ne peut pas être négatif.')
+    .max(2000, 'Au plus 2000.')
+    .optional(),
+  experienceYears: z
+    .number({ invalid_type_error: 'Nombre invalide.' })
+    .int('Nombre entier attendu.')
+    .min(0, 'Ne peut pas être négatif.')
+    .max(80, 'Au plus 80 ans.')
+    .optional(),
+  pricePerRound: z
+    .number({ invalid_type_error: 'Tarif invalide.' })
+    .min(0, 'Le tarif ne peut pas être négatif.')
+    .max(1000, 'Au plus 1000 € par round.')
+    .optional(),
+  available: z.boolean().optional(),
 });
 
 export const reviewSchema = z.object({
@@ -90,7 +121,8 @@ export const reviewSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
-export type SparringInput = z.infer<typeof sparringSchema>;
+export type BookingInput = z.infer<typeof bookingSchema>;
+export type ProfileInput = z.infer<typeof profileSchema>;
 export type ReviewInput = z.infer<typeof reviewSchema>;
 
 /** Erreurs de formulaire indexées par nom de champ. */

@@ -36,7 +36,7 @@ function useAuthRedirect() {
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/welcome');
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)/search');
     }
   }, [isAuthenticated, isBootstrapping, router, segments]);
 }
@@ -71,14 +71,16 @@ function RootNavigator() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="partner/[id]" options={{ title: 'Profil du partenaire' }} />
       <Stack.Screen
-        name="sparring/[id]"
-        options={{ title: 'Détail du sparring', presentation: 'card' }}
+        name="booking/[id]"
+        options={{ title: 'Réserver', presentation: 'card' }}
       />
       <Stack.Screen
-        name="sparring/create"
-        options={{ title: 'Nouveau sparring', presentation: 'modal' }}
+        name="booking/pay/[id]"
+        options={{ title: 'Paiement', presentation: 'card' }}
       />
+      <Stack.Screen name="payments" options={{ title: 'Mes paiements' }} />
     </Stack>
   );
 }
@@ -111,7 +113,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ToastProvider
           placement="top"
-          offsetTop={60}
+          // Assez bas pour ne pas masquer le sélecteur « Reçues / Envoyées »,
+          // qui se trouve juste sous le titre des écrans.
+          offsetTop={110}
           duration={3000}
           animationType="slide-in"
           successColor={COLORS.success}

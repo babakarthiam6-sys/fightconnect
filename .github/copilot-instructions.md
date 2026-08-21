@@ -1,7 +1,10 @@
 # FightConnect — contexte du projet
 
-Plateforme de mise en relation de partenaires de sparring : on publie une séance,
-on la trouve, on la paie, on la note.
+Plateforme de mise en relation de partenaires de sparring. Chacun remplit un
+profil sportif (discipline, catégorie de poids, niveau, tarif au round) et devient
+visible dans la recherche. On consulte une fiche, on envoie une demande pour une
+date et un nombre de rounds ; le partenaire accepte ou refuse, puis on paie et on
+note.
 
 - `frontend/` — React Native (Expo SDK 50, TypeScript strict), navigation `expo-router`.
   Le même code produit l'application mobile **et** une version web.
@@ -10,15 +13,16 @@ on la trouve, on la paie, on la note.
 
 ## État réel
 
-Tout ce qui est décrit ci-dessous existe, est testé, et est fusionné dans `main`.
-**Rien n'est déployé** : aucun hébergeur, aucune base en ligne, aucune clé Stripe.
-L'adresse `fightconnect-prod.up.railway.app` que l'on trouve dans d'anciens
-documents ne répond pas.
+Tout ce qui est décrit ci-dessous existe et est testé.
+**En ligne sur `https://fightconnect-production.up.railway.app`** — API et
+application web servies par le même service Railway, base MongoDB attachée au
+même projet. Stripe et OpenAI ne sont pas configurés : les séances gratuites
+fonctionnent, la modération retombe sur son heuristique locale.
 
 | | |
 | --- | --- |
 | Tests backend | 86 (pytest) — dont 6 sur un vrai MongoDB |
-| Tests frontend | 115 (Jest + Testing Library) |
+| Tests frontend | 135 (Jest + Testing Library) |
 | Vérifications | ESLint, `tsc --noEmit`, bundles natif et web |
 | CI | deux chaînes GitHub Actions, sur chaque push |
 
@@ -32,7 +36,7 @@ uvicorn app.main:app --reload
 
 # frontend/
 npm test && npm run typecheck && npm run lint
-npx expo export --platform web --clear --output-dir ../backend/webapp
+npm run build:web                         # export web + thème sombre de la coquille
 ```
 
 ## Invariants à ne pas casser
@@ -42,20 +46,30 @@ un test qui échoue si on l'enfreint.
 
 1. **L'application web est montée après toutes les routes de l'API.** Montée avant,
    elle masquerait `/api`, `/health` et `/docs`.
-2. **L'inscription à une séance est une écriture conditionnée** au nombre de
-   participants au moment de l'écriture. Un comptage lu en amont laisse deux
-   personnes prendre la dernière place — mesuré : 6 entrants sur 10 sans la garde.
-3. **Le remboursement précède la libération de la place.** Dans l'ordre inverse, un
-   échec de Stripe fait perdre la place *et* l'argent.
-4. **On refuse d'encaisser pour un organisateur non payable** (Stripe Connect
+2. **L'unicité d'une demande en attente est portée par un index unique partiel**,
+   pas par une lecture préalable. Un double appui sur « Envoyer » suffit à créer
+   deux requêtes simultanées qui liraient toutes deux « aucune demande en
+   attente ». Le filtre partiel garde un créneau refusé redemandable.
+3. **Le remboursement précède le passage en « annulée ».** Dans l'ordre inverse, un
+   échec de Stripe fait perdre la séance *et* l'argent.
+4. **On refuse d'encaisser pour un partenaire non payable** (Stripe Connect
    incomplet). Sinon la plateforme accumule des dettes sans moyen de les régler.
+   Et on n'encaisse pas avant qu'il ait accepté : la demande peut être refusée.
 5. **Le client HTTP ne rejoue que les `GET`.** Rejouer un `POST` créerait un doublon
    ou un double débit.
 6. **La modération ne bloque jamais la publication d'un avis.** Sans clé OpenAI, une
-   heuristique locale prend le relais. Un avis signalé n'entre pas dans la note de
-   l'organisateur.
-7. **Les statuts « complet » et « terminé » sont calculés à la lecture**, jamais
-   stockés : ils ne peuvent pas se désynchroniser.
+   heuristique locale prend le relais. Un avis signalé n'entre pas dans la note du
+   partenaire.
+7. **La fiche publique d'un partenaire est construite champ par champ**, jamais par
+   soustraction d'un profil complet : une soustraction laisserait passer tout champ
+   ajouté plus tard, à commencer par l'email.
+8. **La commission sort de la part du partenaire**, elle ne s'ajoute pas au total.
+   Son taux vit à deux endroits (`backend/app/config.py`,
+   `frontend/constants/config.ts`) parce que l'écran de réservation affiche le
+   décompte avant que la demande n'existe ; un test échoue si les deux divergent.
+9. **L'export web vise l'origine qui le sert**, jamais un domaine écrit en dur : un
+   domaine figé casse silencieusement toute l'application dès que l'hébergeur en
+   attribue un autre.
 
 ## Pièges rencontrés, à ne pas réintroduire
 

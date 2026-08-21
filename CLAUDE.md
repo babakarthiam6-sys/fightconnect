@@ -18,11 +18,11 @@ qui n'existe plus. En cas de doute entre la carte et le code, **le code fait foi
 
 ```bash
 # Backend (depuis backend/)
-pytest                     # 83 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
+pytest                     # 86 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
-npm test                   # 115 tests
+npm test                   # 135 tests
 npm run typecheck && npm run lint
 npm run build:web           # export web + thème sombre de la coquille HTML
 ```
@@ -30,18 +30,32 @@ npm run build:web           # export web + thème sombre de la coquille HTML
 Après avoir modifié `.env`, relance avec `-c` : Metro met en cache les fichiers
 transformés et garderait l'ancienne valeur des variables `EXPO_PUBLIC_*`.
 
+## Modèle
+
+Le produit met en relation des **personnes**, pas des séances publiées. Chacun
+remplit un profil sportif (discipline, catégorie de poids, niveau, tarif au
+round) et devient visible dans la recherche. On consulte une fiche, on envoie une
+**demande** pour une date et un nombre de rounds ; le partenaire accepte ou
+refuse. La commission de la plateforme est prélevée sur sa part, jamais ajoutée
+au total payé.
+
 ## Invariants à ne pas casser
 
 - L'application web est montée **après** toutes les routes de l'API. Montée avant,
   elle les masquerait toutes.
-- L'inscription à une séance passe par une écriture **conditionnée** au nombre de
-  participants. Un comptage lu en amont laisserait deux personnes prendre la même place.
-- Le remboursement est demandé **avant** de libérer la place : sinon un échec de
-  Stripe ferait perdre la place et l'argent.
+- L'unicité d'une demande en attente est portée par un **index unique partiel**,
+  pas par une lecture préalable. Un contrôle lu en amont laisserait deux envois
+  simultanés créer deux demandes identiques.
+- Le remboursement est demandé **avant** de passer la demande en annulée : sinon
+  un échec de Stripe ferait perdre la séance et l'argent.
 - Le client HTTP ne rejoue que les `GET`. Rejouer un `POST` créerait un doublon ou
   un double débit.
 - La modération ne bloque jamais la publication d'un avis : sans clé OpenAI, une
   heuristique locale prend le relais.
+- Le taux de commission vit à deux endroits (`backend/app/config.py` et
+  `frontend/constants/config.ts`) parce que l'écran de réservation affiche le
+  décompte avant que la demande n'existe. `frontend/__tests__/commission.test.ts`
+  échoue si les deux divergent.
 
 ## graphify
 

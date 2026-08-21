@@ -26,31 +26,34 @@ async def create_intent(
     database: Database,
     current_user: CurrentUser,
 ) -> dict[str, Any]:
-    sparring_id = to_object_id(payload.sparring_id)
-    if sparring_id is None:
-        raise HTTPException(status_code=404, detail="Sparring introuvable.")
+    booking_id = to_object_id(payload.booking_id)
+    booking = await database.bookings.find_one({"_id": booking_id}) if booking_id else None
+    if booking is None:
+        raise HTTPException(status_code=404, detail="Demande introuvable.")
 
-    sparring = await database.sparrings.find_one({"_id": sparring_id})
-    if sparring is None:
-        raise HTTPException(status_code=404, detail="Sparring introuvable.")
+    if booking.get("requester_id") != current_user["_id"]:
+        raise HTTPException(status_code=403, detail="Cette demande ne vous appartient pas.")
+    if booking.get("status") != "accepted":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Le partenaire n’a pas encore accepté cette demande.",
+        )
+    if booking.get("paid"):
+        raise HTTPException(status_code=409, detail="Cette séance est déjà payée.")
 
-    price = float(sparring.get("price", 0))
-    if price <= 0:
-        raise HTTPException(status_code=400, detail="Ce sparring est gratuit.")
-    if sparring.get("creator_id") == current_user["_id"]:
-        raise HTTPException(status_code=409, detail="Vous êtes l’organisateur de ce sparring.")
-    if current_user["_id"] in sparring.get("participant_ids", []):
-        raise HTTPException(status_code=409, detail="Vous participez déjà à ce sparring.")
+    total = float(booking.get("total", 0))
+    if total <= 0:
+        raise HTTPException(status_code=400, detail="Cette séance est gratuite.")
 
     settings = get_settings()
 
-    # Une intention encore ouverte pour cette même séance est réutilisée : sans
+    # Une intention encore ouverte pour cette même demande est réutilisée : sans
     # cela, chaque retour sur l'écran de paiement en créerait une nouvelle, et
-    # deux intentions payées signifieraient deux débits pour une seule place.
+    # deux intentions payées signifieraient deux débits pour une seule séance.
     existing = await database.payments.find_one(
         {
             "user_id": current_user["_id"],
-            "sparring_id": sparring_id,
+            "booking_id": booking["_id"],
             "status": {"$in": ["pending", "processing"]},
             "consumed": {"$ne": True},
         }
@@ -66,36 +69,36 @@ async def create_intent(
                 "publishable_key": settings.stripe_publishable_key or None,
             }
 
-    # L'organisateur doit pouvoir être payé avant qu'on encaisse quoi que ce
+    # Le partenaire doit pouvoir être payé avant qu'on encaisse quoi que ce
     # soit. Sans cette vérification, la plateforme accumulerait des dettes
-    # envers des organisateurs sans moyen automatique de les régler.
-    organisateur = await database.users.find_one({"_id": sparring.get("creator_id")})
-    if organisateur is None or not organisateur.get("stripe_payouts_enabled"):
+    # envers des partenaires sans moyen automatique de les régler.
+    partner = await database.users.find_one({"_id": booking.get("partner_id")})
+    if partner is None or not partner.get("stripe_payouts_enabled"):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                "L’organisateur n’a pas encore configuré ses versements. "
-                "Cette séance n’est pas encore réservable."
+                "Ce partenaire n’a pas encore configuré ses versements. "
+                "La séance n’est pas encore payable."
             ),
         )
 
-    commission = round(price * settings.commission_rate, 2)
+    commission = float(booking.get("commission", 0))
 
     intent = await create_payment_intent(
-        amount=price,
+        amount=total,
         metadata={
-            "sparring_id": str(sparring_id),
+            "booking_id": str(booking["_id"]),
             "user_id": str(current_user["_id"]),
         },
-        destination_account=organisateur.get("stripe_account_id"),
+        destination_account=partner.get("stripe_account_id"),
         application_fee=commission,
     )
 
     await database.payments.insert_one(
         {
             "user_id": current_user["_id"],
-            "sparring_id": sparring_id,
-            "sparring_title": sparring.get("title"),
+            "booking_id": booking["_id"],
+            "partner_name": f"{partner.get('first_name', '')} {partner.get('last_name', '')}".strip(),
             "payment_intent_id": intent["id"],
             "amount": intent["amount"],
             "currency": intent["currency"],
@@ -203,4 +206,12 @@ async def stripe_webhook(request: Request, database: Database) -> dict[str, str]
     await database.payments.update_one(
         {"payment_intent_id": intent_id}, {"$set": {"status": new_status}}
     )
+
+    # Une demande n'est « payée » que lorsque Stripe l'a confirmé : l'écran de
+    # paiement ne suffit pas, l'utilisateur peut le fermer au mauvais moment.
+    if new_status == "succeeded":
+        booking_id = to_object_id(str(objet.get("metadata", {}).get("booking_id", "")))
+        if booking_id is not None:
+            await database.bookings.update_one({"_id": booking_id}, {"$set": {"paid": True}})
+
     return {"status": "ok"}

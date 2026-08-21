@@ -1,4 +1,6 @@
-from tests.conftest import register, sparring_payload
+"""Statistiques de revenus, vues depuis le compte du partenaire."""
+
+from tests.conftest import booking_payload, make_partner, register
 
 
 async def test_statistiques_vides_pour_un_nouveau_compte(client):
@@ -10,70 +12,62 @@ async def test_statistiques_vides_pour_un_nouveau_compte(client):
     assert response.json() == {
         "total_earnings": 0,
         "balance": 0,
-        "completed_sparrings": 0,
-        "total_sparrings": 0,
+        "completed_bookings": 0,
+        "total_bookings": 0,
         "average_rating": None,
         "currency": "EUR",
     }
 
 
 async def test_les_gains_sont_nets_de_commission(client, database):
-    organisateur = await register(client, "orga@exemple.com", "Ada")
+    luis = await make_partner(client, price_per_round=50)
+    ana = await register(client, "ana@exemple.com", "Ana")
+
     creation = await client.post(
-        "/api/v1/sparrings",
-        json=sparring_payload(price=100),
-        headers=organisateur["headers"],
+        "/api/v1/bookings",
+        json=booking_payload(luis["user"]["id"], rounds=2),
+        headers=ana["headers"],
     )
-    sparring = creation.json()
+    booking = creation.json()
+    assert booking["total"] == 100
 
-    acheteur = await register(client, "acheteur@exemple.com", "Léa")
-    users = database.users
-    acheteur_doc = await users.find_one({"email": "acheteur@exemple.com"})
-    sparrings = database.sparrings
-    sparring_doc = await sparrings.find_one({"title": "Sparring boxe technique"})
+    await client.post(f"/api/v1/bookings/{booking['id']}/accept", headers=luis["headers"])
 
-    await database.payments.insert_one(
-        {
-            "user_id": acheteur_doc["_id"],
-            "sparring_id": sparring_doc["_id"],
-            "amount": 100.0,
-            "currency": "EUR",
-            "status": "succeeded",
-        }
+    # Stripe confirme normalement le paiement via son webhook ; ici on écrit
+    # directement l'état qu'il produirait.
+    from bson import ObjectId
+
+    await database.bookings.update_one(
+        {"_id": ObjectId(booking["id"])}, {"$set": {"paid": True}}
     )
 
-    response = await client.get("/api/v1/revenue/stats", headers=organisateur["headers"])
+    response = await client.get("/api/v1/revenue/stats", headers=luis["headers"])
 
-    # 10 % de commission par défaut.
-    assert response.json()["total_earnings"] == 90.0
-    assert response.json()["total_sparrings"] == 1
-    assert sparring["id"] == str(sparring_doc["_id"])
-    assert acheteur["user"]["id"] == str(acheteur_doc["_id"])
+    body = response.json()
+    assert body["total_earnings"] == booking["payout"]
+    assert body["total_earnings"] < booking["total"]
+    assert body["total_bookings"] == 1
+
+
+async def test_une_demande_non_payee_ne_compte_pas_dans_les_gains(client):
+    """Une demande acceptée mais impayée n'a rien rapporté."""
+    luis = await make_partner(client, price_per_round=50)
+    ana = await register(client, "ana@exemple.com", "Ana")
+
+    creation = await client.post(
+        "/api/v1/bookings",
+        json=booking_payload(luis["user"]["id"]),
+        headers=ana["headers"],
+    )
+    await client.post(
+        f"/api/v1/bookings/{creation.json()['id']}/accept", headers=luis["headers"]
+    )
+
+    response = await client.get("/api/v1/revenue/stats", headers=luis["headers"])
+
+    assert response.json()["total_earnings"] == 0
+    assert response.json()["total_bookings"] == 1
 
 
 async def test_statistiques_exigent_une_authentification(client):
     assert (await client.get("/api/v1/revenue/stats")).status_code == 401
-
-
-async def test_une_seance_passee_compte_comme_terminee(client, database):
-    from datetime import datetime, timedelta, timezone
-
-    organisateur = await register(client)
-    await client.post(
-        "/api/v1/sparrings",
-        json=sparring_payload(price=0),
-        headers=organisateur["headers"],
-    )
-
-    avant = await client.get("/api/v1/revenue/stats", headers=organisateur["headers"])
-    assert avant.json()["completed_sparrings"] == 0
-
-    # La séance a eu lieu hier : aucune tâche planifiée ne la marque terminée,
-    # le statut est déduit de l'horaire.
-    await database.sparrings.update_one(
-        {"title": "Sparring boxe technique"},
-        {"$set": {"scheduled_at": datetime.now(timezone.utc) - timedelta(days=1)}},
-    )
-
-    apres = await client.get("/api/v1/revenue/stats", headers=organisateur["headers"])
-    assert apres.json()["completed_sparrings"] == 1

@@ -1,4 +1,7 @@
 import type {
+  Booking,
+  BookingStatus,
+  Partner,
   Payment,
   PayoutStatus,
   PaymentIntent,
@@ -6,13 +9,13 @@ import type {
   Review,
   RevenueStats,
   RiskLevel,
-  Sparring,
+  SportProfile,
   SparringLevel,
-  SparringStatus,
   SparringStyle,
   User,
   UserRiskProfile,
   UserSummary,
+  WeightClass,
 } from '@/types';
 
 /**
@@ -86,7 +89,7 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback
   return (allowed as readonly string[]).includes(normalized) ? (normalized as T) : fallback;
 }
 
-const LEVELS = ['beginner', 'intermediate', 'advanced', 'pro'] as const;
+const LEVELS = ['beginner', 'amateur', 'pro'] as const;
 const STYLES = [
   'boxing',
   'muay_thai',
@@ -97,7 +100,23 @@ const STYLES = [
   'karate',
   'judo',
 ] as const;
-const SPARRING_STATUSES = ['open', 'full', 'completed', 'cancelled'] as const;
+const WEIGHT_CLASSES = [
+  'flyweight',
+  'bantamweight',
+  'featherweight',
+  'lightweight',
+  'welterweight',
+  'middleweight',
+  'light_heavyweight',
+  'heavyweight',
+] as const;
+const BOOKING_STATUSES = [
+  'pending',
+  'accepted',
+  'declined',
+  'cancelled',
+  'completed',
+] as const;
 const PAYMENT_STATUSES = [
   'pending',
   'processing',
@@ -128,6 +147,51 @@ export function normalizeUserSummary(input: unknown): UserSummary | null {
     lastName: str(raw, ['last_name', 'lastName']),
     avatarUrl: optionalStr(raw, ['avatar_url', 'avatarUrl', 'avatar']),
     averageRating: optionalNum(raw, ['average_rating', 'averageRating', 'rating']),
+    city: optionalStr(raw, ['city', 'location']),
+    pricePerRound: optionalNum(raw, ['price_per_round', 'pricePerRound']),
+  };
+}
+
+/**
+ * Champs sportifs.
+ *
+ * `null` n'est pas une valeur par défaut ici mais une information : le profil
+ * n'est pas encore rempli. L'écran de profil s'en sert pour afficher
+ * « Non défini » plutôt qu'une valeur inventée.
+ */
+function normalizeSportProfile(raw: Raw): SportProfile {
+  return {
+    city: optionalStr(raw, ['city', 'location']),
+    bio: optionalStr(raw, ['bio', 'description', 'about']),
+    style: raw.style == null ? null : oneOf<SparringStyle>(raw.style, STYLES, 'boxing'),
+    level: raw.level == null ? null : oneOf<SparringLevel>(raw.level, LEVELS, 'beginner'),
+    weightClass:
+      raw.weight_class == null && raw.weightClass == null
+        ? null
+        : oneOf<WeightClass>(
+            pick(raw, ['weight_class', 'weightClass']),
+            WEIGHT_CLASSES,
+            'middleweight',
+          ),
+    heightCm: optionalNum(raw, ['height_cm', 'heightCm']),
+    fightsCount: num(raw, ['fights_count', 'fightsCount'], 0),
+    experienceYears: num(raw, ['experience_years', 'experienceYears'], 0),
+    pricePerRound: optionalNum(raw, ['price_per_round', 'pricePerRound']),
+    currency: str(raw, ['currency'], 'EUR').toUpperCase(),
+    available: bool(raw, ['available', 'is_available']),
+  };
+}
+
+export function normalizePartner(input: unknown): Partner {
+  const raw = asRecord(input);
+  return {
+    id: normalizeId(raw),
+    firstName: str(raw, ['first_name', 'firstName']),
+    lastName: str(raw, ['last_name', 'lastName']),
+    avatarUrl: optionalStr(raw, ['avatar_url', 'avatarUrl', 'avatar']),
+    averageRating: optionalNum(raw, ['average_rating', 'averageRating', 'rating']),
+    ratingsCount: num(raw, ['ratings_count', 'ratingsCount', 'reviews_count'], 0),
+    ...normalizeSportProfile(raw),
   };
 }
 
@@ -144,6 +208,7 @@ export function normalizeUser(input: unknown): User {
     ratingsCount: num(raw, ['ratings_count', 'ratingsCount', 'reviews_count'], 0),
     createdAt: optionalStr(raw, ['created_at', 'createdAt']),
     payoutsEnabled: bool(raw, ['payouts_enabled', 'payoutsEnabled']),
+    ...normalizeSportProfile(raw),
   };
 }
 
@@ -157,44 +222,30 @@ export function normalizePayoutStatus(input: unknown): PayoutStatus {
   };
 }
 
-export function normalizeSparring(input: unknown): Sparring {
+export function normalizeBooking(input: unknown): Booking {
   const raw = asRecord(input);
-  const participantsRaw = pick(raw, ['participants', 'participant_list']);
-  const participants = Array.isArray(participantsRaw)
-    ? participantsRaw
-        .map((item) =>
-          typeof item === 'string'
-            ? ({
-                id: item,
-                firstName: '',
-                lastName: '',
-                avatarUrl: null,
-                averageRating: null,
-              } satisfies UserSummary)
-            : normalizeUserSummary(item),
-        )
-        .filter((item): item is UserSummary => item !== null)
-    : [];
+  const rounds = num(raw, ['rounds'], 1);
+  const pricePerRound = num(raw, ['price_per_round', 'pricePerRound'], 0);
 
-  // Certains backends exposent le prix en centimes : on repasse en euros.
-  const priceCents = optionalNum(raw, ['price_cents', 'amount_cents']);
-  const price = priceCents !== null ? priceCents / 100 : num(raw, ['price', 'amount'], 0);
+  // Le total vient du serveur : c'est lui qui fait foi puisque c'est lui qui
+  // facture. Le recalcul local ne sert que si le champ manque.
+  const total = optionalNum(raw, ['total', 'amount']) ?? rounds * pricePerRound;
+  const commission = num(raw, ['commission', 'application_fee'], 0);
 
   return {
     id: normalizeId(raw),
-    title: str(raw, ['title', 'name'], 'Sparring'),
-    description: str(raw, ['description'], ''),
-    location: str(raw, ['location', 'city', 'address'], ''),
-    scheduledAt: str(raw, ['scheduled_at', 'scheduledAt', 'date', 'start_time'], ''),
-    durationMinutes: num(raw, ['duration_minutes', 'durationMinutes', 'duration'], 60),
-    level: oneOf<SparringLevel>(pick(raw, ['level']), LEVELS, 'beginner'),
-    style: oneOf<SparringStyle>(pick(raw, ['style', 'discipline']), STYLES, 'boxing'),
-    price,
+    requester: normalizeUserSummary(pick(raw, ['requester', 'user', 'from'])),
+    partner: normalizeUserSummary(pick(raw, ['partner', 'to'])),
+    scheduledAt: str(raw, ['scheduled_at', 'scheduledAt', 'date'], ''),
+    rounds,
+    pricePerRound,
+    total,
+    commission,
+    payout: optionalNum(raw, ['payout', 'net']) ?? total - commission,
     currency: str(raw, ['currency'], 'EUR').toUpperCase(),
-    maxParticipants: num(raw, ['max_participants', 'maxParticipants'], 2),
-    participants,
-    creator: normalizeUserSummary(pick(raw, ['creator', 'owner', 'author', 'created_by'])),
-    status: oneOf<SparringStatus>(pick(raw, ['status']), SPARRING_STATUSES, 'open'),
+    status: oneOf<BookingStatus>(pick(raw, ['status']), BOOKING_STATUSES, 'pending'),
+    paid: bool(raw, ['paid', 'is_paid']),
+    reviewed: bool(raw, ['reviewed', 'is_reviewed']),
     createdAt: optionalStr(raw, ['created_at', 'createdAt']),
   };
 }
@@ -206,8 +257,8 @@ export function normalizePayment(input: unknown): Payment {
 
   return {
     id: normalizeId(raw) || str(raw, ['payment_intent_id', 'stripe_payment_intent_id'], ''),
-    sparringId: optionalStr(raw, ['sparring_id', 'sparringId']),
-    sparringTitle: optionalStr(raw, ['sparring_title', 'sparringTitle', 'description']),
+    bookingId: optionalStr(raw, ['booking_id', 'bookingId']),
+    partnerName: optionalStr(raw, ['partner_name', 'partnerName', 'description']),
     amount,
     currency: str(raw, ['currency'], 'EUR').toUpperCase(),
     status: oneOf<PaymentStatus>(pick(raw, ['status', 'state']), PAYMENT_STATUSES, 'pending'),
@@ -221,8 +272,8 @@ export function normalizeRevenueStats(input: unknown): RevenueStats {
   return {
     totalEarnings: num(raw, ['total_earnings', 'totalEarnings', 'earnings'], 0),
     balance: num(raw, ['balance', 'available_balance'], 0),
-    completedSparrings: num(raw, ['completed_sparrings', 'completedSparrings'], 0),
-    totalSparrings: num(raw, ['total_sparrings', 'totalSparrings', 'sparrings_count'], 0),
+    completedBookings: num(raw, ['completed_bookings', 'completedBookings'], 0),
+    totalBookings: num(raw, ['total_bookings', 'totalBookings', 'bookings_count'], 0),
     averageRating: optionalNum(raw, ['average_rating', 'averageRating', 'rating']),
     currency: str(raw, ['currency'], 'EUR').toUpperCase(),
   };
@@ -234,7 +285,7 @@ export function normalizeReview(input: unknown): Review {
 
   return {
     id: normalizeId(raw),
-    sparringId: str(raw, ['sparring_id', 'sparringId'], ''),
+    bookingId: str(raw, ['booking_id', 'bookingId'], ''),
     author: normalizeUserSummary(pick(raw, ['author', 'user', 'reviewer'])),
     rating: num(raw, ['rating', 'score'], 0),
     comment: str(raw, ['comment', 'content', 'text'], ''),
@@ -287,7 +338,7 @@ export function normalizePaymentIntent(input: unknown): PaymentIntent {
 export function extractList(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;
   const raw = asRecord(payload);
-  for (const key of ['items', 'results', 'data', 'sparrings', 'payments', 'reviews']) {
+  for (const key of ['items', 'results', 'data', 'partners', 'bookings', 'payments', 'reviews']) {
     const value = raw[key];
     if (Array.isArray(value)) return value;
   }

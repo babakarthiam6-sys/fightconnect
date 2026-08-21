@@ -7,8 +7,8 @@ import type { RevenueStats } from '@/types';
 const EMPTY_STATS: RevenueStats = {
   totalEarnings: 0,
   balance: 0,
-  completedSparrings: 0,
-  totalSparrings: 0,
+  completedBookings: 0,
+  totalBookings: 0,
   averageRating: null,
   currency: 'EUR',
 };

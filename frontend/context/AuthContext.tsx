@@ -11,7 +11,7 @@ import React, {
 import { setUnauthorizedHandler } from '@/services/api';
 import { authService } from '@/services/auth';
 import type { AppError, User } from '@/types';
-import type { LoginInput, SignupInput } from '@/utils/validation';
+import type { LoginInput, ProfileInput, SignupInput } from '@/utils/validation';
 
 interface AuthState {
   user: User | null;
@@ -28,6 +28,7 @@ interface AuthContextValue extends AuthState {
   signup: (input: SignupInput) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  updateProfile: (changes: ProfileInput) => Promise<void>;
   clearError: () => void;
 }
 
@@ -139,6 +140,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.token]);
 
+  /**
+   * Enregistre une modification du profil sportif.
+   *
+   * Le profil renvoyé par le serveur remplace celui en mémoire : c'est lui qui
+   * fait foi, et il porte les valeurs normalisées (une ville mise en forme, un
+   * champ vidé devenu `null`).
+   */
+  const updateProfile = useCallback(async (changes: ProfileInput) => {
+    const user = await authService.updateProfile(changes);
+    if (!isMounted.current) return;
+    setState((previous) => ({ ...previous, user }));
+  }, []);
+
   const clearError = useCallback(() => {
     setState((previous) => ({ ...previous, error: null }));
   }, []);
@@ -151,9 +165,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signup,
       logout,
       refreshUser,
+      updateProfile,
       clearError,
     }),
-    [state, login, signup, logout, refreshUser, clearError],
+    [state, login, signup, logout, refreshUser, updateProfile, clearError],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

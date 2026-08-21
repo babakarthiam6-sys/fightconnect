@@ -5,7 +5,7 @@ from typing import Any
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.serializers import serialize_sparring
+from app.serializers import serialize_booking
 
 
 async def load_users(
@@ -20,62 +20,68 @@ async def load_users(
     return {str(user["_id"]): user async for user in cursor}
 
 
-async def expand_sparring(
+async def expand_booking(
     database: AsyncIOMotorDatabase,
     document: dict[str, Any],
 ) -> dict[str, Any]:
-    participant_ids = list(document.get("participant_ids", []))
-    creator_id = document.get("creator_id")
-
     users = await load_users(
         database,
-        [uid for uid in [*participant_ids, creator_id] if isinstance(uid, ObjectId)],
+        [
+            uid
+            for uid in (document.get("requester_id"), document.get("partner_id"))
+            if isinstance(uid, ObjectId)
+        ],
+    )
+    return serialize_booking(
+        document,
+        users.get(str(document.get("requester_id"))),
+        users.get(str(document.get("partner_id"))),
     )
 
-    participants = [users[str(uid)] for uid in participant_ids if str(uid) in users]
-    creator = users.get(str(creator_id)) if creator_id else None
 
-    return serialize_sparring(document, creator, participants)
-
-
-async def expand_sparrings(
+async def expand_bookings(
     database: AsyncIOMotorDatabase,
     documents: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Version groupée : une seule requête utilisateurs pour toute la liste."""
     needed: list[ObjectId] = []
     for document in documents:
-        needed.extend(uid for uid in document.get("participant_ids", []) if isinstance(uid, ObjectId))
-        creator_id = document.get("creator_id")
-        if isinstance(creator_id, ObjectId):
-            needed.append(creator_id)
+        needed.extend(
+            uid
+            for uid in (document.get("requester_id"), document.get("partner_id"))
+            if isinstance(uid, ObjectId)
+        )
 
     users = await load_users(database, list({str(uid): uid for uid in needed}.values()))
 
-    expanded = []
-    for document in documents:
-        participants = [
-            users[str(uid)] for uid in document.get("participant_ids", []) if str(uid) in users
-        ]
-        creator = users.get(str(document.get("creator_id")))
-        expanded.append(serialize_sparring(document, creator, participants))
-    return expanded
+    return [
+        serialize_booking(
+            document,
+            users.get(str(document.get("requester_id"))),
+            users.get(str(document.get("partner_id"))),
+        )
+        for document in documents
+    ]
 
 
 async def refresh_user_rating(database: AsyncIOMotorDatabase, user_id: ObjectId) -> None:
-    """Recalcule la note moyenne d'un organisateur à partir des avis reçus.
+    """Recalcule la note moyenne d'un partenaire à partir des avis reçus.
 
-    Les avis portent sur un sparring : l'organisateur est donc la personne notée.
+    Un avis porte sur une demande : la personne notée est le partenaire, jamais
+    celui qui a réservé.
     """
-    sparring_ids = [
-        document["_id"] async for document in database.sparrings.find({"creator_id": user_id}, {"_id": 1})
+    booking_ids = [
+        document["_id"]
+        async for document in database.bookings.find({"partner_id": user_id}, {"_id": 1})
     ]
-    if not sparring_ids:
+    if not booking_ids:
         return
 
     ratings = [
         int(review.get("rating", 0))
-        async for review in database.reviews.find({"sparring_id": {"$in": sparring_ids}}, {"rating": 1})
+        async for review in database.reviews.find(
+            {"booking_id": {"$in": booking_ids}}, {"rating": 1}
+        )
     ]
     ratings = [rating for rating in ratings if 1 <= rating <= 5]
 

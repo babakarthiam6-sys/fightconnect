@@ -6,7 +6,7 @@
  * décrivent donc TOUJOURS la forme côté app, jamais la forme réseau brute.
  */
 
-export type SparringLevel = 'beginner' | 'intermediate' | 'advanced' | 'pro';
+export type SparringLevel = 'beginner' | 'amateur' | 'pro';
 
 export type SparringStyle =
   | 'boxing'
@@ -18,7 +18,17 @@ export type SparringStyle =
   | 'karate'
   | 'judo';
 
-export type SparringStatus = 'open' | 'full' | 'completed' | 'cancelled';
+export type WeightClass =
+  | 'flyweight'
+  | 'bantamweight'
+  | 'featherweight'
+  | 'lightweight'
+  | 'welterweight'
+  | 'middleweight'
+  | 'light_heavyweight'
+  | 'heavyweight';
+
+export type BookingStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed';
 
 export type PaymentStatus =
   | 'pending'
@@ -30,7 +40,24 @@ export type PaymentStatus =
 
 export type RiskLevel = 'low' | 'medium' | 'high';
 
-export interface User {
+/** Champs sportifs, communs au profil privé et à la fiche publique. */
+export interface SportProfile {
+  city: string | null;
+  bio: string | null;
+  style: SparringStyle | null;
+  level: SparringLevel | null;
+  weightClass: WeightClass | null;
+  heightCm: number | null;
+  fightsCount: number;
+  experienceYears: number;
+  /** Tarif d'un round, en euros. `null` tant qu'il n'est pas fixé. */
+  pricePerRound: number | null;
+  currency: string;
+  /** Visible dans la recherche et réservable. */
+  available: boolean;
+}
+
+export interface User extends SportProfile {
   id: string;
   email: string;
   firstName: string;
@@ -44,39 +71,52 @@ export interface User {
   payoutsEnabled: boolean;
 }
 
-/** Version allégée d'un utilisateur telle qu'imbriquée dans un sparring. */
+/** Version allégée d'un utilisateur, telle qu'imbriquée dans une demande. */
 export interface UserSummary {
   id: string;
   firstName: string;
   lastName: string;
   avatarUrl: string | null;
   averageRating: number | null;
+  city: string | null;
+  pricePerRound: number | null;
 }
 
-export interface Sparring {
+/** Fiche publique d'un partenaire : jamais d'email ni de données de compte. */
+export interface Partner extends SportProfile {
   id: string;
-  title: string;
-  description: string;
-  location: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  averageRating: number | null;
+  ratingsCount: number;
+}
+
+export interface Booking {
+  id: string;
+  requester: UserSummary | null;
+  partner: UserSummary | null;
   /** ISO 8601. */
   scheduledAt: string;
-  durationMinutes: number;
-  level: SparringLevel;
-  style: SparringStyle;
-  /** Prix en euros (unité majeure), jamais en centimes. */
-  price: number;
+  rounds: number;
+  /** Tous les montants sont en euros (unité majeure), jamais en centimes. */
+  pricePerRound: number;
+  total: number;
+  /** Part de la plateforme, prélevée sur le versement au partenaire. */
+  commission: number;
+  /** Ce que touche le partenaire : `total` moins `commission`. */
+  payout: number;
   currency: string;
-  maxParticipants: number;
-  participants: UserSummary[];
-  creator: UserSummary | null;
-  status: SparringStatus;
+  status: BookingStatus;
+  paid: boolean;
+  reviewed: boolean;
   createdAt: string | null;
 }
 
 export interface Payment {
   id: string;
-  sparringId: string | null;
-  sparringTitle: string | null;
+  bookingId: string | null;
+  partnerName: string | null;
   /** Montant en euros (unité majeure). */
   amount: number;
   currency: string;
@@ -88,15 +128,15 @@ export interface Payment {
 export interface RevenueStats {
   totalEarnings: number;
   balance: number;
-  completedSparrings: number;
-  totalSparrings: number;
+  completedBookings: number;
+  totalBookings: number;
   averageRating: number | null;
   currency: string;
 }
 
 export interface Review {
   id: string;
-  sparringId: string;
+  bookingId: string;
   author: UserSummary | null;
   rating: number;
   comment: string;
@@ -137,12 +177,11 @@ export interface Paginated<T> {
   hasMore: boolean;
 }
 
-export interface SparringFilters {
-  search: string;
+export interface PartnerFilters {
+  city: string;
   level: SparringLevel | null;
   style: SparringStyle | null;
-  minPrice: number | null;
-  maxPrice: number | null;
+  weightClass: WeightClass | null;
 }
 
 /** Erreur applicative normalisée : toute la couche réseau ne rejette que ça. */
@@ -154,7 +193,7 @@ export interface AppError {
   fieldErrors: Record<string, string> | null;
 }
 
-/** État du compte de versement d'un organisateur. */
+/** État du compte de versement d'un partenaire. */
 export interface PayoutStatus {
   /** Un compte Stripe existe, même incomplet. */
   connected: boolean;
