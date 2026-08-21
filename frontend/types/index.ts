@@ -69,6 +69,8 @@ export interface User extends SportProfile {
   createdAt: string | null;
   /** Stripe accepte de verser l'argent des séances à cette personne. */
   payoutsEnabled: boolean;
+  /** Jeton d'appareil pour les notifications. `null` sur le web. */
+  expoPushToken: string | null;
 }
 
 /** Version allégée d'un utilisateur, telle qu'imbriquée dans une demande. */
@@ -111,6 +113,26 @@ export interface Booking {
   paid: boolean;
   reviewed: boolean;
   createdAt: string | null;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  recipientId: string;
+  author: UserSummary | null;
+  content: string;
+  read: boolean;
+  createdAt: string | null;
+}
+
+export interface Conversation {
+  id: string;
+  /** L'interlocuteur, jamais soi-même. */
+  other: UserSummary | null;
+  lastMessage: string;
+  lastMessageAt: string | null;
+  unread: number;
 }
 
 export interface Payment {

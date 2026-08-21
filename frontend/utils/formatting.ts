@@ -39,6 +39,12 @@ export function formatDate(value: string | null | undefined): string {
 }
 
 /** « il y a 3 jours ». */
+/** « 18:30 » — l'heure seule, pour les bulles d'une conversation. */
+export function formatTime(value: string | null | undefined): string {
+  const date = toDate(value);
+  return date ? format(date, 'HH:mm', { locale: fr }) : '';
+}
+
 export function formatRelative(value: string | null | undefined): string {
   const date = toDate(value);
   if (!date) return '—';

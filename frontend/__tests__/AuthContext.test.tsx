@@ -32,6 +32,7 @@ const USER = {
   ratingsCount: 0,
   createdAt: null,
   payoutsEnabled: false,
+  expoPushToken: null,
   city: null,
   bio: null,
   style: null,

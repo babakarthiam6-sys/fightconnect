@@ -178,6 +178,58 @@ async def test_parcours_complet_de_bout_en_bout(client, database):
     assert stats.json()["completed_bookings"] == 1
 
 
+async def test_la_liste_des_conversations_sur_le_vrai_moteur(client, database):
+    """L'agrégation qui groupe les fils n'est pas triviale.
+
+    Elle emploie `$$ROOT`, `$first` après tri, et un `$cond` pour compter les
+    non-lus. Le simulateur en donne une approximation ; seul le vrai moteur dit
+    si le dernier message et le compteur sont justes.
+    """
+    from app.services import chat as chat_service
+
+    luis = await make_partner(client)
+    ana = await register(client, "ana@exemple.com", "Ana")
+    maria = await register(client, "maria@exemple.com", "Maria")
+
+    documents = {
+        email: await database.users.find_one({"email": email})
+        for email in ("luis@exemple.com", "ana@exemple.com", "maria@exemple.com")
+    }
+
+    # Deux fils distincts, et un aller-retour dans le premier.
+    await chat_service.handle_message(
+        database, documents["ana@exemple.com"], documents["luis@exemple.com"]["_id"], "Dispo samedi ?"
+    )
+    await chat_service.handle_message(
+        database, documents["luis@exemple.com"], documents["ana@exemple.com"]["_id"], "Oui, 18h."
+    )
+    await chat_service.handle_message(
+        database, documents["ana@exemple.com"], documents["luis@exemple.com"]["_id"], "Parfait, à samedi."
+    )
+    await chat_service.handle_message(
+        database, documents["maria@exemple.com"], documents["luis@exemple.com"]["_id"], "Salut, tu prends des débutants ?"
+    )
+
+    reponse = await client.get("/api/v1/chat/conversations", headers=luis["headers"])
+    fils = reponse.json()["items"]
+
+    assert len(fils) == 2
+    # Le plus récent d'abord : le message de Maria est arrivé en dernier.
+    assert fils[0]["other"]["first_name"] == "Maria"
+    assert fils[0]["unread"] == 1
+    # Dans le fil d'Ana, seuls ses deux messages sont non lus, pas la réponse de Luis.
+    fil_ana = next(fil for fil in fils if fil["other"]["first_name"] == "Ana")
+    assert fil_ana["last_message"] == "Parfait, à samedi."
+    assert fil_ana["unread"] == 2
+
+    # Ouvrir le fil remet le compteur à zéro, sans toucher à l'autre.
+    await client.get(f"/api/v1/chat/history/{ana['user']['id']}", headers=luis["headers"])
+    apres = (await client.get("/api/v1/chat/conversations", headers=luis["headers"])).json()["items"]
+    assert next(fil for fil in apres if fil["other"]["first_name"] == "Ana")["unread"] == 0
+    assert next(fil for fil in apres if fil["other"]["first_name"] == "Maria")["unread"] == 1
+    assert maria["user"]["id"]
+
+
 async def test_le_freinage_de_connexion_fonctionne_sur_le_vrai_moteur(client):
     from app.services import throttle
 

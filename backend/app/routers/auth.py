@@ -60,6 +60,7 @@ async def signup(payload: SignupRequest, database: Database) -> dict:
         "price_per_round": None,
         "currency": "EUR",
         "available": False,
+        "expo_push_token": None,
         "created_at": datetime.now(timezone.utc),
     }
     result = await database.users.insert_one(document)

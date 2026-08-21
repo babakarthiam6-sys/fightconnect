@@ -24,6 +24,13 @@ export const ENDPOINTS = {
     complete: (id: string) => `/bookings/${id}/complete`,
     reviews: (id: string) => `/bookings/${id}/reviews`,
   },
+  chat: {
+    conversations: '/chat/conversations',
+    history: (otherId: string) => `/chat/history/${otherId}`,
+    pushToken: '/chat/push-token',
+    /** Le jeton passe en paramètre : un WebSocket n'accepte pas d'en-tête. */
+    socket: (token: string) => `/chat/ws?token=${encodeURIComponent(token)}`,
+  },
   payments: {
     createIntent: '/payments/create-intent',
     history: '/payments/history',

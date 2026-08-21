@@ -21,8 +21,8 @@ fonctionnent, la modération retombe sur son heuristique locale.
 
 | | |
 | --- | --- |
-| Tests backend | 86 (pytest) — dont 6 sur un vrai MongoDB |
-| Tests frontend | 135 (Jest + Testing Library) |
+| Tests backend | 105 (pytest) — dont 7 sur un vrai MongoDB |
+| Tests frontend | 145 (Jest + Testing Library) |
 | Vérifications | ESLint, `tsc --noEmit`, bundles natif et web |
 | CI | deux chaînes GitHub Actions, sur chaque push |
 
@@ -70,6 +70,11 @@ un test qui échoue si on l'enfreint.
 9. **L'export web vise l'origine qui le sert**, jamais un domaine écrit en dur : un
    domaine figé casse silencieusement toute l'application dès que l'hébergeur en
    attribue un autre.
+10. **Un message signalé n'est ni enregistré ni transmis**, contrairement à un avis.
+    Un avis perdu se réécrit ; une transaction sortie de la plateforme ne revient pas.
+11. **Le point d'entrée WebSocket prend la base par la dépendance.** Un appel
+    direct à `get_database()` le rend intestable — c'était le cas, et il n'avait
+    donc aucun test.
 
 ## Pièges rencontrés, à ne pas réintroduire
 

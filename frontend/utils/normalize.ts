@@ -1,6 +1,8 @@
 import type {
   Booking,
   BookingStatus,
+  Conversation,
+  Message,
   Partner,
   Payment,
   PayoutStatus,
@@ -208,7 +210,33 @@ export function normalizeUser(input: unknown): User {
     ratingsCount: num(raw, ['ratings_count', 'ratingsCount', 'reviews_count'], 0),
     createdAt: optionalStr(raw, ['created_at', 'createdAt']),
     payoutsEnabled: bool(raw, ['payouts_enabled', 'payoutsEnabled']),
+    expoPushToken: optionalStr(raw, ['expo_push_token', 'expoPushToken']),
     ...normalizeSportProfile(raw),
+  };
+}
+
+export function normalizeMessage(input: unknown): Message {
+  const raw = asRecord(input);
+  return {
+    id: normalizeId(raw),
+    conversationId: str(raw, ['conversation_id', 'conversationId'], ''),
+    senderId: str(raw, ['sender_id', 'senderId'], ''),
+    recipientId: str(raw, ['recipient_id', 'recipientId'], ''),
+    author: normalizeUserSummary(pick(raw, ['author', 'sender'])),
+    content: str(raw, ['content', 'text', 'body'], ''),
+    read: bool(raw, ['read', 'is_read']),
+    createdAt: optionalStr(raw, ['created_at', 'createdAt', 'timestamp']),
+  };
+}
+
+export function normalizeConversation(input: unknown): Conversation {
+  const raw = asRecord(input);
+  return {
+    id: normalizeId(raw),
+    other: normalizeUserSummary(pick(raw, ['other', 'partner', 'user'])),
+    lastMessage: str(raw, ['last_message', 'lastMessage'], ''),
+    lastMessageAt: optionalStr(raw, ['last_message_at', 'lastMessageAt']),
+    unread: num(raw, ['unread', 'unread_count'], 0),
   };
 }
 
@@ -338,7 +366,17 @@ export function normalizePaymentIntent(input: unknown): PaymentIntent {
 export function extractList(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;
   const raw = asRecord(payload);
-  for (const key of ['items', 'results', 'data', 'partners', 'bookings', 'payments', 'reviews']) {
+  for (const key of [
+    'items',
+    'results',
+    'data',
+    'partners',
+    'bookings',
+    'payments',
+    'reviews',
+    'messages',
+    'conversations',
+  ]) {
     const value = raw[key];
     if (Array.isArray(value)) return value;
   }

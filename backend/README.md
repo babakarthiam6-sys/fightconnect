@@ -61,6 +61,7 @@ MONGODB_TEST_URI=mongodb://127.0.0.1:27017 pytest -q
 | `test_config.py` | garde-fous de production et découpage des origines CORS |
 | `test_throttle.py` | blocage après échecs répétés, expiration, isolation entre comptes |
 | `test_integration_mongo.py` | vrai MongoDB : index uniques, requêtes, parcours complet, et dix envois simultanés d'une même demande |
+| `test_chat.py` | modération des messages, cloisonnement des fils, non-lus, notifications, WebSocket de bout en bout |
 | `test_payouts.py` | inscription Stripe Connect, resynchronisation, panne de Stripe |
 | `test_webapp.py` | l'application web montée à la racine ne masque ni l'API, ni la documentation |
 
@@ -110,6 +111,10 @@ Tous préfixés par `/api/v1`.
 | POST | `/moderation/reviews` | ✅ | Publier un avis (modéré) |
 | GET | `/moderation/user-risk/{id}` | ✅ | Profil de risque |
 | GET | `/moderation/recommendations` | ✅ | Partenaires suggérés |
+| GET | `/chat/conversations` | ✅ | Un fil par interlocuteur, non-lus compris |
+| GET | `/chat/history/{id}` | ✅ | Fil avec une personne ; le lire le marque lu |
+| PUT | `/chat/push-token` | ✅ | Jeton d'appareil pour les notifications |
+| WS | `/chat/ws?token=…` | ✅ | Discussion temps réel |
 
 ## Choix de conception
 
@@ -121,7 +126,20 @@ Tous préfixés par `/api/v1`.
   `client_secret`, ce qui lui permet d'ouvrir la Payment Sheet sans manipuler de
   données de carte. Un webhook confirme le paiement ; en développement, les
   paiements en attente sont resynchronisés à la lecture de l'historique.
-- **La modération ne bloque jamais la publication.** Si OpenAI est absent ou en
+- **Un message signalé n'est ni enregistré ni transmis**, contrairement à un
+  avis. L'asymétrie est voulue : un avis perdu se réécrit, une transaction
+  sortie de la plateforme ne revient pas. La détection d'esquive de paiement est
+  volontairement prudente — « je n'ai pas de liquide sur moi » suffit à alerter,
+  mais un numéro de téléphone seul, dans « je t'appelle en arrivant », ne
+  déclenche rien.
+- **Le point d'entrée WebSocket reçoit la base par la dépendance**, jamais par un
+  appel direct à `get_database()` : sinon les tests ne peuvent pas la remplacer,
+  et le point d'entrée reste sans couverture.
+- **Une notification part seulement si le destinataire n'est pas connecté.**
+  Recevoir une alerte pour un message qu'on lit à l'écran est le meilleur moyen
+  de faire couper les notifications. Aucun échec d'Expo ne remonte : un message
+  enregistré et transmis ne doit pas échouer parce qu'un tiers est en panne.
+- **La modération ne bloque jamais la publication d'un avis.** Si OpenAI est absent ou en
   panne, une heuristique locale prend le relais : un faux négatif vaut mieux
   qu'un avis perdu. Un avis signalé n'entre pas dans la note du partenaire,
   sinon un commentaire abusif ferait chuter sa moyenne.

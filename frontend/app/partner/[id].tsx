@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -103,13 +103,26 @@ export default function PartnerScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button
-          label="Réserver"
-          onPress={() => router.push(`/booking/${partner.id}`)}
-          disabled={!partner.available}
-          icon={<Ionicons name="calendar" size={18} color={COLORS.textInverse} />}
-          testID="partner-book"
-        />
+        <View style={styles.actions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Écrire à ${formatUserName(partner)}`}
+            onPress={() => router.push(`/chat/${partner.id}`)}
+            style={({ pressed }) => [styles.discuter, pressed && styles.pressed]}
+            testID="partner-chat"
+          >
+            <Ionicons name="chatbubble" size={20} color={COLORS.primary} />
+          </Pressable>
+
+          <Button
+            label="Réserver"
+            onPress={() => router.push(`/booking/${partner.id}`)}
+            disabled={!partner.available}
+            icon={<Ionicons name="calendar" size={18} color={COLORS.textInverse} />}
+            style={styles.reserver}
+            testID="partner-book"
+          />
+        </View>
         {!partner.available ? (
           <Text style={styles.unavailable}>
             Ce partenaire s’est mis en pause. Il n’accepte pas de demande pour l’instant.
@@ -203,4 +216,17 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   unavailable: { ...TYPOGRAPHY.caption, color: COLORS.textMuted, textAlign: 'center' },
+  actions: { flexDirection: 'row', gap: SPACING.sm },
+  discuter: {
+    alignItems: 'center',
+    backgroundColor: COLORS.primarySoft,
+    borderColor: COLORS.primary,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 54,
+    width: 58,
+  },
+  reserver: { flex: 1 },
+  pressed: { opacity: 0.85 },
 });

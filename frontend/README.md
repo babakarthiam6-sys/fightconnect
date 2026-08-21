@@ -94,11 +94,13 @@ frontend/
 │   ├── (tabs)/             # search, bookings, profile
 │   ├── partner/            # [id] — fiche publique d'un partenaire
 │   ├── booking/            # [id] — réserver ; pay/[id] — payer
+│   ├── chat/               # index (conversations), [id] (fil)
 │   ├── payments.tsx        # historique, atteint depuis le profil
 │   ├── _layout.tsx         # providers + garde d'authentification
 │   └── index.tsx           # redirection selon la session
 ├── components/             # UI réutilisable (cartes, formulaires, états)
-├── services/               # api, auth, partner, booking, payment, revenue, moderation
+├── services/               # api, auth, partner, booking, chat, payment, revenue, moderation
+├── hooks/                  # fil temps réel, jeton de notification
 ├── context/                # AuthContext, AppContext
 ├── store/                  # filtres et décharge (zustand)
 ├── constants/              # endpoints, config, thème
@@ -113,7 +115,8 @@ frontend/
 `POST /auth/signup` · `POST /auth/login` · `GET /auth/me` ·
 `PATCH /auth/me` · `GET /partners` · `GET /partners/{id}` ·
 `GET|POST /bookings` · `POST /bookings/{id}/accept|decline|cancel|complete` ·
-`GET /bookings/{id}/reviews` ·
+`GET /bookings/{id}/reviews` · `GET /chat/conversations` ·
+`GET /chat/history/{id}` · `PUT /chat/push-token` · `WS /chat/ws` ·
 `POST /payments/create-intent` · `GET /payments/history` · `GET /revenue/stats` ·
 `POST /moderation/reviews` · `GET /moderation/user-risk/{user_id}` ·
 `GET /moderation/recommendations`
@@ -136,7 +139,7 @@ l'app sur une autre implémentation du même contrat sans toucher aux écrans.
 
 ## Qualité
 
-135 tests répartis en 14 suites, tous verts :
+145 tests répartis en 15 suites, tous verts :
 
 | Suite | Ce qu'elle couvre |
 | --- | --- |
@@ -151,6 +154,7 @@ l'app sur une autre implémentation du même contrat sans toucher aux écrans.
 | `payout` | inscription Stripe des partenaires, états de la carte, erreurs |
 | `config` | l'export web vise l'origine qui le sert, jamais un domaine figé |
 | `commission` | le taux affiché est celui que le serveur applique |
+| `chat` | adresse du WebSocket, normalisation des messages, jeton d'appareil |
 | `contract` | les normaliseurs face aux **vraies** réponses de l'API (voir ci-dessous) |
 
 ```bash

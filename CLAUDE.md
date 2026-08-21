@@ -18,11 +18,11 @@ qui n'existe plus. En cas de doute entre la carte et le code, **le code fait foi
 
 ```bash
 # Backend (depuis backend/)
-pytest                     # 86 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
+pytest                     # 105 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
-npm test                   # 135 tests
+npm test                   # 145 tests
 npm run typecheck && npm run lint
 npm run build:web           # export web + thème sombre de la coquille HTML
 ```
@@ -37,7 +37,7 @@ remplit un profil sportif (discipline, catégorie de poids, niveau, tarif au
 round) et devient visible dans la recherche. On consulte une fiche, on envoie une
 **demande** pour une date et un nombre de rounds ; le partenaire accepte ou
 refuse. La commission de la plateforme est prélevée sur sa part, jamais ajoutée
-au total payé.
+au total payé. Une discussion permet de caler les détails ; elle est modérée.
 
 ## Invariants à ne pas casser
 
@@ -50,8 +50,13 @@ au total payé.
   un échec de Stripe ferait perdre la séance et l'argent.
 - Le client HTTP ne rejoue que les `GET`. Rejouer un `POST` créerait un doublon ou
   un double débit.
-- La modération ne bloque jamais la publication d'un avis : sans clé OpenAI, une
-  heuristique locale prend le relais.
+- La modération ne bloque jamais la publication d'un **avis** : sans clé OpenAI,
+  une heuristique locale prend le relais. Elle bloque en revanche un **message**
+  signalé : un avis perdu se réécrit, une transaction sortie de la plateforme ne
+  revient pas.
+- Le point d'entrée WebSocket reçoit la base **par la dépendance**, jamais par un
+  appel direct à `get_database()`. Sans cela il n'est pas testable, et il ne
+  l'était pas.
 - Le taux de commission vit à deux endroits (`backend/app/config.py` et
   `frontend/constants/config.ts`) parce que l'écran de réservation affiche le
   décompte avant que la demande n'existe. `frontend/__tests__/commission.test.ts`

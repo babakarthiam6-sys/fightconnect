@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useToast } from 'react-native-toast-notifications';
 
@@ -53,6 +55,7 @@ const WEB_SWITCH_THUMB: Record<string, unknown> =
   Platform.OS === 'web' ? { activeThumbColor: COLORS.textInverse } : {};
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, logout, refreshUser, updateProfile } = useAuth();
   const { stats, isConnected, refreshStats } = useApp();
   const toast = useToast();
@@ -134,7 +137,17 @@ export default function ProfileScreen() {
           />
         }
       >
-        <Text style={styles.title}>Mon profil</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Mon profil</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Messages"
+            onPress={() => router.push('/chat')}
+            style={({ pressed }) => [styles.messages, pressed && styles.pressed]}
+          >
+            <Ionicons name="chatbubbles" size={22} color={COLORS.primary} />
+          </Pressable>
+        </View>
 
         <View style={styles.header}>
           <Avatar user={user} size={112} />
@@ -298,7 +311,17 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safe: { backgroundColor: COLORS.background, flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
+  titleRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   title: { ...TYPOGRAPHY.display, color: COLORS.text },
+  messages: {
+    alignItems: 'center',
+    backgroundColor: COLORS.primarySoft,
+    borderRadius: RADIUS.pill,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  pressed: { opacity: 0.85 },
   header: { alignItems: 'center', gap: SPACING.xs, marginVertical: SPACING.xl },
   name: { ...TYPOGRAPHY.headline, color: COLORS.text, marginTop: SPACING.md },
   email: { ...TYPOGRAPHY.body, color: COLORS.textMuted },

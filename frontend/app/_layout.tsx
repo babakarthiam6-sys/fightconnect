@@ -9,6 +9,7 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import { ToastProvider } from 'react-native-toast-notifications';
 
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { usePushToken } from '@/hooks/usePushToken';
 import { AppProvider } from '@/context/AppContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { COLORS } from '@/constants/theme';
@@ -42,8 +43,9 @@ function useAuthRedirect() {
 }
 
 function RootNavigator() {
-  const { isBootstrapping } = useAuth();
+  const { isAuthenticated, isBootstrapping } = useAuth();
   useAuthRedirect();
+  usePushToken(isAuthenticated);
 
   useEffect(() => {
     if (!isBootstrapping) {
@@ -81,6 +83,8 @@ function RootNavigator() {
         options={{ title: 'Paiement', presentation: 'card' }}
       />
       <Stack.Screen name="payments" options={{ title: 'Mes paiements' }} />
+      <Stack.Screen name="chat/index" options={{ title: 'Messages' }} />
+      <Stack.Screen name="chat/[id]" options={{ title: 'Conversation' }} />
     </Stack>
   );
 }

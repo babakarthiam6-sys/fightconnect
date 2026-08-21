@@ -72,6 +72,7 @@ const USER: User = {
   ratingsCount: 12,
   createdAt: null,
   payoutsEnabled: false,
+  expoPushToken: null,
   city: 'Valence',
   bio: null,
   style: 'boxing',

@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import connect, disconnect, ping
-from app.routers import auth, bookings, moderation, partners, payments, payouts, revenue
+from app.routers import auth, bookings, chat, moderation, partners, payments, payouts, revenue
 from app.webapp import is_web_app_available, mount_web_app
 
 API_PREFIX = "/api/v1"
@@ -47,6 +47,7 @@ def create_app() -> FastAPI:
         auth.router,
         partners.router,
         bookings.router,
+        chat.router,
         payments.router,
         payouts.router,
         revenue.router,

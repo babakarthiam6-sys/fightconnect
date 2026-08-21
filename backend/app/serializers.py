@@ -70,6 +70,7 @@ def serialize_user(document: dict[str, Any]) -> dict[str, Any]:
         "ratings_count": int(document.get("ratings_count", 0)),
         "created_at": iso(document.get("created_at")),
         "payouts_enabled": bool(document.get("stripe_payouts_enabled", False)),
+        "expo_push_token": document.get("expo_push_token"),
     }
 
 
@@ -139,4 +140,35 @@ def serialize_review(document: dict[str, Any], author: dict[str, Any] | None) ->
         "flagged": bool(document.get("flagged", False)),
         "flag_reason": document.get("flag_reason"),
         "moderation_score": document.get("moderation_score"),
+    }
+
+
+def serialize_message(
+    document: dict[str, Any],
+    author: dict[str, Any] | None,
+) -> dict[str, Any]:
+    return {
+        "id": str(document["_id"]),
+        "conversation_id": document.get("conversation_id", ""),
+        "sender_id": str(document.get("sender_id", "")),
+        "recipient_id": str(document.get("recipient_id", "")),
+        "author": serialize_user_summary(author),
+        "content": document.get("content", ""),
+        "read": bool(document.get("read", False)),
+        "created_at": iso(document.get("created_at")),
+    }
+
+
+def serialize_conversation(
+    conversation_id: str,
+    other: dict[str, Any] | None,
+    last_message: dict[str, Any],
+    unread: int,
+) -> dict[str, Any]:
+    return {
+        "id": conversation_id,
+        "other": serialize_user_summary(other),
+        "last_message": last_message.get("content", ""),
+        "last_message_at": iso(last_message.get("created_at")),
+        "unread": unread,
     }

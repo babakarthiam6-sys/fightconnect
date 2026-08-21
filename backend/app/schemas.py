@@ -90,6 +90,7 @@ class UserOut(UserSummary):
     experience_years: int = 0
     available: bool = False
     currency: str = "EUR"
+    expo_push_token: str | None = None
 
 
 class AuthResponse(BaseModel):
@@ -153,6 +154,41 @@ class BookingOut(BaseModel):
 class BookingList(BaseModel):
     items: list[BookingOut]
     total: int
+
+
+class MessageOut(BaseModel):
+    id: str
+    conversation_id: str
+    sender_id: str
+    recipient_id: str
+    author: UserSummary | None
+    content: str
+    read: bool
+    created_at: str | None = None
+
+
+class MessageList(BaseModel):
+    items: list[MessageOut]
+    total: int
+
+
+class ConversationOut(BaseModel):
+    id: str
+    other: UserSummary | None
+    last_message: str
+    last_message_at: str | None
+    unread: int
+
+
+class ConversationList(BaseModel):
+    items: list[ConversationOut]
+    total: int
+
+
+class PushTokenRequest(BaseModel):
+    """Jeton d'appareil pour les notifications. `null` le détache."""
+
+    expo_push_token: str | None = Field(default=None, max_length=200)
 
 
 class PaymentIntentRequest(BaseModel):
