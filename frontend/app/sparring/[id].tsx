@@ -41,7 +41,7 @@ function InfoRow({
 }) {
   return (
     <View style={styles.infoRow}>
-      <Ionicons name={icon} size={18} color={COLORS.secondary} />
+      <Ionicons name={icon} size={18} color={COLORS.primary} />
       <View style={styles.infoText}>
         <Text style={styles.infoLabel}>{label}</Text>
         <Text style={styles.infoValue}>{value}</Text>
@@ -231,7 +231,7 @@ export default function SparringDetailScreen() {
       <View style={styles.card}>
         {isCreator ? (
           <View style={styles.notice}>
-            <Ionicons name="information-circle-outline" size={18} color={COLORS.secondary} />
+            <Ionicons name="information-circle-outline" size={18} color={COLORS.primary} />
             <Text style={styles.noticeText}>Vous êtes l’organisateur de ce sparring.</Text>
           </View>
         ) : isParticipant ? (

@@ -34,12 +34,14 @@ const BACKGROUNDS: Record<Variant, string> = {
   ghost: 'transparent',
 };
 
+// Sur fond sombre, un contour bleu marine disparaît : les variantes sans aplat
+// reprennent l'orange, qui reste la couleur d'action de l'application.
 const LABEL_COLORS: Record<Variant, string> = {
   primary: COLORS.textInverse,
   secondary: COLORS.textInverse,
-  outline: COLORS.secondary,
+  outline: COLORS.primary,
   danger: COLORS.textInverse,
-  ghost: COLORS.secondary,
+  ghost: COLORS.primary,
 };
 
 export function Button({
@@ -92,12 +94,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: RADIUS.md,
     justifyContent: 'center',
-    minHeight: 50,
+    minHeight: 54,
     paddingHorizontal: SPACING.lg,
   },
   fullWidth: { alignSelf: 'stretch' },
   outline: {
-    borderColor: COLORS.secondary,
+    borderColor: COLORS.primary,
     borderWidth: 1.5,
   },
   inactive: { opacity: 0.55 },

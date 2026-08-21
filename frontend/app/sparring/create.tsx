@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
   },
-  optionActive: { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
+  optionActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   optionLabel: { ...TYPOGRAPHY.caption, color: COLORS.text },
   optionLabelActive: { color: COLORS.textInverse, fontWeight: '600' },
   row: { flexDirection: 'row', gap: SPACING.md },

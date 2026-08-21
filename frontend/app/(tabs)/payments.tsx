@@ -37,7 +37,7 @@ function PaymentRow({ payment, onPress }: { payment: Payment; onPress: () => voi
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
       <View style={styles.rowIcon}>
-        <Ionicons name={STATUS_ICONS[payment.status]} size={20} color={COLORS.secondary} />
+        <Ionicons name={STATUS_ICONS[payment.status]} size={20} color={COLORS.primary} />
       </View>
 
       <View style={styles.rowBody}>
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   summary: {
     ...SHADOW,
     alignItems: 'center',
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -155,8 +155,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     padding: SPACING.lg,
   },
-  summaryLabel: { ...TYPOGRAPHY.body, color: COLORS.textInverse, opacity: 0.85 },
-  summaryValue: { ...TYPOGRAPHY.headline, color: COLORS.textInverse },
+  summaryLabel: { ...TYPOGRAPHY.body, color: COLORS.textMuted },
+  summaryValue: { ...TYPOGRAPHY.headline, color: COLORS.primary },
   list: { paddingBottom: SPACING.xxl, paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
   row: {
     ...SHADOW,

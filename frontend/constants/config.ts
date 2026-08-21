@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 /**
  * Configuration issue de l'environnement.
@@ -20,14 +21,48 @@ function resolve(inlined: string | undefined, extraKey: string, fallback: string
   return readExtra(extraKey) ?? fallback;
 }
 
-const DEFAULT_API_BASE_URL = 'https://fightconnect-prod.up.railway.app/api/v1';
+const DEFAULT_API_BASE_URL = 'https://fightconnect-production.up.railway.app/api/v1';
+
+interface ApiBaseSources {
+  /** `EXPO_PUBLIC_API_BASE_URL`, inlinée par Metro à la compilation. */
+  envValue?: string;
+  platformOS: string;
+  /** `window.location.origin`, absent hors navigateur. */
+  origin?: string;
+  /** `app.json > extra > apiBaseUrl`, filet pour les builds natifs. */
+  extraValue?: string;
+}
+
+/**
+ * Choisit l'URL de base de l'API.
+ *
+ * Sur le web, l'export est servi par l'API elle-même, au même hôte : viser cette
+ * origine plutôt qu'un domaine écrit en dur rend le bundle indépendant de
+ * l'adresse de déploiement. Un domaine figé casse silencieusement toute
+ * l'application dès que l'hébergeur en attribue un autre — la page s'affiche,
+ * mais aucune requête n'aboutit, et rien dans l'interface ne dit pourquoi.
+ *
+ * `EXPO_PUBLIC_API_BASE_URL` reste prioritaire : c'est ce qui permet de pointer
+ * un build web vers une API distincte, en développement par exemple.
+ */
+export function resolveApiBaseUrl({
+  envValue,
+  platformOS,
+  origin,
+  extraValue,
+}: ApiBaseSources): string {
+  const sameOrigin = platformOS === 'web' && origin ? `${origin}/api/v1` : undefined;
+  const chosen = envValue || sameOrigin || extraValue || DEFAULT_API_BASE_URL;
+  return chosen.replace(/\/+$/, '');
+}
 
 /** URL de base de l'API, sans slash final. */
-export const API_BASE_URL = resolve(
-  process.env.EXPO_PUBLIC_API_BASE_URL,
-  'apiBaseUrl',
-  DEFAULT_API_BASE_URL,
-).replace(/\/+$/, '');
+export const API_BASE_URL = resolveApiBaseUrl({
+  envValue: process.env.EXPO_PUBLIC_API_BASE_URL,
+  platformOS: Platform.OS,
+  origin: typeof window !== 'undefined' ? window.location?.origin : undefined,
+  extraValue: readExtra('apiBaseUrl'),
+});
 
 export const STRIPE_PUBLISHABLE_KEY = resolve(
   process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY,

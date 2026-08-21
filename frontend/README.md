@@ -58,9 +58,19 @@ une erreur explicite au lieu de planter.
 Le même code produit une application web, servie par l'API elle-même :
 
 ```bash
-EXPO_PUBLIC_API_BASE_URL=/api/v1 npx expo export --platform web --clear \
-  --output-dir ../backend/webapp
+npm run build:web
 ```
+
+L'adresse de l'API n'a pas à être fournie : servi par le même hôte que l'API,
+l'export web vise `window.location.origin`. Renseigner
+`EXPO_PUBLIC_API_BASE_URL` reste possible et prioritaire, pour pointer un build
+vers une API distincte.
+
+La commande enchaîne l'export Expo et `scripts/theme-web-shell.mjs`, qui applique
+le fond sombre au document HTML : Expo génère lui-même cet `index.html` quand
+`web.output` vaut « single » et ignore `app/+html.tsx` dans ce mode. Sans cette
+étape, la page reste blanche derrière l'application — un éclair blanc au
+chargement, et une barre d'adresse claire sur iOS.
 
 Deux composants ne peuvent pas exister tels quels dans un navigateur et ont une
 variante web :

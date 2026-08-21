@@ -44,7 +44,7 @@ export function DateTimeField({
 
       <View style={styles.row}>
         <Pressable style={styles.dateButton} onPress={() => setMode('date')}>
-          <Ionicons name="calendar-outline" size={18} color={COLORS.secondary} />
+          <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
           <Text style={styles.dateText}>{formatDateTime(value.toISOString())}</Text>
         </Pressable>
         <Pressable
@@ -52,7 +52,7 @@ export function DateTimeField({
           onPress={() => setMode('time')}
           accessibilityLabel="Choisir l’heure"
         >
-          <Ionicons name="time-outline" size={18} color={COLORS.secondary} />
+          <Ionicons name="time-outline" size={18} color={COLORS.primary} />
         </Pressable>
       </View>
 

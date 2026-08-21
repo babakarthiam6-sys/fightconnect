@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   image: { backgroundColor: COLORS.border },
   fallback: {
     alignItems: 'center',
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.primary,
     justifyContent: 'center',
   },
   initials: { ...TYPOGRAPHY.subtitle, color: COLORS.textInverse },

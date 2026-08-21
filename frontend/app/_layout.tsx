@@ -34,7 +34,7 @@ function useAuthRedirect() {
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)/login');
+      router.replace('/(auth)/welcome');
     } else if (isAuthenticated && inAuthGroup) {
       router.replace('/(tabs)/home');
     }
@@ -62,8 +62,8 @@ function RootNavigator() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: COLORS.surface },
-        headerTintColor: COLORS.secondary,
+        headerStyle: { backgroundColor: COLORS.background },
+        headerTintColor: COLORS.text,
         headerTitleStyle: { fontWeight: '700' },
         contentStyle: { backgroundColor: COLORS.background },
       }}
@@ -119,7 +119,7 @@ export default function RootLayout() {
           warningColor={COLORS.warning}
         >
           <Providers>
-            <StatusBar style="dark" />
+            <StatusBar style="light" />
             <RootNavigator />
           </Providers>
         </ToastProvider>

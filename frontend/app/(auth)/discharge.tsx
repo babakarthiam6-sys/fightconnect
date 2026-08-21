@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
     padding: SPACING.lg,
   },
-  clauseTitle: { ...TYPOGRAPHY.subtitle, color: COLORS.secondary, marginBottom: SPACING.xs },
+  clauseTitle: { ...TYPOGRAPHY.subtitle, color: COLORS.text, marginBottom: SPACING.xs },
   clauseBody: { ...TYPOGRAPHY.body, color: COLORS.text, lineHeight: 20 },
   legal: { ...TYPOGRAPHY.caption, color: COLORS.textMuted, marginTop: SPACING.md },
   actions: {

@@ -14,7 +14,8 @@
     "build:android": "eas build --platform android --profile preview",
     "build:ios": "eas build --platform ios --profile preview",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "build:web": "expo export --platform web --clear --output-dir ../backend/webapp && node scripts/theme-web-shell.mjs ../backend/webapp/index.html"
   },
   "jest": {
     "preset": "jest-expo",

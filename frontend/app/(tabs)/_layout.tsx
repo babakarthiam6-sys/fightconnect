@@ -15,13 +15,15 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: COLORS.surface,
           borderTopColor: COLORS.border,
-          height: 60,
+          borderTopWidth: 1,
+          height: 62,
           paddingBottom: 8,
           paddingTop: 6,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        headerStyle: { backgroundColor: COLORS.surface },
-        headerTitleStyle: { color: COLORS.secondary, fontWeight: '700' },
+        headerStyle: { backgroundColor: COLORS.background },
+        headerTitleStyle: { color: COLORS.text, fontWeight: '700' },
+        headerTintColor: COLORS.text,
       }}
     >
       <Tabs.Screen

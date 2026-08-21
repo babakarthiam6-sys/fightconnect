@@ -5,12 +5,12 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "fightconnect",
-    "userInterfaceStyle": "light",
-    "backgroundColor": "#FAFAFA",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0C0C0E",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#004E89"
+      "backgroundColor": "#0C0C0E"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -20,23 +20,26 @@
       "bundleIdentifier": "com.fightconnect.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Utilise l'appareil photo pour votre photo de profil."
-      }
+      },
+      "userInterfaceStyle": "dark"
     },
     "android": {
       "package": "com.fightconnect.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FF6B35"
+        "backgroundColor": "#0C0C0E"
       },
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE"
-      ]
+      ],
+      "userInterfaceStyle": "dark"
     },
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "backgroundColor": "#0C0C0E"
     },
     "plugins": [
       "expo-router",
@@ -53,7 +56,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiBaseUrl": "https://fightconnect-prod.up.railway.app/api/v1",
+      "apiBaseUrl": "https://fightconnect-production.up.railway.app/api/v1",
       "eas": {
         "projectId": "00000000-0000-0000-0000-000000000000"
       }

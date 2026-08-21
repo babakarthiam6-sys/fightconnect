@@ -194,7 +194,7 @@ export default function SparringsScreen() {
           onPress={() => setIsFilterOpen(true)}
           style={styles.filterButton}
         >
-          <Ionicons name="options-outline" size={20} color={COLORS.secondary} />
+          <Ionicons name="options-outline" size={20} color={COLORS.primary} />
           {activeFilterCount > 0 ? (
             <View style={styles.filterBadge}>
               <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>

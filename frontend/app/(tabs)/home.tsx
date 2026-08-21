@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   safe: { backgroundColor: COLORS.background, flex: 1 },
   content: { paddingBottom: SPACING.xxl, paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
   header: { marginBottom: SPACING.lg },
-  greeting: { ...TYPOGRAPHY.headline, color: COLORS.secondary },
+  greeting: { ...TYPOGRAPHY.display, color: COLORS.text },
   subtitle: { ...TYPOGRAPHY.body, color: COLORS.textMuted, marginTop: SPACING.xs },
   statsRow: { flexDirection: 'row', gap: SPACING.md },
   cta: { marginTop: SPACING.lg },

@@ -15,7 +15,8 @@ COPY frontend/ ./
 # relative évite toute configuration et supprime la question du CORS.
 ENV EXPO_PUBLIC_API_BASE_URL=/api/v1
 ENV EXPO_NO_TELEMETRY=1
-RUN npx expo export --platform web --clear --output-dir /build/web-dist
+RUN npx expo export --platform web --clear --output-dir /build/web-dist \
+    && node scripts/theme-web-shell.mjs /build/web-dist/index.html
 
 
 # --- Étape 2 : l'API, qui sert aussi l'application ------------------------

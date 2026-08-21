@@ -24,7 +24,7 @@ uvicorn app.main:app --reload
 # Frontend (depuis frontend/)
 npm test                   # 115 tests
 npm run typecheck && npm run lint
-npx expo export --platform web --clear --output-dir ../backend/webapp
+npm run build:web           # export web + thème sombre de la coquille HTML
 ```
 
 Après avoir modifié `.env`, relance avec `-c` : Metro met en cache les fichiers
