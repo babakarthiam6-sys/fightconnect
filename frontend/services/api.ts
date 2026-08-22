@@ -1,4 +1,5 @@
 import NetInfo from '@react-native-community/netinfo';
+import { Platform } from 'react-native';
 import axios, {
   AxiosError,
   type AxiosInstance,
@@ -61,6 +62,15 @@ api.interceptors.response.use(
 );
 
 export async function isOnline(): Promise<boolean> {
+  // Sur le web, c'est le navigateur qui sait. NetInfo y devine la connectivité
+  // avec un `HEAD /` qu'il annule parfois ; il rapporte alors une coupure qui
+  // n'existe pas. Constaté sur la production : environ un chargement sur cinq
+  // de l'écran de recherche affichait « Mode hors ligne — données en cache. »
+  // sans avoir passé le moindre appel à l'API.
+  if (Platform.OS === 'web') {
+    return typeof navigator === 'undefined' || navigator.onLine !== false;
+  }
+
   try {
     const state = await NetInfo.fetch();
     // `isInternetReachable` vaut null tant que la sonde n'a pas abouti : dans ce
