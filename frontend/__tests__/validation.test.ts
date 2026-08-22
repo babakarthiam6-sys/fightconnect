@@ -1,9 +1,10 @@
 import {
+  bookingSchema,
   loginSchema,
   passwordStrength,
+  profileSchema,
   reviewSchema,
   signupSchema,
-  sparringSchema,
   validate,
 } from '@/utils/validation';
 
@@ -64,25 +65,18 @@ describe('validation des identifiants', () => {
   });
 });
 
-describe('validation d’un sparring', () => {
+describe('validation d’une demande', () => {
   const base = {
-    title: 'Sparring boxe technique',
-    description: 'Séance technique à intensité modérée, gants 14 oz obligatoires.',
-    location: 'Paris 11e',
     scheduledAt: new Date(Date.now() + 86_400_000).toISOString(),
-    durationMinutes: 60,
-    level: 'intermediate',
-    style: 'boxing',
-    price: 25,
-    maxParticipants: 4,
+    rounds: 2,
   };
 
   it('accepte un formulaire complet', () => {
-    expect(validate(sparringSchema, base).success).toBe(true);
+    expect(validate(bookingSchema, base).success).toBe(true);
   });
 
   it('refuse une date passée', () => {
-    const result = validate(sparringSchema, {
+    const result = validate(bookingSchema, {
       ...base,
       scheduledAt: new Date(Date.now() - 86_400_000).toISOString(),
     });
@@ -90,21 +84,44 @@ describe('validation d’un sparring', () => {
     expect(result.errors.scheduledAt).toBeDefined();
   });
 
-  it('refuse un champ numérique vide (NaN)', () => {
-    const result = validate(sparringSchema, { ...base, price: Number('') || Number.NaN });
+  it('refuse un nombre de rounds vide (NaN)', () => {
+    const result = validate(bookingSchema, { ...base, rounds: Number('') || Number.NaN });
     expect(result.success).toBe(false);
-    expect(result.errors.price).toBeDefined();
+    expect(result.errors.rounds).toBeDefined();
+  });
+
+  it('refuse zéro round', () => {
+    expect(validate(bookingSchema, { ...base, rounds: 0 }).success).toBe(false);
+  });
+});
+
+describe('validation du profil sportif', () => {
+  it('accepte un profil partiel : l’écran enregistre une ligne à la fois', () => {
+    expect(validate(profileSchema, { city: 'Valence' }).success).toBe(true);
+    expect(validate(profileSchema, {}).success).toBe(true);
   });
 
   it('refuse une discipline inconnue', () => {
-    const result = validate(sparringSchema, { ...base, style: 'sumo' });
+    const result = validate(profileSchema, { style: 'sumo' });
     expect(result.success).toBe(false);
     expect(result.errors.style).toBeDefined();
   });
 
+  it('refuse un tarif négatif', () => {
+    const result = validate(profileSchema, { pricePerRound: -5 });
+    expect(result.success).toBe(false);
+    expect(result.errors.pricePerRound).toBeDefined();
+  });
+
+  it('borne la taille à des valeurs humaines', () => {
+    expect(validate(profileSchema, { heightCm: 178 }).success).toBe(true);
+    expect(validate(profileSchema, { heightCm: 30 }).success).toBe(false);
+    expect(validate(profileSchema, { heightCm: 400 }).success).toBe(false);
+  });
+
   it('n’expose qu’une erreur par champ', () => {
-    const result = validate(sparringSchema, { ...base, title: 'a' });
-    expect(Object.keys(result.errors)).toEqual(['title']);
+    const result = validate(profileSchema, { city: 'x'.repeat(200), style: 'sumo' });
+    expect(Object.keys(result.errors).sort()).toEqual(['city', 'style']);
   });
 });
 

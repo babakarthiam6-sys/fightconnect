@@ -9,14 +9,27 @@ export const ENDPOINTS = {
     signup: '/auth/signup',
     login: '/auth/login',
     me: '/auth/me',
+    updateMe: '/auth/me',
   },
-  sparrings: {
-    list: '/sparrings',
-    create: '/sparrings',
-    detail: (id: string) => `/sparrings/${id}`,
-    join: (id: string) => `/sparrings/${id}/join`,
-    cancel: (id: string) => `/sparrings/${id}/cancel`,
-    reviews: (id: string) => `/sparrings/${id}/reviews`,
+  partners: {
+    list: '/partners',
+    detail: (id: string) => `/partners/${id}`,
+  },
+  bookings: {
+    list: '/bookings',
+    create: '/bookings',
+    accept: (id: string) => `/bookings/${id}/accept`,
+    decline: (id: string) => `/bookings/${id}/decline`,
+    cancel: (id: string) => `/bookings/${id}/cancel`,
+    complete: (id: string) => `/bookings/${id}/complete`,
+    reviews: (id: string) => `/bookings/${id}/reviews`,
+  },
+  chat: {
+    conversations: '/chat/conversations',
+    history: (otherId: string) => `/chat/history/${otherId}`,
+    pushToken: '/chat/push-token',
+    /** Le jeton passe en paramètre : un WebSocket n'accepte pas d'en-tête. */
+    socket: (token: string) => `/chat/ws?token=${encodeURIComponent(token)}`,
   },
   payments: {
     createIntent: '/payments/create-intent',
@@ -40,7 +53,8 @@ export const ENDPOINTS = {
 export const STORAGE_KEYS = {
   token: '@fightconnect/auth-token',
   user: '@fightconnect/auth-user',
-  sparringsCache: '@fightconnect/cache/sparrings',
+  partnersCache: '@fightconnect/cache/partners',
+  bookingsCache: '@fightconnect/cache/bookings',
   paymentsCache: '@fightconnect/cache/payments',
   statsCache: '@fightconnect/cache/stats',
   filters: '@fightconnect/filters',

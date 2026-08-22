@@ -2,30 +2,30 @@ import { ENDPOINTS } from '@/constants/api';
 import { http } from '@/services/api';
 import {
   extractList,
+  normalizePartner,
   normalizeReview,
-  normalizeSparring,
   normalizeUserRisk,
 } from '@/utils/normalize';
-import type { Review, Sparring, UserRiskProfile } from '@/types';
+import type { Partner, Review, UserRiskProfile } from '@/types';
 import type { ReviewInput } from '@/utils/validation';
 
 export const moderationService = {
   /**
-   * Poste un avis. Le backend le passe à la modération OpenAI et peut renvoyer
-   * l'avis avec `flagged: true` — ce n'est pas une erreur, l'UI affiche alors
-   * un badge de signalement.
+   * Poste un avis. Le serveur le passe à la modération OpenAI et peut renvoyer
+   * l'avis avec `flagged: true` — ce n'est pas une erreur, l'interface affiche
+   * alors un badge de signalement.
    */
-  async postReview(sparringId: string, input: ReviewInput): Promise<Review> {
+  async postReview(bookingId: string, input: ReviewInput): Promise<Review> {
     const payload = await http.post<unknown>(ENDPOINTS.moderation.reviews, {
-      sparring_id: sparringId,
+      booking_id: bookingId,
       rating: input.rating,
       comment: input.comment,
     });
     return normalizeReview(payload);
   },
 
-  async listReviews(sparringId: string): Promise<Review[]> {
-    const payload = await http.get<unknown>(ENDPOINTS.sparrings.reviews(sparringId));
+  async listReviews(bookingId: string): Promise<Review[]> {
+    const payload = await http.get<unknown>(ENDPOINTS.bookings.reviews(bookingId));
     return extractList(payload).map(normalizeReview);
   },
 
@@ -39,10 +39,10 @@ export const moderationService = {
     }
   },
 
-  async recommendations(): Promise<Sparring[]> {
+  async recommendations(): Promise<Partner[]> {
     try {
       const payload = await http.get<unknown>(ENDPOINTS.moderation.recommendations);
-      return extractList(payload).map(normalizeSparring);
+      return extractList(payload).map(normalizePartner);
     } catch {
       return [];
     }

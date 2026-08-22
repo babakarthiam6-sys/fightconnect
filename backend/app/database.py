@@ -44,10 +44,29 @@ async def disconnect() -> None:
 async def create_indexes(database: AsyncIOMotorDatabase) -> None:
     """Index nécessaires aux requêtes chaudes et à l'unicité de l'email."""
     await database.users.create_index("email", unique=True)
-    await database.sparrings.create_index([("scheduled_at", 1)])
-    await database.sparrings.create_index([("creator_id", 1)])
-    await database.reviews.create_index([("sparring_id", 1)])
+    # La recherche de partenaires filtre sur ces trois champs et ne retient que
+    # les profils disponibles : l'index composé couvre le cas courant.
+    await database.users.create_index([("available", 1), ("style", 1), ("level", 1)])
+    await database.users.create_index([("available", 1), ("city", 1)])
+    await database.bookings.create_index([("requester_id", 1), ("scheduled_at", -1)])
+    await database.bookings.create_index([("partner_id", 1), ("scheduled_at", -1)])
+    # Deux demandes identiques en attente sont un doublon : un double appui sur
+    # « Envoyer » suffit à les produire. Un contrôle lu en amont laisserait
+    # passer deux requêtes simultanées ; l'unicité est donc portée par l'index.
+    # Le filtre partiel la limite aux demandes encore en attente, pour qu'un
+    # créneau refusé ou annulé reste redemandable.
+    await database.bookings.create_index(
+        [("requester_id", 1), ("partner_id", 1), ("scheduled_at", 1)],
+        unique=True,
+        partialFilterExpression={"status": "pending"},
+        name="demande_en_attente_unique",
+    )
+    await database.reviews.create_index([("booking_id", 1)])
     await database.reviews.create_index([("author_id", 1)])
+    # Un fil se lit du plus récent au plus ancien ; la liste des conversations
+    # regroupe sur le même champ.
+    await database.messages.create_index([("conversation_id", 1), ("created_at", -1)])
+    await database.messages.create_index([("recipient_id", 1), ("read", 1)])
     await database.payments.create_index([("user_id", 1), ("created_at", -1)])
     # Le webhook Stripe retrouve un paiement par son identifiant d'intention.
     await database.payments.create_index("payment_intent_id")

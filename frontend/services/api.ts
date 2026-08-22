@@ -153,7 +153,7 @@ function delay(ms: number): Promise<void> {
 
 function shouldRetry(error: AppError, method: string): boolean {
   // On ne rejoue que ce qui est idempotent : rejouer un POST risquerait de
-  // créer deux sparrings ou de débiter deux fois.
+  // créer deux demandes ou de débiter deux fois.
   if (method.toLowerCase() !== 'get') return false;
   return error.isNetworkError || (error.status !== null && error.status >= 500);
 }

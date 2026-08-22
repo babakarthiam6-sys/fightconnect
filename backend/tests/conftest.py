@@ -53,17 +53,40 @@ async def register(
     }
 
 
-def sparring_payload(**overrides: Any) -> dict[str, Any]:
+async def make_partner(
+    http: AsyncClient,
+    email: str = "luis@exemple.com",
+    first_name: str = "Luis",
+    **profile: Any,
+) -> dict[str, Any]:
+    """Crée un compte et le rend réservable : profil sportif complet et disponible."""
+    account = await register(http, email=email, first_name=first_name)
+
     payload = {
-        "title": "Sparring boxe technique",
-        "description": "Séance technique à intensité modérée, gants 14 oz obligatoires.",
-        "location": "Paris 11e",
-        "scheduled_at": "2030-05-12T18:30:00+00:00",
-        "duration_minutes": 90,
-        "level": "intermediate",
+        "city": "Valence",
         "style": "boxing",
-        "price": 25,
-        "max_participants": 4,
+        "level": "amateur",
+        "weight_class": "middleweight",
+        "height_cm": 178,
+        "fights_count": 15,
+        "experience_years": 5,
+        "price_per_round": 20,
+        "bio": "Boxeur amateur, toujours prêt pour un bon sparring.",
+        "available": True,
+    }
+    payload.update(profile)
+
+    response = await http.patch("/api/v1/auth/me", json=payload, headers=account["headers"])
+    assert response.status_code == 200, response.text
+    account["user"] = response.json()
+    return account
+
+
+def booking_payload(partner_id: str, **overrides: Any) -> dict[str, Any]:
+    payload = {
+        "partner_id": partner_id,
+        "scheduled_at": "2030-05-12T18:30:00+00:00",
+        "rounds": 2,
     }
     payload.update(overrides)
     return payload

@@ -7,9 +7,26 @@ from pydantic import BaseModel, EmailStr, Field
 
 Level = str
 Style = str
+WeightClass = str
 
-LEVELS = ("beginner", "intermediate", "advanced", "pro")
+LEVELS = ("beginner", "amateur", "pro")
+
 STYLES = ("boxing", "muay_thai", "kickboxing", "mma", "bjj", "wrestling", "karate", "judo")
+
+# Catégories de poids de la boxe amateur, bornes en kilogrammes. Le libellé
+# affiché vit côté mobile : le serveur ne connaît que l'identifiant.
+WEIGHT_CLASSES = (
+    "flyweight",
+    "bantamweight",
+    "featherweight",
+    "lightweight",
+    "welterweight",
+    "middleweight",
+    "light_heavyweight",
+    "heavyweight",
+)
+
+BOOKING_STATUSES = ("pending", "accepted", "declined", "cancelled", "completed")
 
 
 class SignupRequest(BaseModel):
@@ -31,6 +48,29 @@ class UserSummary(BaseModel):
     last_name: str
     avatar_url: str | None = None
     average_rating: float | None = None
+    city: str | None = None
+    price_per_round: float | None = None
+
+
+class ProfileUpdate(BaseModel):
+    """Modification du profil sportif.
+
+    Tous les champs sont facultatifs : l'écran de profil enregistre un champ à la
+    fois, et un compte tout juste créé n'en a encore aucun.
+    """
+
+    first_name: str | None = Field(default=None, min_length=2, max_length=50)
+    last_name: str | None = Field(default=None, min_length=2, max_length=50)
+    city: str | None = Field(default=None, max_length=80)
+    bio: str | None = Field(default=None, max_length=600)
+    style: Style | None = None
+    level: Level | None = None
+    weight_class: WeightClass | None = None
+    height_cm: int | None = Field(default=None, ge=120, le=250)
+    fights_count: int | None = Field(default=None, ge=0, le=2000)
+    experience_years: int | None = Field(default=None, ge=0, le=80)
+    price_per_round: float | None = Field(default=None, ge=0, le=1000)
+    available: bool | None = None
 
 
 class UserOut(UserSummary):
@@ -38,9 +78,19 @@ class UserOut(UserSummary):
     discharge_accepted: bool
     ratings_count: int = 0
     created_at: str | None = None
-    # Un organisateur ne peut encaisser une séance payante qu'une fois Stripe
-    # en mesure de lui verser l'argent.
+    # Un partenaire ne peut encaisser un sparring payant qu'une fois Stripe en
+    # mesure de lui verser l'argent.
     payouts_enabled: bool = False
+    bio: str | None = None
+    style: str | None = None
+    level: str | None = None
+    weight_class: str | None = None
+    height_cm: int | None = None
+    fights_count: int = 0
+    experience_years: int = 0
+    available: bool = False
+    currency: str = "EUR"
+    expo_push_token: str | None = None
 
 
 class AuthResponse(BaseModel):
@@ -49,45 +99,100 @@ class AuthResponse(BaseModel):
     user: UserOut
 
 
-class SparringCreate(BaseModel):
-    title: str = Field(min_length=5, max_length=80)
-    description: str = Field(min_length=20, max_length=1000)
-    location: str = Field(min_length=3, max_length=120)
-    scheduled_at: str
-    duration_minutes: int = Field(ge=15, le=480)
-    level: Level
-    style: Style
-    price: float = Field(ge=0, le=1000)
-    max_participants: int = Field(ge=2, le=50)
+class PartnerOut(BaseModel):
+    """Fiche publique d'un partenaire : jamais d'email ni de données de compte."""
 
-
-class SparringOut(BaseModel):
     id: str
-    title: str
-    description: str
-    location: str
-    scheduled_at: str
-    duration_minutes: int
-    level: str
-    style: str
-    price: float
-    currency: str
-    max_participants: int
-    participants: list[UserSummary]
-    creator: UserSummary | None
-    status: str
-    created_at: str | None = None
+    first_name: str
+    last_name: str
+    avatar_url: str | None = None
+    average_rating: float | None = None
+    ratings_count: int = 0
+    city: str | None = None
+    bio: str | None = None
+    style: str | None = None
+    level: str | None = None
+    weight_class: str | None = None
+    height_cm: int | None = None
+    fights_count: int = 0
+    experience_years: int = 0
+    price_per_round: float | None = None
+    currency: str = "EUR"
+    available: bool = False
 
 
-class SparringList(BaseModel):
-    items: list[SparringOut]
+class PartnerList(BaseModel):
+    items: list[PartnerOut]
     total: int
     page: int
     limit: int
 
 
+class BookingCreate(BaseModel):
+    partner_id: str
+    scheduled_at: str
+    rounds: int = Field(ge=1, le=20)
+
+
+class BookingOut(BaseModel):
+    id: str
+    requester: UserSummary | None
+    partner: UserSummary | None
+    scheduled_at: str
+    rounds: int
+    price_per_round: float
+    total: float
+    commission: float
+    payout: float
+    currency: str
+    status: str
+    paid: bool = False
+    reviewed: bool = False
+    created_at: str | None = None
+
+
+class BookingList(BaseModel):
+    items: list[BookingOut]
+    total: int
+
+
+class MessageOut(BaseModel):
+    id: str
+    conversation_id: str
+    sender_id: str
+    recipient_id: str
+    author: UserSummary | None
+    content: str
+    read: bool
+    created_at: str | None = None
+
+
+class MessageList(BaseModel):
+    items: list[MessageOut]
+    total: int
+
+
+class ConversationOut(BaseModel):
+    id: str
+    other: UserSummary | None
+    last_message: str
+    last_message_at: str | None
+    unread: int
+
+
+class ConversationList(BaseModel):
+    items: list[ConversationOut]
+    total: int
+
+
+class PushTokenRequest(BaseModel):
+    """Jeton d'appareil pour les notifications. `null` le détache."""
+
+    expo_push_token: str | None = Field(default=None, max_length=200)
+
+
 class PaymentIntentRequest(BaseModel):
-    sparring_id: str
+    booking_id: str
 
 
 class PaymentIntentOut(BaseModel):
@@ -100,8 +205,8 @@ class PaymentIntentOut(BaseModel):
 
 class PaymentOut(BaseModel):
     id: str
-    sparring_id: str | None
-    sparring_title: str | None
+    booking_id: str | None
+    partner_name: str | None
     amount: float
     currency: str
     status: str
@@ -117,21 +222,21 @@ class PaymentList(BaseModel):
 class RevenueStatsOut(BaseModel):
     total_earnings: float
     balance: float
-    completed_sparrings: int
-    total_sparrings: int
+    completed_bookings: int
+    total_bookings: int
     average_rating: float | None
     currency: str
 
 
 class ReviewCreate(BaseModel):
-    sparring_id: str
+    booking_id: str
     rating: int = Field(ge=1, le=5)
     comment: str = Field(min_length=10, max_length=1000)
 
 
 class ReviewOut(BaseModel):
     id: str
-    sparring_id: str
+    booking_id: str
     author: UserSummary | None
     rating: int
     comment: str
@@ -154,7 +259,7 @@ class UserRiskOut(BaseModel):
 
 
 class PayoutStatusOut(BaseModel):
-    """État du compte de versement d'un organisateur."""
+    """État du compte de versement d'un partenaire."""
 
     connected: bool
     details_submitted: bool

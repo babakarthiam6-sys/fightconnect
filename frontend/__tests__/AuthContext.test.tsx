@@ -32,6 +32,18 @@ const USER = {
   ratingsCount: 0,
   createdAt: null,
   payoutsEnabled: false,
+  expoPushToken: null,
+  city: null,
+  bio: null,
+  style: null,
+  level: null,
+  weightClass: null,
+  heightCm: null,
+  fightsCount: 0,
+  experienceYears: 0,
+  pricePerRound: null,
+  currency: 'EUR',
+  available: false,
 };
 
 function Probe() {

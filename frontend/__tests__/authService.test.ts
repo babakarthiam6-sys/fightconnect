@@ -117,14 +117,14 @@ describe('service d’authentification', () => {
   it('efface le cache métier à la déconnexion', async () => {
     await AsyncStorage.multiSet([
       [STORAGE_KEYS.token, 'jwt'],
-      [STORAGE_KEYS.sparringsCache, '[]'],
+      [STORAGE_KEYS.partnersCache, '[]'],
       [STORAGE_KEYS.paymentsCache, '[]'],
     ]);
 
     await authService.logout();
 
     expect(await AsyncStorage.getItem(STORAGE_KEYS.token)).toBeNull();
-    expect(await AsyncStorage.getItem(STORAGE_KEYS.sparringsCache)).toBeNull();
+    expect(await AsyncStorage.getItem(STORAGE_KEYS.partnersCache)).toBeNull();
     expect(mockedSetToken).toHaveBeenCalledWith(null);
   });
 });

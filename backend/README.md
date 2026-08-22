@@ -53,13 +53,15 @@ MONGODB_TEST_URI=mongodb://127.0.0.1:27017 pytest -q
 | Fichier | Couvre |
 | --- | --- |
 | `test_auth.py` | inscription, doublon d'email, décharge obligatoire, connexion, jeton invalide |
-| `test_sparrings.py` | création, filtres, pagination, participation, séance complète, annulation |
+| `test_partners.py` | visibilité d'un profil, filtres, fiche publique sans email |
+| `test_bookings.py` | décompte, cycle de vie d'une demande, droits de chacun |
 | `test_payments.py` | intention de paiement, isolation de l'historique, accès payant, webhook |
-| `test_moderation.py` | droit de laisser un avis, signalement, note de l'organisateur, profil de risque |
+| `test_moderation.py` | droit de laisser un avis, signalement, note du partenaire, profil de risque |
 | `test_revenue.py` | statistiques et commission |
 | `test_config.py` | garde-fous de production et découpage des origines CORS |
 | `test_throttle.py` | blocage après échecs répétés, expiration, isolation entre comptes |
-| `test_integration_mongo.py` | vrai MongoDB : index unique, requêtes, parcours complet, et dix inscriptions simultanées sur une seule place |
+| `test_integration_mongo.py` | vrai MongoDB : index uniques, requêtes, parcours complet, et dix envois simultanés d'une même demande |
+| `test_chat.py` | modération des messages, cloisonnement des fils, non-lus, notifications, WebSocket de bout en bout |
 | `test_payouts.py` | inscription Stripe Connect, resynchronisation, panne de Stripe |
 | `test_webapp.py` | l'application web montée à la racine ne masque ni l'API, ni la documentation |
 
@@ -70,9 +72,13 @@ Après toute modification d'un schéma de sortie, régénérez les réponses de
 référence, sinon le test de contrat validerait un contrat périmé :
 
 ```bash
-uvicorn app.main:app --port 8123        # dans un terminal
-python scripts/capture_fixtures.py      # dans un autre
+python scripts/capture_fixtures.py
 ```
+
+L'API est montée en mémoire sur une base simulée : aucun serveur à lancer,
+aucun MongoDB à installer, ce qui rend la régénération possible depuis
+n'importe quel poste. `--mongodb-uri` bascule sur un vrai serveur quand on veut
+capturer contre le moteur réel.
 
 Le script écrit dans `frontend/__tests__/fixtures/api-responses.json`. Les
 données produites sont entièrement synthétiques.
@@ -86,49 +92,76 @@ Tous préfixés par `/api/v1`.
 | POST | `/auth/signup` | — | Créer un compte (décharge obligatoire) |
 | POST | `/auth/login` | — | Se connecter |
 | GET | `/auth/me` | ✅ | Profil courant |
-| GET | `/sparrings` | — | Liste paginée et filtrable (`search`, `level`, `style`, `min_price`, `max_price`, `creator_id`) |
-| POST | `/sparrings` | ✅ | Publier une séance |
-| GET | `/sparrings/{id}` | — | Détail |
-| POST | `/sparrings/{id}/join` | ✅ | Rejoindre (paiement exigé si payante) |
-| POST | `/sparrings/{id}/cancel` | ✅ | Annuler sa participation |
-| GET | `/sparrings/{id}/reviews` | — | Avis d'une séance |
+| PATCH | `/auth/me` | ✅ | Modifier le profil sportif |
+| GET | `/partners` | ✅ | Recherche filtrable (`style`, `level`, `weight_class`, `city`) |
+| GET | `/partners/{id}` | ✅ | Fiche publique d'un partenaire |
+| POST | `/bookings` | ✅ | Envoyer une demande (partenaire, date, rounds) |
+| GET | `/bookings` | ✅ | Mes demandes (`direction=received\|sent`) |
+| POST | `/bookings/{id}/accept` | ✅ | Le partenaire accepte |
+| POST | `/bookings/{id}/decline` | ✅ | Le partenaire refuse |
+| POST | `/bookings/{id}/cancel` | ✅ | L'une ou l'autre partie annule (remboursement d'abord) |
+| POST | `/bookings/{id}/complete` | ✅ | Clore une séance passée |
+| GET | `/bookings/{id}/reviews` | — | Avis d'une demande |
 | POST | `/payments/create-intent` | ✅ | Créer un PaymentIntent Stripe |
 | GET | `/payments/history` | ✅ | Historique personnel |
 | POST | `/payments/webhook` | — | Évènements Stripe (signature vérifiée) |
-| GET | `/payouts/status` | ✅ | État du compte de versement de l'organisateur |
+| GET | `/payouts/status` | ✅ | État du compte de versement du partenaire |
 | POST | `/payouts/onboarding` | ✅ | Lien d'inscription Stripe Connect |
 | GET | `/revenue/stats` | ✅ | Gains, solde, note moyenne |
 | POST | `/moderation/reviews` | ✅ | Publier un avis (modéré) |
 | GET | `/moderation/user-risk/{id}` | ✅ | Profil de risque |
-| GET | `/moderation/recommendations` | ✅ | Séances suggérées |
+| GET | `/moderation/recommendations` | ✅ | Partenaires suggérés |
+| GET | `/chat/conversations` | ✅ | Un fil par interlocuteur, non-lus compris |
+| GET | `/chat/history/{id}` | ✅ | Fil avec une personne ; le lire le marque lu |
+| PUT | `/chat/push-token` | ✅ | Jeton d'appareil pour les notifications |
+| WS | `/chat/ws?token=…` | ✅ | Discussion temps réel |
 
 ## Choix de conception
 
-- **Une place payante n'est accordée qu'après paiement abouti.** `join` vérifie
-  l'existence d'un paiement `succeeded` non encore consommé, puis le marque
-  consommé. Sans cela, l'endpoint donnerait accès gratuitement à une séance payante.
+- **Le paiement n'est possible qu'après l'accord du partenaire.** Payer une
+  demande encore en attente engagerait l'argent pour une séance qui peut être
+  refusée. Le statut « payée » n'est posé que par le webhook Stripe : l'écran de
+  paiement ne suffit pas, l'utilisateur peut le fermer au mauvais moment.
 - **La clé secrète Stripe ne sort jamais du serveur.** Le mobile ne reçoit qu'un
   `client_secret`, ce qui lui permet d'ouvrir la Payment Sheet sans manipuler de
   données de carte. Un webhook confirme le paiement ; en développement, les
   paiements en attente sont resynchronisés à la lecture de l'historique.
-- **La modération ne bloque jamais la publication.** Si OpenAI est absent ou en
+- **Un message signalé n'est ni enregistré ni transmis**, contrairement à un
+  avis. L'asymétrie est voulue : un avis perdu se réécrit, une transaction
+  sortie de la plateforme ne revient pas. La détection d'esquive de paiement est
+  volontairement prudente — « je n'ai pas de liquide sur moi » suffit à alerter,
+  mais un numéro de téléphone seul, dans « je t'appelle en arrivant », ne
+  déclenche rien.
+- **Le point d'entrée WebSocket reçoit la base par la dépendance**, jamais par un
+  appel direct à `get_database()` : sinon les tests ne peuvent pas la remplacer,
+  et le point d'entrée reste sans couverture.
+- **Une notification part seulement si le destinataire n'est pas connecté.**
+  Recevoir une alerte pour un message qu'on lit à l'écran est le meilleur moyen
+  de faire couper les notifications. Aucun échec d'Expo ne remonte : un message
+  enregistré et transmis ne doit pas échouer parce qu'un tiers est en panne.
+- **La modération ne bloque jamais la publication d'un avis.** Si OpenAI est absent ou en
   panne, une heuristique locale prend le relais : un faux négatif vaut mieux
-  qu'un avis perdu. Un avis signalé n'entre pas dans la note de l'organisateur,
+  qu'un avis perdu. Un avis signalé n'entre pas dans la note du partenaire,
   sinon un commentaire abusif ferait chuter sa moyenne.
 - **Connexion : un seul message d'erreur.** Distinguer « email inconnu » de
   « mot de passe faux » permettrait d'énumérer les comptes existants.
-- **Le statut « complet » est calculé**, jamais stocké : il ne peut pas se
-  désynchroniser du nombre réel de participants.
+- **La fiche publique est construite champ par champ**, jamais par soustraction
+  d'un profil complet : une soustraction laisserait passer tout champ ajouté plus
+  tard, à commencer par l'email.
+- **La commission sort de la part du partenaire**, elle ne s'ajoute pas au total.
+  Un supplément découvert au moment de payer est la première cause d'abandon
+  d'une réservation. Le montant net est figé dans la demande à sa création :
+  recalculer la commission plus tard ferait varier a posteriori ce qui a déjà
+  été facturé si le taux de la plateforme changeait.
 - **Le démarrage tolère une base indisponible** : l'API répond `degraded` sur
   `/health` au lieu de tomber en boucle de redémarrage.
-- **L'inscription à une séance est atomique.** La place est accordée par une
-  écriture conditionnée au nombre de participants au moment exact de l'écriture,
-  et non par un comptage lu en amont : deux requêtes simultanées sur la dernière
-  place ne peuvent pas réussir toutes les deux. Mesuré : sans cette condition,
-  6 des 10 candidats simultanés entrent dans une séance à 2 places ; avec, un
-  seul. Le paiement n'est marqué consommé
-  qu'après l'inscription réussie, pour que le perdant de la course ne perde pas
-  aussi son paiement.
+- **L'unicité d'une demande en attente est portée par l'index**, pas par une
+  lecture préalable. Un double appui sur « Envoyer » suffit à produire deux
+  requêtes simultanées, qui liraient toutes deux « aucune demande en attente »
+  avant que l'une n'écrive. L'index est *partiel*, restreint au statut
+  « pending » : un créneau refusé ou annulé reste redemandable. Le perdant de la
+  course relit le gagnant plutôt que de recevoir une erreur — sa demande est
+  bel et bien partie.
 - **Un organisateur doit pouvoir être payé avant qu'on encaisse.** Réserver une
   séance payante dont l'organisateur n'a pas terminé son inscription Stripe est
   refusé (409). L'inverse — encaisser puis chercher comment reverser — ferait

@@ -14,7 +14,8 @@
     "build:android": "eas build --platform android --profile preview",
     "build:ios": "eas build --platform ios --profile preview",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "build:web": "expo export --platform web --clear --output-dir ../backend/webapp && node scripts/theme-web-shell.mjs ../backend/webapp/index.html"
   },
   "jest": {
     "preset": "jest-expo",
@@ -43,6 +44,7 @@
     "expo-constants": "~15.4.5",
     "expo-font": "~11.10.3",
     "expo-linking": "~6.2.2",
+    "expo-notifications": "^0.27.8",
     "expo-router": "~3.4.8",
     "expo-splash-screen": "~0.26.4",
     "expo-status-bar": "~1.11.1",

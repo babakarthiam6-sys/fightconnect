@@ -99,9 +99,11 @@ const styles = StyleSheet.create({
   },
   field: {
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    // Le champ est plus clair que la carte qui le porte : sur fond sombre c'est
+    // ce contraste-là, et non un contour, qui signale une zone de saisie.
+    backgroundColor: COLORS.surfaceRaised,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     borderWidth: 1.5,
     flexDirection: 'row',
     minHeight: 50,

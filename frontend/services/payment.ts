@@ -11,9 +11,9 @@ export interface HistoryResult {
 
 export const paymentService = {
   /** Crée le PaymentIntent côté backend ; la clé secrète ne transite jamais ici. */
-  async createIntent(sparringId: string): Promise<PaymentIntent> {
+  async createIntent(bookingId: string): Promise<PaymentIntent> {
     const payload = await http.post<unknown>(ENDPOINTS.payments.createIntent, {
-      sparring_id: sparringId,
+      booking_id: bookingId,
     });
     const intent = normalizePaymentIntent(payload);
 

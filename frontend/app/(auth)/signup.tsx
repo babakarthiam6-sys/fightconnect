@@ -208,7 +208,7 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   container: { backgroundColor: COLORS.background, flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: SPACING.xl },
-  title: { ...TYPOGRAPHY.headline, color: COLORS.secondary },
+  title: { ...TYPOGRAPHY.display, color: COLORS.text },
   subtitle: { ...TYPOGRAPHY.body, color: COLORS.textMuted, marginBottom: SPACING.xl, marginTop: SPACING.xs },
   row: { flexDirection: 'row', gap: SPACING.md },
   rowItem: { flex: 1 },

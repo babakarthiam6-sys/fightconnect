@@ -1,20 +1,38 @@
 import { Platform } from 'react-native';
 
+/**
+ * Palette sombre.
+ *
+ * Le fond quasi noir n'est pas une coquetterie : les salles d'entraînement sont
+ * mal éclairées et l'application se consulte au bord du tapis, souvent tard.
+ * L'orange reste la seule couleur vive, ce qui laisse l'œil trouver
+ * immédiatement l'action à faire sur chaque écran.
+ */
 export const COLORS = {
   primary: '#FF6B35',
-  secondary: '#004E89',
+  /** Fond des puces et pastilles orange : l'orange dilué dans le noir du fond. */
+  primarySoft: '#3A1D11',
+  /** Le bleu marine d'origine devient illisible sur fond sombre : on l'éclaircit. */
+  secondary: '#5AA9F5',
+  secondarySoft: '#132638',
   accent: '#F77F00',
-  background: '#FAFAFA',
-  surface: '#FFFFFF',
-  error: '#D62828',
-  success: '#2A9D8F',
-  warning: '#E9C46A',
-  text: '#1A1A1A',
-  textMuted: '#6B7280',
+  background: '#0C0C0E',
+  surface: '#17171B',
+  /** Cartes posées sur une autre carte (statistiques, champs de formulaire). */
+  surfaceRaised: '#202027',
+  error: '#FF5A5A',
+  errorSoft: '#3A1717',
+  success: '#3DD68C',
+  successSoft: '#10301F',
+  warning: '#F2C14E',
+  warningSoft: '#33280D',
+  text: '#FFFFFF',
+  textMuted: '#9A9AA4',
+  /** Texte posé sur un aplat orange ou rouge. */
   textInverse: '#FFFFFF',
-  border: '#E5E7EB',
-  overlay: 'rgba(0, 0, 0, 0.45)',
-  disabled: '#C7CBD1',
+  border: '#26262D',
+  overlay: 'rgba(0, 0, 0, 0.72)',
+  disabled: '#3A3A44',
 } as const;
 
 export const SPACING = {
@@ -27,38 +45,68 @@ export const SPACING = {
 } as const;
 
 export const RADIUS = {
-  sm: 6,
-  md: 10,
+  sm: 8,
+  md: 12,
   lg: 16,
+  xl: 22,
   pill: 999,
 } as const;
 
 export const TYPOGRAPHY = {
+  display: { fontSize: 30, fontWeight: '800' },
   headline: { fontSize: 24, fontWeight: '700' },
   title: { fontSize: 18, fontWeight: '700' },
   subtitle: { fontSize: 16, fontWeight: '600' },
   body: { fontSize: 14, fontWeight: '400' },
-  button: { fontSize: 16, fontWeight: '600' },
+  button: { fontSize: 16, fontWeight: '700' },
   caption: { fontSize: 12, fontWeight: '400' },
 } as const;
 
-/** Ombre portée des cartes, déclinée par plateforme. */
-export const SHADOW = Platform.select({
-  ios: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-  android: { elevation: 3 },
-  default: {},
-}) as object;
+/**
+ * Relief des cartes.
+ *
+ * Une ombre portée ne se voit pas sur un fond noir. Ce qui détache une carte
+ * ici, c'est son fond plus clair que celui de l'écran, souligné d'un filet.
+ * L'ombre native est conservée : elle ajoute une profondeur discrète sur iOS et
+ * Android, où l'écran est physiquement plus contrasté.
+ */
+export const SHADOW = {
+  borderColor: COLORS.border,
+  borderWidth: 1,
+  ...Platform.select({
+    ios: {
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 12,
+    },
+    android: { elevation: 4 },
+    default: {},
+  }),
+} as object;
 
 export const LEVEL_LABELS: Record<string, string> = {
   beginner: 'Débutant',
-  intermediate: 'Intermédiaire',
-  advanced: 'Avancé',
+  amateur: 'Amateur',
   pro: 'Professionnel',
+};
+
+/**
+ * Catégories de poids de la boxe amateur.
+ *
+ * Les bornes font partie du libellé : « Moyen » seul ne dit rien à quelqu'un qui
+ * débute, et c'est précisément la personne qui a le plus besoin de savoir avec
+ * qui elle peut monter sur le ring sans danger.
+ */
+export const WEIGHT_LABELS: Record<string, string> = {
+  flyweight: 'Mouche (−52 kg)',
+  bantamweight: 'Coq (52–57 kg)',
+  featherweight: 'Plume (57–61 kg)',
+  lightweight: 'Léger (61–66 kg)',
+  welterweight: 'Welter (66–70 kg)',
+  middleweight: 'Moyen (70–77 kg)',
+  light_heavyweight: 'Mi-lourd (77–84 kg)',
+  heavyweight: 'Lourd (+84 kg)',
 };
 
 export const STYLE_LABELS: Record<string, string> = {
@@ -73,11 +121,11 @@ export const STYLE_LABELS: Record<string, string> = {
 };
 
 export const STATUS_LABELS: Record<string, string> = {
-  open: 'Ouvert',
-  full: 'Complet',
-  completed: 'Terminé',
-  cancelled: 'Annulé',
   pending: 'En attente',
+  accepted: 'Acceptée',
+  declined: 'Refusée',
+  completed: 'Terminée',
+  cancelled: 'Annulée',
   processing: 'En cours',
   succeeded: 'Payé',
   failed: 'Échoué',

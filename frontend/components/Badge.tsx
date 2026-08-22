@@ -13,12 +13,12 @@ interface Props {
 }
 
 const TONES: Record<Tone, { background: string; text: string }> = {
-  neutral: { background: '#EEF1F4', text: COLORS.textMuted },
-  primary: { background: '#FFEDE5', text: COLORS.primary },
-  secondary: { background: '#E3EDF6', text: COLORS.secondary },
-  success: { background: '#E3F3F1', text: COLORS.success },
-  warning: { background: '#FBF3DF', text: '#9A7B12' },
-  danger: { background: '#FBE4E4', text: COLORS.error },
+  neutral: { background: COLORS.surfaceRaised, text: COLORS.textMuted },
+  primary: { background: COLORS.primarySoft, text: COLORS.primary },
+  secondary: { background: COLORS.secondarySoft, text: COLORS.secondary },
+  success: { background: COLORS.successSoft, text: COLORS.success },
+  warning: { background: COLORS.warningSoft, text: COLORS.warning },
+  danger: { background: COLORS.errorSoft, text: COLORS.error },
 };
 
 export function Badge({ label, tone = 'neutral', icon }: Props) {

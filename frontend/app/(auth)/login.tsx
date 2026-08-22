@@ -56,7 +56,9 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.logo}>FIGHT<Text style={styles.logoAccent}>CONNECT</Text></Text>
+          <Text style={styles.logo}>
+            Fight<Text style={styles.logoAccent}>Connect</Text>
+          </Text>
           <Text style={styles.tagline}>Trouvez votre prochain partenaire de sparring.</Text>
         </View>
 
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
   container: { backgroundColor: COLORS.background, flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: SPACING.xl },
   header: { marginBottom: SPACING.xxl },
-  logo: { ...TYPOGRAPHY.headline, color: COLORS.secondary, fontSize: 32, letterSpacing: 1 },
+  logo: { ...TYPOGRAPHY.display, color: COLORS.text, fontSize: 34 },
   logoAccent: { color: COLORS.primary },
   tagline: { ...TYPOGRAPHY.body, color: COLORS.textMuted, marginTop: SPACING.sm },
   footer: {

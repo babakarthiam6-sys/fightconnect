@@ -58,9 +58,19 @@ une erreur explicite au lieu de planter.
 Le même code produit une application web, servie par l'API elle-même :
 
 ```bash
-EXPO_PUBLIC_API_BASE_URL=/api/v1 npx expo export --platform web --clear \
-  --output-dir ../backend/webapp
+npm run build:web
 ```
+
+L'adresse de l'API n'a pas à être fournie : servi par le même hôte que l'API,
+l'export web vise `window.location.origin`. Renseigner
+`EXPO_PUBLIC_API_BASE_URL` reste possible et prioritaire, pour pointer un build
+vers une API distincte.
+
+La commande enchaîne l'export Expo et `scripts/theme-web-shell.mjs`, qui applique
+le fond sombre au document HTML : Expo génère lui-même cet `index.html` quand
+`web.output` vaut « single » et ignore `app/+html.tsx` dans ce mode. Sans cette
+étape, la page reste blanche derrière l'application — un éclair blanc au
+chargement, et une barre d'adresse claire sur iOS.
 
 Deux composants ne peuvent pas exister tels quels dans un navigateur et ont une
 variante web :
@@ -73,7 +83,7 @@ variante web :
   `DateTimeField.web.tsx` utilise le champ `datetime-local` du navigateur, qui
   ouvre au passage le sélecteur du système sur iOS et Android.
 
-Le reste fonctionne à l'identique : comptes, séances, participation, avis.
+Le reste fonctionne à l'identique : comptes, recherche, demandes, avis.
 
 ## Structure
 
@@ -81,12 +91,16 @@ Le reste fonctionne à l'identique : comptes, séances, participation, avis.
 frontend/
 ├── app/                    # routes expo-router
 │   ├── (auth)/             # signup, login, discharge (modale)
-│   ├── (tabs)/             # home, sparrings, payments, profile
-│   ├── sparring/           # [id] (détail), create (modale)
+│   ├── (tabs)/             # search, bookings, profile
+│   ├── partner/            # [id] — fiche publique d'un partenaire
+│   ├── booking/            # [id] — réserver ; pay/[id] — payer
+│   ├── chat/               # index (conversations), [id] (fil)
+│   ├── payments.tsx        # historique, atteint depuis le profil
 │   ├── _layout.tsx         # providers + garde d'authentification
 │   └── index.tsx           # redirection selon la session
 ├── components/             # UI réutilisable (cartes, formulaires, états)
-├── services/               # api, auth, sparring, payment, revenue, moderation
+├── services/               # api, auth, partner, booking, chat, payment, revenue, moderation
+├── hooks/                  # fil temps réel, jeton de notification
 ├── context/                # AuthContext, AppContext
 ├── store/                  # filtres et décharge (zustand)
 ├── constants/              # endpoints, config, thème
@@ -99,8 +113,10 @@ frontend/
 ## Endpoints consommés
 
 `POST /auth/signup` · `POST /auth/login` · `GET /auth/me` ·
-`GET|POST /sparrings` · `GET /sparrings/{id}` · `POST /sparrings/{id}/join` ·
-`POST /sparrings/{id}/cancel` · `GET /sparrings/{id}/reviews` ·
+`PATCH /auth/me` · `GET /partners` · `GET /partners/{id}` ·
+`GET|POST /bookings` · `POST /bookings/{id}/accept|decline|cancel|complete` ·
+`GET /bookings/{id}/reviews` · `GET /chat/conversations` ·
+`GET /chat/history/{id}` · `PUT /chat/push-token` · `WS /chat/ws` ·
 `POST /payments/create-intent` · `GET /payments/history` · `GET /revenue/stats` ·
 `POST /moderation/reviews` · `GET /moderation/user-risk/{user_id}` ·
 `GET /moderation/recommendations`
@@ -115,27 +131,30 @@ l'app sur une autre implémentation du même contrat sans toucher aux écrans.
 
 - **Auto-login** : le JWT est relu au démarrage ; un `401` sur n'importe quelle requête
   purge la session et renvoie vers l'écran de connexion.
-- **Hors ligne** : `NetInfo` alimente un bandeau global ; sparrings, paiements et stats
-  servent leur dernier cache disque plutôt qu'un écran vide.
+- **Hors ligne** : `NetInfo` alimente un bandeau global ; partenaires, paiements et
+  statistiques servent leur dernier cache disque plutôt qu'un écran vide.
 - **Retry** : backoff exponentiel (2 tentatives) sur erreur réseau ou 5xx, uniquement
   sur les `GET` — rejouer un `POST` créerait un doublon ou un double débit.
 - **États** : chaque écran gère chargement, erreur (avec relance) et vide.
 
 ## Qualité
 
-115 tests répartis en 12 suites, tous verts :
+145 tests répartis en 15 suites, tous verts :
 
 | Suite | Ce qu'elle couvre |
 | --- | --- |
 | `validation` / `formatting` / `normalize` | règles de saisie, affichage FR, tolérance du contrat API |
 | `api` | messages d'erreur FastAPI, et la politique de réessai (GET seulement) |
 | `authService` | variantes de token, restauration hors ligne, purge sur 401 |
-| `sparringService` | écriture et lecture du cache, filtrage local hors ligne, filtre organisateur |
+| `partnerService` | traduction des filtres, cache hors ligne, corps des demandes |
 | `AuthContext` | démarrage, connexion, déconnexion, 401 venu de l'intercepteur |
-| `components` | `Button`, `SparringCard`, `RatingStars`, `UserProfile` |
+| `components` | `Button`, `PartnerCard`, `BookingCard`, `RatingStars`, `UserProfile` |
 | `PaymentForm` | PaymentIntent → Payment Sheet, annulation, carte refusée, clé absente |
 | `loginScreen` | validation du formulaire et normalisation de l'email |
-| `payout` | inscription Stripe des organisateurs, états de la carte, erreurs |
+| `payout` | inscription Stripe des partenaires, états de la carte, erreurs |
+| `config` | l'export web vise l'origine qui le sert, jamais un domaine figé |
+| `commission` | le taux affiché est celui que le serveur applique |
+| `chat` | adresse du WebSocket, normalisation des messages, jeton d'appareil |
 | `contract` | les normaliseurs face aux **vraies** réponses de l'API (voir ci-dessous) |
 
 ```bash
@@ -151,15 +170,14 @@ npm run build:android / build:ios   # EAS (profil preview)
 
 Les autres suites utilisent des payloads écrits à la main : ils décrivent ce que
 l'on *croit* que l'API renvoie. `__tests__/contract.test.ts` fait tourner les
-normaliseurs sur des réponses réellement capturées sur l'API de `backend/`,
-tournant contre un vrai MongoDB. Un champ renommé côté serveur casse donc un
-test, au lieu de casser en silence dans l'application.
+normaliseurs sur des réponses réellement capturées sur l'API de `backend/`. Un
+champ renommé côté serveur casse donc un test, au lieu de casser en silence dans
+l'application.
 
-Les fixtures se régénèrent depuis le backend :
+Les fixtures se régénèrent depuis le backend, sans rien installer :
 
 ```bash
-cd backend && uvicorn app.main:app --port 8123      # dans un terminal
-python scripts/capture_fixtures.py                   # dans un autre
+cd backend && python scripts/capture_fixtures.py
 ```
 
 La CI (`.github/workflows/frontend.yml`) rejoue lint, types, tests et un bundle

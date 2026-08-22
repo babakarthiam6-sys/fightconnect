@@ -9,6 +9,7 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import { ToastProvider } from 'react-native-toast-notifications';
 
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { usePushToken } from '@/hooks/usePushToken';
 import { AppProvider } from '@/context/AppContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { COLORS } from '@/constants/theme';
@@ -34,16 +35,17 @@ function useAuthRedirect() {
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)/login');
+      router.replace('/(auth)/welcome');
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)/search');
     }
   }, [isAuthenticated, isBootstrapping, router, segments]);
 }
 
 function RootNavigator() {
-  const { isBootstrapping } = useAuth();
+  const { isAuthenticated, isBootstrapping } = useAuth();
   useAuthRedirect();
+  usePushToken(isAuthenticated);
 
   useEffect(() => {
     if (!isBootstrapping) {
@@ -62,8 +64,8 @@ function RootNavigator() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: COLORS.surface },
-        headerTintColor: COLORS.secondary,
+        headerStyle: { backgroundColor: COLORS.background },
+        headerTintColor: COLORS.text,
         headerTitleStyle: { fontWeight: '700' },
         contentStyle: { backgroundColor: COLORS.background },
       }}
@@ -71,14 +73,18 @@ function RootNavigator() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="partner/[id]" options={{ title: 'Profil du partenaire' }} />
       <Stack.Screen
-        name="sparring/[id]"
-        options={{ title: 'Détail du sparring', presentation: 'card' }}
+        name="booking/[id]"
+        options={{ title: 'Réserver', presentation: 'card' }}
       />
       <Stack.Screen
-        name="sparring/create"
-        options={{ title: 'Nouveau sparring', presentation: 'modal' }}
+        name="booking/pay/[id]"
+        options={{ title: 'Paiement', presentation: 'card' }}
       />
+      <Stack.Screen name="payments" options={{ title: 'Mes paiements' }} />
+      <Stack.Screen name="chat/index" options={{ title: 'Messages' }} />
+      <Stack.Screen name="chat/[id]" options={{ title: 'Conversation' }} />
     </Stack>
   );
 }
@@ -111,7 +117,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ToastProvider
           placement="top"
-          offsetTop={60}
+          // Assez bas pour ne pas masquer le sélecteur « Reçues / Envoyées »,
+          // qui se trouve juste sous le titre des écrans.
+          offsetTop={110}
           duration={3000}
           animationType="slide-in"
           successColor={COLORS.success}
@@ -119,7 +127,7 @@ export default function RootLayout() {
           warningColor={COLORS.warning}
         >
           <Providers>
-            <StatusBar style="dark" />
+            <StatusBar style="light" />
             <RootNavigator />
           </Providers>
         </ToastProvider>
