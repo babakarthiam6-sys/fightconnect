@@ -89,6 +89,10 @@ def serialize_partner(document: dict[str, Any]) -> dict[str, Any]:
         "ratings_count": int(document.get("ratings_count", 0)),
         "city": document.get("city"),
         "price_per_round": _price(document),
+        # Seul champ de compte qui traverse : il ne dit rien de la personne, il
+        # dit si une séance avec elle sera payable. L'écran a besoin de le
+        # savoir avant que la demande ne parte.
+        "payouts_enabled": bool(document.get("stripe_payouts_enabled", False)),
         **_sport_profile(document),
     }
 

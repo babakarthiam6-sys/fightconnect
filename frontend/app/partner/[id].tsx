@@ -13,6 +13,7 @@ import { partnerService } from '@/services/partner';
 import {
   formatLevel,
   formatPrice,
+  formatRating,
   formatStyle,
   formatUserName,
   formatWeightClass,
@@ -62,9 +63,13 @@ export default function PartnerScreen() {
           </View>
 
           <View style={styles.ratingRow}>
-            <RatingStars value={partner.averageRating ?? 0} size={16} />
+            <RatingStars
+              value={partner.averageRating ?? 0}
+              size={16}
+              ratingsCount={partner.ratingsCount}
+            />
             <Text style={styles.ratingLabel}>
-              {isNew ? 'Nouveau' : partner.averageRating?.toFixed(1)}
+              {isNew ? 'Nouveau' : formatRating(partner.averageRating)}
             </Text>
             <Text style={styles.meta}>
               ({partner.ratingsCount} avis)
@@ -123,9 +128,20 @@ export default function PartnerScreen() {
             testID="partner-book"
           />
         </View>
+        {/*
+          Deux avertissements, jamais ensemble : une mise en pause interdit la
+          demande, un compte de versement absent ne l'interdit pas — elle partira
+          et pourra être acceptée. Mais elle ne sera pas payable, et l'apprendre
+          au moment de payer est le pire moment.
+        */}
         {!partner.available ? (
           <Text style={styles.unavailable}>
             Ce partenaire s’est mis en pause. Il n’accepte pas de demande pour l’instant.
+          </Text>
+        ) : !partner.payoutsEnabled ? (
+          <Text style={styles.unavailable} testID="partner-no-payouts">
+            Ce partenaire n’a pas encore activé les paiements. Vous pouvez lui écrire, mais la
+            séance ne sera pas payable tant qu’il ne l’a pas fait.
           </Text>
         ) : null}
       </View>

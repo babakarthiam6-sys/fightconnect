@@ -117,3 +117,47 @@ async def test_se_rendre_disponible_sans_tarif_est_refuse(client):
     )
 
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_la_fiche_dit_si_le_partenaire_peut_etre_paye(client, database):
+    """L'écran de réservation doit prévenir avant que la demande ne parte.
+
+    Sans cette information sur la fiche publique, le blocage n'arrive qu'au
+    moment de payer : la demande est déjà envoyée, déjà acceptée, et c'est le
+    pire moment pour l'apprendre.
+    """
+    luis = await make_partner(client)
+    chercheur = await register(client, email="chercheur@exemple.com", first_name="Ana")
+
+    avant = await client.get(
+        f"/api/v1/partners/{luis['user']['id']}", headers=chercheur["headers"]
+    )
+    assert avant.status_code == 200
+    assert avant.json()["payouts_enabled"] is False
+
+    await database.users.update_one(
+        {"email": "luis@exemple.com"}, {"$set": {"stripe_payouts_enabled": True}}
+    )
+
+    apres = await client.get(
+        f"/api/v1/partners/{luis['user']['id']}", headers=chercheur["headers"]
+    )
+    assert apres.json()["payouts_enabled"] is True
+
+
+@pytest.mark.asyncio
+async def test_la_fiche_publique_ne_laisse_pas_passer_l_email(client):
+    """Le champ ajouté ci-dessus ne doit pas avoir ouvert la porte au reste."""
+    luis = await make_partner(client)
+    chercheur = await register(client, email="chercheur@exemple.com", first_name="Ana")
+
+    fiche = await client.get(
+        f"/api/v1/partners/{luis['user']['id']}", headers=chercheur["headers"]
+    )
+
+    corps = fiche.json()
+    assert "email" not in corps
+    assert "luis@exemple.com" not in fiche.text
+    assert "expo_push_token" not in corps
+    assert "discharge_accepted" not in corps

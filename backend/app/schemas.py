@@ -119,6 +119,10 @@ class PartnerOut(BaseModel):
     price_per_round: float | None = None
     currency: str = "EUR"
     available: bool = False
+    # Stripe accepte de verser l'argent à cette personne. Exposé sur la fiche
+    # publique pour que l'écran de réservation prévienne avant la demande, et
+    # non au moment de payer — le pire moment pour l'apprendre.
+    payouts_enabled: bool = False
 
 
 class PartnerList(BaseModel):

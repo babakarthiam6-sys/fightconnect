@@ -9,19 +9,46 @@ function toDate(value: string | number | Date | null | undefined): Date | null {
   return isValid(date) ? date : null;
 }
 
-/** « 1 250,00 € ». Le montant est attendu en unité majeure, pas en centimes. */
-export function formatPrice(amount: number | null | undefined, currency = 'EUR'): string {
+export interface PriceOptions {
+  /**
+   * Force les centimes : « 6,00 € » plutôt que « 6 € ».
+   *
+   * Utile pour les montants dérivés d'un calcul — commission, part du
+   * partenaire — que l'on aligne les uns sous les autres : un « 6 € » au milieu
+   * de « 34,00 € » se lit comme une inattention.
+   */
+  cents?: boolean;
+  /** Préfixe le montant d'un signe moins : « −6,00 € ». */
+  negative?: boolean;
+}
+
+/**
+ * « 1 250,00 € ». Le montant est attendu en unité majeure, pas en centimes.
+ *
+ * Seule fonction d'affichage des prix de l'application : virgule décimale et
+ * espace insécable avant le symbole, partout et sans exception.
+ */
+export function formatPrice(
+  amount: number | null | undefined,
+  currency = 'EUR',
+  options: PriceOptions = {},
+): string {
   const safe = typeof amount === 'number' && Number.isFinite(amount) ? amount : 0;
+  const decimals = options.cents || !Number.isInteger(safe) ? 2 : 0;
+  let rendu: string;
   try {
-    return new Intl.NumberFormat('fr-FR', {
+    rendu = new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: currency || 'EUR',
-      minimumFractionDigits: Number.isInteger(safe) ? 0 : 2,
+      minimumFractionDigits: decimals,
       maximumFractionDigits: 2,
     }).format(safe);
   } catch {
-    return `${safe.toFixed(2)} ${currency}`;
+    rendu = `${safe.toFixed(decimals).replace('.', ',')}\u00a0${currency}`;
   }
+  // « − » (U+2212) et non le trait d'union : c'est le signe moins typographique,
+  // et il se distingue du tiret des plages de poids affichées ailleurs.
+  return options.negative && safe !== 0 ? `\u2212${rendu}` : rendu;
 }
 
 /** « lun. 12 mai 2025 à 18:30 ». */

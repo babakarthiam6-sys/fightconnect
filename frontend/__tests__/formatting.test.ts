@@ -58,3 +58,33 @@ describe('formatage', () => {
     expect(truncate('phrase beaucoup trop longue', 10)).toHaveLength(10);
   });
 });
+
+describe('formatPrice, seule fonction d’affichage des prix', () => {
+  /** Les espaces insécables de `Intl` rendent les comparaisons brutes illisibles. */
+  const lisible = (texte: string) => texte.replace(/[\u00a0\u202f\u2009]/g, ' ');
+
+  it('écrit un montant rond sans centimes', () => {
+    expect(lisible(formatPrice(40))).toBe('40 €');
+  });
+
+  it('force les centimes à la demande', () => {
+    expect(lisible(formatPrice(6, 'EUR', { cents: true }))).toBe('6,00 €');
+    expect(lisible(formatPrice(34, 'EUR', { cents: true }))).toBe('34,00 €');
+  });
+
+  it('signe un montant retenu', () => {
+    expect(lisible(formatPrice(9, 'EUR', { cents: true, negative: true }))).toBe('−9,00 €');
+  });
+
+  it('ne signe pas un zéro : « −0,00 € » n’a pas de sens', () => {
+    expect(lisible(formatPrice(0, 'EUR', { cents: true, negative: true }))).toBe('0,00 €');
+  });
+
+  it('n’écrit jamais un prix avec un point décimal', () => {
+    for (const montant of [0, 6, 9.5, 34.25, 40, 1250.5]) {
+      for (const options of [{}, { cents: true }, { cents: true, negative: true }]) {
+        expect(formatPrice(montant, 'EUR', options)).not.toContain('.');
+      }
+    }
+  });
+});

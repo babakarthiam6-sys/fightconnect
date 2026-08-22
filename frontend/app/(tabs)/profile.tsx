@@ -155,7 +155,11 @@ export default function ProfileScreen() {
           <Text style={styles.email}>{user.email}</Text>
 
           <View style={styles.ratingRow}>
-            <RatingStars value={user.averageRating ?? 0} size={15} />
+            <RatingStars
+              value={user.averageRating ?? 0}
+              size={15}
+              ratingsCount={user.ratingsCount}
+            />
             <Text style={styles.ratingLabel}>
               {isNew ? 'Nouveau' : user.averageRating?.toFixed(1)}
             </Text>

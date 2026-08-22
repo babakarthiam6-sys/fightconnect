@@ -15,6 +15,7 @@ const PARTNER: Partner = {
   avatarUrl: null,
   averageRating: null,
   ratingsCount: 0,
+  payoutsEnabled: true,
   city: 'Valence',
   bio: 'Boxeur amateur.',
   style: 'muay_thai',

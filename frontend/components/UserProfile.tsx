@@ -36,7 +36,7 @@ export function UserProfile({ user, riskProfile, showEmail = true }: Props) {
       {showEmail && user.email ? <Text style={styles.email}>{user.email}</Text> : null}
 
       <View style={styles.ratingRow}>
-        <RatingStars value={user.averageRating ?? 0} size={18} />
+        <RatingStars value={user.averageRating ?? 0} size={18} ratingsCount={user.ratingsCount} />
         <Text style={styles.ratingText}>
           {formatRating(user.averageRating)}
           {user.ratingsCount > 0 ? ` (${user.ratingsCount} avis)` : ' (aucun avis)'}

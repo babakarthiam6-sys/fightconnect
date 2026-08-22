@@ -193,6 +193,7 @@ export function normalizePartner(input: unknown): Partner {
     avatarUrl: optionalStr(raw, ['avatar_url', 'avatarUrl', 'avatar']),
     averageRating: optionalNum(raw, ['average_rating', 'averageRating', 'rating']),
     ratingsCount: num(raw, ['ratings_count', 'ratingsCount', 'reviews_count'], 0),
+    payoutsEnabled: bool(raw, ['payouts_enabled', 'payoutsEnabled']),
     ...normalizeSportProfile(raw),
   };
 }

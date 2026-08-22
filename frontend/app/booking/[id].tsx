@@ -21,6 +21,11 @@ import type { AppError, Partner } from '@/types';
 const MIN_ROUNDS = 1;
 const MAX_ROUNDS = 20;
 
+/** « round » au singulier, « rounds » au-delà. Un seul endroit pour la règle. */
+function plural(rounds: number): string {
+  return rounds > 1 ? 'rounds' : 'round';
+}
+
 export default function BookingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -65,10 +70,8 @@ export default function BookingScreen() {
   // prélevée sur la part du partenaire, elle ne s'ajoute pas au total.
   const quote = useMemo(() => {
     const total = pricePerRound * rounds;
-    return {
-      total,
-      commission: Math.round(total * CONFIG.commissionRate * 100) / 100,
-    };
+    const commission = Math.round(total * CONFIG.commissionRate * 100) / 100;
+    return { total, commission, payout: Math.round((total - commission) * 100) / 100 };
   }, [pricePerRound, rounds]);
 
   const submit = useCallback(async () => {
@@ -132,7 +135,7 @@ export default function BookingScreen() {
 
           <View style={styles.roundsBlock}>
             <Text style={styles.rounds}>{rounds}</Text>
-            <Text style={styles.meta}>round{rounds > 1 ? 's' : ''}</Text>
+            <Text style={styles.meta}>{plural(rounds)}</Text>
           </View>
 
           <Pressable
@@ -153,9 +156,16 @@ export default function BookingScreen() {
 
         <Text style={styles.sectionTitle}>Récapitulatif</Text>
         <View style={styles.summary}>
+          {/*
+            L'ordre des trois premières lignes raconte le trajet de l'argent : ce
+            qui est payé, ce que la plateforme retient, ce qu'il reste au
+            partenaire. Le total ne vient qu'après le trait, et il est égal à la
+            première ligne — sans quoi le lecteur additionne le tarif et la
+            commission et croit à une erreur.
+          */}
           <View style={styles.summaryRow}>
             <Text style={styles.meta}>
-              {rounds} round{rounds > 1 ? 's' : ''} × {formatPrice(pricePerRound, partner.currency)}
+              {rounds} {plural(rounds)} × {formatPrice(pricePerRound, partner.currency)}
             </Text>
             <Text style={styles.summaryValue}>{formatPrice(quote.total, partner.currency)}</Text>
           </View>
@@ -164,21 +174,30 @@ export default function BookingScreen() {
             <Text style={styles.meta}>
               Commission plateforme ({Math.round(CONFIG.commissionRate * 100)} %)
             </Text>
-            <Text style={styles.summaryValue}>
-              {formatPrice(quote.commission, partner.currency)}
+            <Text style={styles.summaryValue} testID="booking-commission">
+              {formatPrice(quote.commission, partner.currency, { cents: true, negative: true })}
             </Text>
           </View>
 
-          <Text style={styles.note}>
-            La commission est prélevée sur la part du partenaire. Vous payez le tarif annoncé,
-            sans supplément.
-          </Text>
+          <View style={styles.summaryRow}>
+            <Text style={styles.meta}>Le partenaire reçoit</Text>
+            <Text style={styles.summaryValue} testID="booking-payout">
+              {formatPrice(quote.payout, partner.currency, { cents: true })}
+            </Text>
+          </View>
 
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total à payer</Text>
-            <Text style={styles.total}>{formatPrice(quote.total, partner.currency)}</Text>
+            <Text style={styles.total} testID="booking-total">
+              {formatPrice(quote.total, partner.currency)}
+            </Text>
           </View>
         </View>
+
+        <Text style={styles.note}>
+          La commission est prélevée sur la part du partenaire. Vous payez le tarif annoncé,
+          sans supplément.
+        </Text>
       </ScrollView>
 
       <View style={styles.footer}>
@@ -239,7 +258,7 @@ const styles = StyleSheet.create({
   },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryValue: { ...TYPOGRAPHY.body, color: COLORS.text },
-  note: { ...TYPOGRAPHY.caption, color: COLORS.textMuted, lineHeight: 16 },
+  note: { ...TYPOGRAPHY.caption, color: COLORS.textMuted, lineHeight: 16, marginTop: SPACING.md },
   totalRow: {
     borderTopColor: COLORS.border,
     borderTopWidth: 1,

@@ -92,6 +92,8 @@ export interface Partner extends SportProfile {
   avatarUrl: string | null;
   averageRating: number | null;
   ratingsCount: number;
+  /** Stripe accepte de verser l'argent des séances à cette personne. */
+  payoutsEnabled: boolean;
 }
 
 export interface Booking {
