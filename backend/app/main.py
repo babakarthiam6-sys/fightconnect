@@ -8,7 +8,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.database import connect, disconnect, ping
 from app.i18n import choisir_langue, definir_langue
-from app.routers import auth, bookings, chat, moderation, partners, payments, payouts, revenue
+from app.routers import (
+    admin,
+    auth,
+    bookings,
+    chat,
+    moderation,
+    partners,
+    payments,
+    payouts,
+    revenue,
+)
 from app.webapp import is_web_app_available, mount_web_app
 
 API_PREFIX = "/api/v1"
@@ -66,6 +76,12 @@ def create_app() -> FastAPI:
         moderation.router,
     ):
         app.include_router(router, prefix=API_PREFIX)
+
+    # La fenêtre de surveillance n'existe que si un jeton est configuré. Monter
+    # les routes puis vérifier le jeton à l'intérieur reviendrait au même en
+    # théorie ; en pratique, une porte absente ne s'ouvre pas par oubli.
+    if settings.admin_token:
+        app.include_router(admin.router, prefix=API_PREFIX)
 
     web_disponible = is_web_app_available(settings.web_dir)
 

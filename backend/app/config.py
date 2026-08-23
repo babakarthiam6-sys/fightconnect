@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     currency: str = "eur"
 
+    # Jeton de la fenêtre de surveillance. Vide — c'est la valeur par défaut —
+    # les routes d'administration n'existent tout simplement pas : mieux vaut
+    # une fonctionnalité absente qu'une porte ouverte parce qu'on a oublié de
+    # définir une variable.
+    admin_token: str = ""
+
     # --- Modération IA ---
     openai_api_key: str = ""
     openai_moderation_model: str = "omni-moderation-latest"

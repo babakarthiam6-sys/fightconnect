@@ -18,11 +18,11 @@ qui n'existe plus. En cas de doute entre la carte et le code, **le code fait foi
 
 ```bash
 # Backend (depuis backend/)
-pytest                     # 105 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
+pytest                     # 143 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
-npm test                   # 145 tests
+npm test                   # 176 tests
 npm run typecheck && npm run lint
 npm run build:web           # export web + thème sombre de la coquille HTML
 ```
@@ -57,10 +57,35 @@ au total payé. Une discussion permet de caler les détails ; elle est modérée
 - Le point d'entrée WebSocket reçoit la base **par la dépendance**, jamais par un
   appel direct à `get_database()`. Sans cela il n'est pas testable, et il ne
   l'était pas.
+- Les textes de l'application vivent dans `frontend/i18n/fr.ts`, et `en.ts` en
+  est typé comme une copie exacte : oublier une traduction fait échouer `tsc`.
+  Une phrase écrite en dur dans un écran ne se voit pas, et ne se traduit jamais.
+- Les listes d'identifiants — disciplines, niveaux, poids, pays, devises —
+  existent des deux côtés parce que l'étape Docker ne copie que `backend/` dans
+  l'image finale : un fichier commun à la racine n'y serait pas.
+  `frontend/__tests__/sports.test.ts` compare les deux et échoue si l'un bouge
+  sans l'autre.
+- `to_minor_units` prend la devise : le yen et le franc CFA n'ont pas de
+  subdivision. Multiplier par cent sans regarder ferait facturer mille yens
+  cent mille.
+- Les pays où Stripe verse de l'argent sont **demandés à Stripe**, jamais
+  recopiés : sa couverture s'étend, et une liste figée refuserait en silence un
+  pays devenu possible.
+- Les routes de surveillance (`/api/v1/admin/*`) ne sont montées que si
+  `ADMIN_TOKEN` est défini, ne renvoient que des compteurs, et n'écrivent
+  jamais. `backend/tests/test_admin.py` vérifie qu'aucune donnée personnelle
+  n'en sort.
 - Le taux de commission vit à deux endroits (`backend/app/config.py` et
   `frontend/constants/config.ts`) parce que l'écran de réservation affiche le
   décompte avant que la demande n'existe. `frontend/__tests__/commission.test.ts`
   échoue si les deux divergent.
+
+## Surveillance
+
+`tools/fightconnect_mcp.py` est un serveur MCP sans dépendance qui expose trois
+outils en lecture seule : `sante`, `apercu`, `routes`. Il se branche à Claude
+Code ou à l'application Claude et lit la production directement. Voir l'en-tête
+du fichier pour la configuration.
 
 ## graphify
 
