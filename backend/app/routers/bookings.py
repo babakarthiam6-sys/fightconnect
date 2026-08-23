@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
 
+from app.i18n import t
 from app.config import get_settings
 from app.dependencies import CurrentUser, Database
 from app.repositories import expand_booking, expand_bookings
@@ -18,7 +19,7 @@ from app.services.payments import refund_payment
 router = APIRouter(prefix="/bookings", tags=["réservations"])
 
 NOT_FOUND = HTTPException(
-    status_code=status.HTTP_404_NOT_FOUND, detail="Demande introuvable."
+    status_code=status.HTTP_404_NOT_FOUND, detail=t("demande.introuvable")
 )
 
 
@@ -28,7 +29,7 @@ def parse_scheduled_at(value: str) -> datetime:
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Date invalide : format ISO 8601 attendu.",
+            detail=t("demande.date_invalide"),
         ) from error
 
     if parsed.tzinfo is None:
@@ -36,7 +37,7 @@ def parse_scheduled_at(value: str) -> datetime:
     if parsed <= datetime.now(timezone.utc):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="La séance doit être programmée dans le futur.",
+            detail=t("demande.date_passee"),
         )
     return parsed
 
@@ -88,22 +89,22 @@ async def create_booking(
     partner_id = to_object_id(payload.partner_id)
     partner = await database.users.find_one({"_id": partner_id}) if partner_id else None
     if partner is None:
-        raise HTTPException(status_code=404, detail="Partenaire introuvable.")
+        raise HTTPException(status_code=404, detail=t("partenaire.introuvable"))
 
     if partner["_id"] == current_user["_id"]:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="On ne peut pas se réserver soi-même.",
+            detail=t("demande.soi_meme"),
         )
     if not partner.get("available"):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Ce partenaire n’est pas disponible en ce moment.",
+            detail=t("demande.partenaire_indisponible"),
         )
     if partner.get("price_per_round") is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Ce partenaire n’a pas encore fixé son tarif.",
+            detail=t("demande.tarif_absent"),
         )
 
     scheduled_at = parse_scheduled_at(payload.scheduled_at)
@@ -182,9 +183,9 @@ async def _transition(
 async def accept(booking_id: str, database: Database, current_user: CurrentUser) -> dict[str, Any]:
     booking = await fetch_booking(database, booking_id)
     if booking["partner_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Cette demande ne vous est pas adressée.")
+        raise HTTPException(status_code=403, detail=t("demande.pas_pour_vous"))
     if booking.get("status") != "pending":
-        raise HTTPException(status_code=409, detail="Cette demande a déjà été traitée.")
+        raise HTTPException(status_code=409, detail=t("demande.deja_traitee"))
     return await _transition(database, booking, "accepted")
 
 
@@ -192,9 +193,9 @@ async def accept(booking_id: str, database: Database, current_user: CurrentUser)
 async def decline(booking_id: str, database: Database, current_user: CurrentUser) -> dict[str, Any]:
     booking = await fetch_booking(database, booking_id)
     if booking["partner_id"] != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Cette demande ne vous est pas adressée.")
+        raise HTTPException(status_code=403, detail=t("demande.pas_pour_vous"))
     if booking.get("status") != "pending":
-        raise HTTPException(status_code=409, detail="Cette demande a déjà été traitée.")
+        raise HTTPException(status_code=409, detail=t("demande.deja_traitee"))
     return await _transition(database, booking, "declined")
 
 
@@ -204,9 +205,9 @@ async def cancel(booking_id: str, database: Database, current_user: CurrentUser)
     user_id: ObjectId = current_user["_id"]
 
     if user_id not in {booking.get("requester_id"), booking.get("partner_id")}:
-        raise HTTPException(status_code=403, detail="Cette demande ne vous concerne pas.")
+        raise HTTPException(status_code=403, detail=t("demande.pas_concerne"))
     if booking.get("status") not in {"pending", "accepted"}:
-        raise HTTPException(status_code=409, detail="Cette demande ne peut plus être annulée.")
+        raise HTTPException(status_code=409, detail=t("demande.annulation_impossible"))
 
     # Le remboursement est demandé **avant** de changer le statut : si Stripe
     # échoue, la demande reste debout plutôt que d'être annulée sans que
@@ -228,11 +229,11 @@ async def cancel(booking_id: str, database: Database, current_user: CurrentUser)
 async def complete(booking_id: str, database: Database, current_user: CurrentUser) -> dict[str, Any]:
     booking = await fetch_booking(database, booking_id)
     if current_user["_id"] not in {booking.get("requester_id"), booking.get("partner_id")}:
-        raise HTTPException(status_code=403, detail="Cette demande ne vous concerne pas.")
+        raise HTTPException(status_code=403, detail=t("demande.pas_concerne"))
     if booking.get("status") != "accepted":
-        raise HTTPException(status_code=409, detail="Seule une demande acceptée peut être clôturée.")
+        raise HTTPException(status_code=409, detail=t("demande.cloture_impossible"))
     if not _has_ended(booking):
-        raise HTTPException(status_code=409, detail="La séance n’a pas encore eu lieu.")
+        raise HTTPException(status_code=409, detail=t("demande.pas_encore_passee"))
     return await _transition(database, booking, "completed")
 
 

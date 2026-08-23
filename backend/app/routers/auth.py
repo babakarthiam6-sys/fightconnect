@@ -4,7 +4,9 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.i18n import t
 from app.dependencies import CurrentUser, Database
+from app.geo import CURRENCIES, DEFAULT_CURRENCY, devise_par_defaut, normalise_pays, tarif_max
 from app.schemas import (
     LEVELS,
     STYLES,
@@ -27,14 +29,14 @@ async def signup(payload: SignupRequest, database: Database) -> dict:
     if not payload.discharge_accepted:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="La décharge de responsabilité doit être acceptée.",
+            detail=t("compte.decharge_obligatoire"),
         )
 
     email = payload.email.lower()
     if await database.users.find_one({"email": email}):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Un compte existe déjà avec cet email.",
+            detail=t("compte.email_pris"),
         )
 
     document = {
@@ -50,6 +52,7 @@ async def signup(payload: SignupRequest, database: Database) -> dict:
         # qu'il manque une discipline et un tarif, le compte n'apparaît pas
         # dans les recherches : personne ne peut réserver dans le vide.
         "city": None,
+        "country": None,
         "bio": None,
         "style": None,
         "level": None,
@@ -82,7 +85,7 @@ async def login(payload: LoginRequest, database: Database) -> dict:
     if remaining > 0:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Trop de tentatives. Réessayez dans quelques minutes.",
+            detail=t("compte.trop_de_tentatives"),
             headers={"Retry-After": str(remaining)},
         )
 
@@ -94,7 +97,7 @@ async def login(payload: LoginRequest, database: Database) -> dict:
         await throttle.register_failure(database, email)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email ou mot de passe incorrect.",
+            detail=t("compte.identifiants_invalides"),
         )
 
     await throttle.clear(database, email)
@@ -136,7 +139,40 @@ async def update_me(
         if value is not None and value not in allowed:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Valeur inconnue pour {field} : {value}.",
+                detail=t("compte.valeur_inconnue", champ=field, valeur=value),
+            )
+
+    if changes.get("country") is not None:
+        pays = normalise_pays(changes["country"])
+        if pays is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=t("compte.pays_inconnu", valeur=changes["country"]),
+            )
+        changes["country"] = pays
+        # Déclarer son pays sans avoir touché à sa devise propose celle du lieu :
+        # un boxeur à Londres ne devrait pas corriger « EUR » à la main. Un choix
+        # explicite, lui, n'est jamais écrasé.
+        if "currency" not in changes and current_user.get("price_per_round") is None:
+            changes["currency"] = devise_par_defaut(pays)
+
+    if changes.get("currency") is not None:
+        devise = changes["currency"].strip().upper()
+        if devise not in CURRENCIES:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=t("compte.devise_inconnue", valeur=changes["currency"]),
+            )
+        changes["currency"] = devise
+
+    tarif = changes.get("price_per_round")
+    if tarif is not None:
+        devise = changes.get("currency") or current_user.get("currency") or DEFAULT_CURRENCY
+        plafond = tarif_max(devise)
+        if tarif > plafond:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=t("compte.tarif_trop_eleve", plafond=f"{plafond:.0f}", devise=devise),
             )
 
     for field in ("first_name", "last_name", "city", "bio"):
@@ -149,7 +185,7 @@ async def update_me(
     if merged.get("available") and (merged.get("style") is None or merged.get("price_per_round") is None):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Renseignez votre discipline et votre tarif avant de vous rendre disponible.",
+            detail=t("compte.profil_incomplet"),
         )
 
     if changes:

@@ -48,6 +48,7 @@ def serialize_user_summary(document: dict[str, Any] | None) -> dict[str, Any] | 
 def _sport_profile(document: dict[str, Any]) -> dict[str, Any]:
     """Champs sportifs communs au profil privé et à la fiche publique."""
     return {
+        "country": document.get("country"),
         "bio": document.get("bio"),
         "style": document.get("style"),
         "level": document.get("level"),

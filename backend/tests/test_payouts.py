@@ -13,8 +13,11 @@ def stripe_connect(monkeypatch):
     """Double de Stripe Connect, qui compte les créations de compte."""
     appels = {"comptes": 0, "liens": 0}
 
-    async def creer_compte(email: str, full_name: str) -> str:
+    async def creer_compte(email: str, full_name: str, country: str | None = None) -> str:
         appels["comptes"] += 1
+        # Le pays reçu est conservé : c'est lui qui décide du RIB que Stripe
+        # réclamera, et le passer était tout l'intérêt du changement.
+        appels["pays"] = country
         return f"acct_{appels['comptes']}"
 
     async def creer_lien(account_id: str, return_url: str) -> str:

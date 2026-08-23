@@ -5,7 +5,9 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Query, status
 
+from app.i18n import t
 from app.dependencies import CurrentUser, Database
+from app.geo import normalise_pays
 from app.schemas import LEVELS, STYLES, WEIGHT_CLASSES, PartnerList, PartnerOut
 from app.serializers import serialize_partner, to_object_id
 
@@ -23,7 +25,7 @@ def _validated(value: str | None, allowed: tuple[str, ...], label: str) -> str |
     if value not in allowed:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"{label} inconnu : {value}.",
+            detail=t("recherche.filtre_inconnu", label=label, valeur=value),
         )
     return value
 
@@ -35,6 +37,7 @@ async def list_partners(
     style: Annotated[str | None, Query()] = None,
     level: Annotated[str | None, Query()] = None,
     weight_class: Annotated[str | None, Query()] = None,
+    country: Annotated[str | None, Query()] = None,
     city: Annotated[str | None, Query()] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
@@ -48,12 +51,22 @@ async def list_partners(
         "price_per_round": {"$ne": None},
     }
 
-    if value := _validated(style, STYLES, "Sport"):
+    if value := _validated(style, STYLES, t("recherche.filtre.sport")):
         query["style"] = value
-    if value := _validated(level, LEVELS, "Niveau"):
+    if value := _validated(level, LEVELS, t("recherche.filtre.niveau")):
         query["level"] = value
-    if value := _validated(weight_class, WEIGHT_CLASSES, "Catégorie de poids"):
+    if value := _validated(weight_class, WEIGHT_CLASSES, t("recherche.filtre.poids")):
         query["weight_class"] = value
+    if country:
+        # Le pays d'abord : sans lui, « Paris » ramène la France et le Texas dans
+        # la même liste, et une recherche à Dakar remonte des partenaires à Lyon.
+        code = normalise_pays(country)
+        if code is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=t("compte.pays_inconnu", valeur=country),
+            )
+        query["country"] = code
     if city and city.strip():
         # Recherche par préfixe insensible à la casse : « val » trouve Valence.
         # `escape` évite qu'un point ou une parenthèse ne soit pris pour un motif.
@@ -80,5 +93,5 @@ async def get_partner(partner_id: str, database: Database, _: CurrentUser) -> di
     object_id = to_object_id(partner_id)
     document = await database.users.find_one({"_id": object_id}) if object_id else None
     if document is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partenaire introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=t("partenaire.introuvable"))
     return serialize_partner(document)

@@ -2,11 +2,12 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import connect, disconnect, ping
+from app.i18n import choisir_langue, definir_langue
 from app.routers import auth, bookings, chat, moderation, partners, payments, payouts, revenue
 from app.webapp import is_web_app_available, mount_web_app
 
@@ -35,6 +36,17 @@ def create_app() -> FastAPI:
     # middleware renverrait alors des en-têtes que le client refuse. L'app mobile
     # n'utilise pas de cookies, seulement un en-tête Authorization, donc couper
     # les credentials avec le joker est sans effet sur elle.
+    @app.middleware("http")
+    async def langue_de_la_requete(request: Request, call_next):
+        """Fixe la langue des messages pour toute la durée de la requête.
+
+        Posée ici plutôt qu'au fond des routeurs : un message d'erreur peut
+        naître dans un service, loin du point d'entrée, et n'a alors plus accès
+        à l'en-tête.
+        """
+        definir_langue(choisir_langue(request.headers.get("accept-language")))
+        return await call_next(request)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,

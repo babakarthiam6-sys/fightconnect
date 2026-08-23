@@ -2,8 +2,11 @@
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from bson import ObjectId
 
+from app.services.moderation import detect_payment_bypass
 from tests.conftest import booking_payload, make_partner, register
 
 BASE = "/api/v1/moderation"
@@ -184,3 +187,40 @@ async def test_les_recommandations_privilegient_la_meme_discipline(client):
     prenoms = [item["first_name"] for item in response.json()["items"]]
     assert prenoms[0] == "Maria"
     assert "Ana" not in prenoms
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Let's do it outside the app, cash in hand",
+        "Can you send it on WhatsApp instead? We can skip the fee",
+        "I'll pay you with Venmo, no need for the platform",
+        "Pay me under the table, +33 6 12 34 56 78",
+        "Let's avoid the commission, my Wise account is ready",
+    ],
+)
+def test_le_contournement_est_vu_aussi_en_anglais(message):
+    """L'heuristique locale ne parlait que français.
+
+    Sans clé OpenAI — c'est le cas en production aujourd'hui — un message
+    anglais proposant de sortir de la plateforme passait sans être vu. Or c'est
+    exactement la transaction qui ne revient jamais.
+    """
+    assert detect_payment_bypass(message).flagged is True
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "See you at the gym tomorrow, I'll bring my own gloves",
+        "Great session today, thanks for the tips on my jab",
+        "I train at a club near the station, is that ok for you?",
+    ],
+)
+def test_un_message_anglais_anodin_passe(message):
+    """Élargir les motifs ne doit pas transformer l'anglais en suspect.
+
+    « app » et « fee » sont des mots courants : seuls comptent les motifs où
+    ils suivent une intention d'esquive.
+    """
+    assert detect_payment_bypass(message).flagged is False

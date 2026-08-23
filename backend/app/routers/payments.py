@@ -6,6 +6,7 @@ from typing import Any
 import stripe
 from fastapi import APIRouter, HTTPException, Request, status
 
+from app.i18n import t
 from app.config import get_settings
 from app.dependencies import CurrentUser, Database
 from app.schemas import PaymentIntentOut, PaymentIntentRequest, PaymentList
@@ -29,21 +30,21 @@ async def create_intent(
     booking_id = to_object_id(payload.booking_id)
     booking = await database.bookings.find_one({"_id": booking_id}) if booking_id else None
     if booking is None:
-        raise HTTPException(status_code=404, detail="Demande introuvable.")
+        raise HTTPException(status_code=404, detail=t("demande.introuvable"))
 
     if booking.get("requester_id") != current_user["_id"]:
-        raise HTTPException(status_code=403, detail="Cette demande ne vous appartient pas.")
+        raise HTTPException(status_code=403, detail=t("demande.pas_la_votre"))
     if booking.get("status") != "accepted":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Le partenaire n’a pas encore accepté cette demande.",
+            detail=t("paiement.pas_acceptee"),
         )
     if booking.get("paid"):
-        raise HTTPException(status_code=409, detail="Cette séance est déjà payée.")
+        raise HTTPException(status_code=409, detail=t("paiement.deja_paye"))
 
     total = float(booking.get("total", 0))
     if total <= 0:
-        raise HTTPException(status_code=400, detail="Cette séance est gratuite.")
+        raise HTTPException(status_code=400, detail=t("paiement.gratuite"))
 
     settings = get_settings()
 
@@ -76,10 +77,7 @@ async def create_intent(
     if partner is None or not partner.get("stripe_payouts_enabled"):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "Ce partenaire n’a pas encore configuré ses versements. "
-                "La séance n’est pas encore payable."
-            ),
+            detail=t("paiement.versements_absents"),
         )
 
     commission = float(booking.get("commission", 0))
@@ -92,6 +90,7 @@ async def create_intent(
         },
         destination_account=partner.get("stripe_account_id"),
         application_fee=commission,
+        currency=booking.get("currency"),
     )
 
     await database.payments.insert_one(
@@ -155,7 +154,7 @@ async def stripe_webhook(request: Request, database: Database) -> dict[str, str]
     if not settings.stripe_webhook_secret:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="STRIPE_WEBHOOK_SECRET n’est pas configuré.",
+            detail=t("paiement.webhook_absent"),
         )
 
     try:
@@ -164,7 +163,7 @@ async def stripe_webhook(request: Request, database: Database) -> dict[str, str]
         )
     except (ValueError, stripe.SignatureVerificationError) as error:
         # Signature invalide : la requête ne vient pas de Stripe.
-        raise HTTPException(status_code=400, detail="Signature Stripe invalide.") from error
+        raise HTTPException(status_code=400, detail=t("paiement.signature_invalide")) from error
 
     objet = event["data"]["object"]
 

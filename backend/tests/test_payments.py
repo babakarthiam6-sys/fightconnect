@@ -18,12 +18,16 @@ def stripe_ok(monkeypatch):
         metadata: dict[str, str],
         destination_account: str | None = None,
         application_fee: float | None = None,
+        currency: str | None = None,
     ) -> dict[str, object]:
+        # La doublure renvoie la devise qu'on lui a passée, et non une valeur
+        # fixe : c'est ce qui permet de vérifier que la demande impose la
+        # sienne au lieu d'un réglage global.
         return {
             "id": "pi_test_123",
             "client_secret": "pi_test_123_secret",
             "amount": amount,
-            "currency": "EUR",
+            "currency": (currency or "EUR").upper(),
         }
 
     monkeypatch.setattr(payments_router, "create_payment_intent", fake_intent)
@@ -264,6 +268,7 @@ async def test_une_intention_ouverte_est_reutilisee(client, monkeypatch, databas
         metadata: dict[str, str],
         destination_account: str | None = None,
         application_fee: float | None = None,
+        currency: str | None = None,
     ) -> dict[str, object]:
         appels["create"] += 1
         return {
@@ -313,6 +318,7 @@ async def test_une_intention_perimee_est_remplacee(client, monkeypatch, database
         metadata: dict[str, str],
         destination_account: str | None = None,
         application_fee: float | None = None,
+        currency: str | None = None,
     ) -> dict[str, object]:
         appels["create"] += 1
         return {

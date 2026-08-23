@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.i18n import t
 from app.dependencies import CurrentUser, Database
 from app.repositories import refresh_user_rating
 from app.schemas import PartnerList, ReviewCreate, ReviewOut, UserRiskOut
@@ -23,7 +24,7 @@ async def create_review(
     booking_id = to_object_id(payload.booking_id)
     booking = await database.bookings.find_one({"_id": booking_id}) if booking_id else None
     if booking is None:
-        raise HTTPException(status_code=404, detail="Demande introuvable.")
+        raise HTTPException(status_code=404, detail=t("demande.introuvable"))
 
     user_id = current_user["_id"]
 
@@ -33,16 +34,16 @@ async def create_review(
     if booking.get("requester_id") != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Seule la personne qui a réservé peut laisser un avis.",
+            detail=t("avis.pas_l_auteur"),
         )
     if booking.get("status") != "completed":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Attendez que la séance ait eu lieu pour laisser un avis.",
+            detail=t("avis.trop_tot"),
         )
 
     if await database.reviews.find_one({"booking_id": booking["_id"], "author_id": user_id}):
-        raise HTTPException(status_code=409, detail="Vous avez déjà laissé un avis.")
+        raise HTTPException(status_code=409, detail=t("avis.deja_donne"))
 
     verdict = await moderate_comment(payload.comment)
 
@@ -73,10 +74,10 @@ async def create_review(
 async def user_risk(user_id: str, database: Database, current_user: CurrentUser) -> dict[str, Any]:
     object_id = to_object_id(user_id)
     if object_id is None:
-        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+        raise HTTPException(status_code=404, detail=t("compte.introuvable"))
 
     if await database.users.find_one({"_id": object_id}) is None:
-        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+        raise HTTPException(status_code=404, detail=t("compte.introuvable"))
 
     total = await database.reviews.count_documents({"author_id": object_id})
     flagged = await database.reviews.count_documents({"author_id": object_id, "flagged": True})

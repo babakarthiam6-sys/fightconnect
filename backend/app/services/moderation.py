@@ -37,14 +37,39 @@ class ModerationResult:
 # non par mot isolé : « 06 12 34 56 78 » dans « je t'appelle en arrivant » est
 # légitime, la même suite dans « paie-moi en liquide » ne l'est pas.
 _ESQUIVE_MOTIFS = (
-    re.compile(r"\b(esp[èe]ces?|liquide|cash|de\s*la\s*main\s*[àa]\s*la\s*main)\b", re.I),
+    # Argent liquide, en français puis en anglais. « cash » couvrait déjà les
+    # deux ; le reste ne couvrait que le français, et un message anglais
+    # proposant de payer de la main à la main passait sans être vu.
+    re.compile(
+        r"\b(esp[èe]ces?|liquide|cash|de\s*la\s*main\s*[àa]\s*la\s*main"
+        r"|in\s*hand|hand\s*to\s*hand|under\s*the\s*table)\b",
+        re.I,
+    ),
     # « sans / hors / éviter » suivi, à quelques mots près, de ce qu'on esquive.
     # L'écart tolère « sans passer par l'appli » comme « sans l'appli ».
-    re.compile(r"\b(sans|hors|[ée]viter)\b[^.!?]{0,30}?\b(appli|application|plateforme|frais|commission)", re.I),
+    re.compile(
+        r"\b(sans|hors|[ée]viter)\b[^.!?]{0,30}?\b(appli|application|plateforme|frais|commission)",
+        re.I,
+    ),
+    # Le même mouvement en anglais : « outside the app », « skip the fee »,
+    # « without the platform », « off the app ».
+    re.compile(
+        r"\b(outside|without|off|skip|avoid|bypass)\b[^.!?]{0,30}?"
+        r"\b(app|application|platform|fee|fees|commission|site)\b",
+        re.I,
+    ),
     # Pas de frontière finale : « PayPal, » ou « paypal:» restent des paiements
-    # hors plateforme.
-    re.compile(r"\b(paypal|lydia|revolut|virement|paylib)", re.I),
-    re.compile(r"\b(whatsapp|instagram|insta|telegram|snapchat|snap)\b", re.I),
+    # hors plateforme. Les services listés couvrent l'Europe, l'Amérique du Nord
+    # et l'Afrique de l'Ouest — là où l'application peut raisonnablement aller.
+    re.compile(
+        r"\b(paypal|lydia|revolut|virement|paylib|wise|venmo|zelle|cashapp|cash\s*app"
+        r"|bank\s*transfer|wire\s*transfer|e[- ]?transfer|orange\s*money|wave|mtn\s*momo)",
+        re.I,
+    ),
+    re.compile(
+        r"\b(whatsapp|instagram|insta|telegram|snapchat|snap|signal|messenger|wechat|viber)\b",
+        re.I,
+    ),
 )
 
 # Un contact seul n'est pas suspect ; couplé à un motif d'esquive, il l'est.

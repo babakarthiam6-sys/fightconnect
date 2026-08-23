@@ -15,6 +15,7 @@ from app.dependencies import CurrentUser, Database
 from app.schemas import OnboardingLinkOut, PayoutStatusOut
 from app.services.payments import (
     create_connected_account,
+    list_payout_countries,
     create_onboarding_link,
     retrieve_account_state,
 )
@@ -65,6 +66,19 @@ async def status(database: Database, current_user: CurrentUser) -> dict[str, Any
     return {**state, "stripe_configured": settings.is_stripe_configured}
 
 
+@router.get("/countries")
+async def payout_countries() -> dict[str, Any]:
+    """Pays où un partenaire peut effectivement être payé.
+
+    L'écran s'en sert pour prévenir avant l'inscription plutôt que de laisser
+    quelqu'un remplir un formulaire Stripe qui le refusera. Une liste vide
+    signifie « on ne sait pas encore » — Stripe n'est pas configuré ou n'a pas
+    répondu — et l'écran doit alors se taire, pas accuser.
+    """
+    codes = await list_payout_countries()
+    return {"items": codes, "known": bool(codes)}
+
+
 @router.post("/onboarding", response_model=OnboardingLinkOut)
 async def onboarding(
     request: Request,
@@ -80,7 +94,9 @@ async def onboarding(
 
     if not account_id:
         full_name = f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}".strip()
-        account_id = await create_connected_account(current_user.get("email", ""), full_name)
+        account_id = await create_connected_account(
+            current_user.get("email", ""), full_name, current_user.get("country")
+        )
         await database.users.update_one(
             {"_id": current_user["_id"]},
             {

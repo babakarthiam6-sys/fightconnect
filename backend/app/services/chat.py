@@ -13,6 +13,7 @@ from bson import ObjectId
 from fastapi import WebSocket
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.i18n import t
 from app.serializers import serialize_message, serialize_user_summary
 from app.services.moderation import moderate_message
 from app.services.notifications import send_push
@@ -94,11 +95,10 @@ async def handle_message(
         return {
             "type": "blocked",
             "reason": verdict.reason,
-            "message": (
-                "Les paiements passent par l’application : c’est ce qui vous protège "
-                "tous les deux en cas d’annulation ou de litige."
+            "message": t(
+                "discussion.contournement"
                 if verdict.reason == "payment_bypass"
-                else "Ce message n’a pas été envoyé : il a été signalé par la modération."
+                else "discussion.signale"
             ),
         }
 

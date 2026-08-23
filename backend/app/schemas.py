@@ -62,6 +62,10 @@ class ProfileUpdate(BaseModel):
     first_name: str | None = Field(default=None, min_length=2, max_length=50)
     last_name: str | None = Field(default=None, min_length=2, max_length=50)
     city: str | None = Field(default=None, max_length=80)
+    # ISO 3166-1 alpha-2. Sans lui, « Paris » ramène la France et le Texas dans
+    # la même liste.
+    country: str | None = Field(default=None, min_length=2, max_length=2)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
     bio: str | None = Field(default=None, max_length=600)
     style: Style | None = None
     level: Level | None = None
@@ -69,7 +73,10 @@ class ProfileUpdate(BaseModel):
     height_cm: int | None = Field(default=None, ge=120, le=250)
     fights_count: int | None = Field(default=None, ge=0, le=2000)
     experience_years: int | None = Field(default=None, ge=0, le=80)
-    price_per_round: float | None = Field(default=None, ge=0, le=1000)
+    # Le plafond réel dépend de la devise et se vérifie dans le routeur : mille
+    # francs CFA valent moins de deux euros, la même borne pour tous n'a pas de
+    # sens. Celle-ci n'arrête qu'une saisie manifestement folle.
+    price_per_round: float | None = Field(default=None, ge=0, le=1_000_000)
     available: bool | None = None
 
 
@@ -81,6 +88,7 @@ class UserOut(UserSummary):
     # Un partenaire ne peut encaisser un sparring payant qu'une fois Stripe en
     # mesure de lui verser l'argent.
     payouts_enabled: bool = False
+    country: str | None = None
     bio: str | None = None
     style: str | None = None
     level: str | None = None
@@ -109,6 +117,7 @@ class PartnerOut(BaseModel):
     average_rating: float | None = None
     ratings_count: int = 0
     city: str | None = None
+    country: str | None = None
     bio: str | None = None
     style: str | None = None
     level: str | None = None

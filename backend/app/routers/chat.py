@@ -5,6 +5,7 @@ from typing import Annotated, Any
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 
+from app.i18n import t
 from app.dependencies import CurrentUser, Database
 from app.schemas import ConversationList, MessageList, PushTokenRequest, UserOut
 from app.security import decode_access_token
@@ -93,7 +94,7 @@ async def history(
     """Fil avec une personne. L'ouvrir marque ses messages comme lus."""
     autre = to_object_id(other_id)
     if autre is None:
-        raise HTTPException(status_code=404, detail="Interlocuteur introuvable.")
+        raise HTTPException(status_code=404, detail=t("discussion.interlocuteur_introuvable"))
 
     identifiant = conversation_key(current_user["_id"], autre)
 
