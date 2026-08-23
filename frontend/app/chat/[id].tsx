@@ -23,12 +23,15 @@ import { useAuth } from '@/context/AuthContext';
 import { useChatSocket } from '@/hooks/useChatSocket';
 import { chatService } from '@/services/chat';
 import { partnerService } from '@/services/partner';
+import SecuriteSheet from '@/components/SecuriteSheet';
 import { formatTime, formatUserName } from '@/utils/formatting';
 import type { AppError, Message } from '@/types';
 
 export default function ConversationScreen() {
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [nomDeLAutre, setNomDeLAutre] = useState('');
+  const [securiteOuverte, setSecuriteOuverte] = useState(false);
   const navigation = useNavigation();
   const toast = useToast();
   const { user } = useAuth();
@@ -64,13 +67,32 @@ export default function ConversationScreen() {
         partnerService.detail(id).catch(() => null),
       ]);
       setMessages(history);
-      if (partner) navigation.setOptions({ title: formatUserName(partner) });
+      if (partner) {
+        const nom = formatUserName(partner);
+        setNomDeLAutre(nom);
+        // C'est dans la conversation que l'abus se produit : le geste pour le
+        // signaler doit être à portée de pouce, dans la barre de titre.
+        navigation.setOptions({
+          title: nom,
+          headerRight: () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('securite.signalerCette', { nom })}
+              onPress={() => setSecuriteOuverte(true)}
+              hitSlop={12}
+              testID="chat-report"
+            >
+              <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.textMuted} />
+            </Pressable>
+          ),
+        });
+      }
     } catch (caught) {
       setError(caught as AppError);
     } finally {
       setIsLoading(false);
     }
-  }, [id, navigation]);
+  }, [t, id, navigation]);
 
   useEffect(() => {
     void load();
@@ -163,6 +185,14 @@ export default function ConversationScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      <SecuriteSheet
+        visible={securiteOuverte}
+        onClose={() => setSecuriteOuverte(false)}
+        userId={id ?? ''}
+        nom={nomDeLAutre}
+        onBlocked={() => navigation.goBack()}
+      />
     </SafeAreaView>
   );
 }

@@ -18,11 +18,11 @@ qui n'existe plus. En cas de doute entre la carte et le code, **le code fait foi
 
 ```bash
 # Backend (depuis backend/)
-pytest                     # 143 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
+pytest                     # 170 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
-npm test                   # 214 tests
+npm test                   # 222 tests
 npm run typecheck && npm run lint
 npm run build:web           # export web + thème sombre de la coquille HTML
 ```
@@ -79,6 +79,22 @@ au total payé. Une discussion permet de caler les détails ; elle est modérée
   `frontend/constants/config.ts`) parce que l'écran de réservation affiche le
   décompte avant que la demande n'existe. `frontend/__tests__/commission.test.ts`
   échoue si les deux divergent.
+
+## Exigences des magasins d'applications
+
+Trois fonctions existent parce qu'Apple et Google les imposent, et leur retrait
+ferait rejeter ou retirer l'application :
+
+- **Supprimer son compte** depuis l'application (Apple 5.1.1(v)), plus une page
+  publique `/suppression` atteignable sans l'installer (exigence Google).
+- **Signaler** et **bloquer**, atteignables depuis le contenu lui-même — fiche
+  du partenaire et conversation — et non depuis un menu de réglages (Apple 1.2).
+- Une **politique de confidentialité** publique, servie par l'API à
+  `/confidentialite` : l'héberger ailleurs, c'est déclarer au magasin une
+  adresse qui expirera un jour.
+
+Ce qui est effacé et ce qui est seulement anonymisé est décidé dans
+`backend/app/services/comptes.py`, avec les raisons de chaque cas.
 
 ## Surveillance
 

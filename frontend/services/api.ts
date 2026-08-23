@@ -213,6 +213,9 @@ export const http = {
     request<T>({ ...config, url, method: 'put', data }),
   patch: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
     request<T>({ ...config, url, method: 'patch', data }),
-  delete: <T>(url: string, config?: AxiosRequestConfig) =>
-    request<T>({ ...config, url, method: 'delete' }),
+  // `data` sur un DELETE est inhabituel mais nécessaire ici : la suppression de
+  // compte se confirme par mot de passe, et un mot de passe n'a rien à faire
+  // dans une adresse — il finirait dans les journaux du serveur.
+  delete: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+    request<T>({ ...config, url, method: 'delete', data }),
 };

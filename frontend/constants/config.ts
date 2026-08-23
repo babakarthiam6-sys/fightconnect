@@ -82,6 +82,15 @@ export const API_TIMEOUT_MS =
 /** Stripe est utilisable seulement si une clé publique est fournie. */
 export const IS_STRIPE_CONFIGURED = STRIPE_PUBLISHABLE_KEY.startsWith('pk_');
 
+/**
+ * Racine du serveur, sans le préfixe de l'API.
+ *
+ * Les pages légales — confidentialité, suppression — sont servies par le même
+ * serveur, un cran au-dessus. Les déduire évite une seconde adresse à tenir à
+ * jour, et surtout évite qu'elle diverge le jour d'un changement de domaine.
+ */
+export const ORIGINE_API = API_BASE_URL.replace(/\/api\/v\d+\/?$/, '');
+
 export const CONFIG = {
   pageSize: 20,
   /**

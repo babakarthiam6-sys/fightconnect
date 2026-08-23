@@ -8,6 +8,7 @@ import Button from '@/components/Button';
 import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import RatingStars from '@/components/RatingStars';
+import SecuriteSheet from '@/components/SecuriteSheet';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useT } from '@/i18n';
 import { partnerService } from '@/services/partner';
@@ -23,6 +24,7 @@ import type { AppError, Partner } from '@/types';
 
 export default function PartnerScreen() {
   const t = useT();
+  const [securiteOuverte, setSecuriteOuverte] = useState(false);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -55,6 +57,22 @@ export default function PartnerScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/*
+          Le signalement doit être atteignable depuis le contenu lui-même, et
+          non enfoui dans un menu de réglages : c'est ce que demandent les deux
+          magasins, et c'est aussi le seul endroit où quelqu'un y pense.
+        */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('securite.signalerCette', { nom: formatUserName(partner) })}
+          onPress={() => setSecuriteOuverte(true)}
+          style={styles.signaler}
+          hitSlop={10}
+          testID="partner-report"
+        >
+          <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.textMuted} />
+        </Pressable>
+
         <View style={styles.header}>
           <Avatar user={partner} size={128} />
           <Text style={styles.name}>{formatUserName(partner)}</Text>
@@ -146,6 +164,14 @@ export default function PartnerScreen() {
           </Text>
         ) : null}
       </View>
+
+      <SecuriteSheet
+        visible={securiteOuverte}
+        onClose={() => setSecuriteOuverte(false)}
+        userId={partner.id}
+        nom={formatUserName(partner)}
+        onBlocked={() => router.back()}
+      />
     </SafeAreaView>
   );
 }
@@ -182,6 +208,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 const styles = StyleSheet.create({
   safe: { backgroundColor: COLORS.background, flex: 1 },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
+  signaler: { alignSelf: 'flex-end', padding: SPACING.sm },
   header: { alignItems: 'center', gap: SPACING.xs },
   name: { ...TYPOGRAPHY.display, color: COLORS.text, marginTop: SPACING.md },
   metaRow: { alignItems: 'center', flexDirection: 'row', gap: SPACING.xs },

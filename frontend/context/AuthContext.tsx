@@ -27,6 +27,7 @@ interface AuthContextValue extends AuthState {
   login: (input: LoginInput) => Promise<boolean>;
   signup: (input: SignupInput) => Promise<boolean>;
   logout: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   updateProfile: (changes: ProfileInput) => Promise<void>;
   clearError: () => void;
@@ -54,6 +55,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     await authService.logout();
+    if (!isMounted.current) return;
+    setState({
+      user: null,
+      token: null,
+      isBootstrapping: false,
+      isSubmitting: false,
+      error: null,
+    });
+  }, []);
+
+  const deleteAccount = useCallback(async (password: string) => {
+    // Le service ne vide l'appareil qu'après un serveur qui a dit oui : un refus
+    // — mot de passe faux, séance payée à venir — doit laisser la session
+    // intacte, sans quoi on serait déconnecté d'un compte qui existe toujours.
+    await authService.deleteAccount(password);
     if (!isMounted.current) return;
     setState({
       user: null,
@@ -164,11 +180,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       signup,
       logout,
+      deleteAccount,
       refreshUser,
       updateProfile,
       clearError,
     }),
-    [state, login, signup, logout, refreshUser, updateProfile, clearError],
+    [state, login, signup, logout, deleteAccount, refreshUser, updateProfile, clearError],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

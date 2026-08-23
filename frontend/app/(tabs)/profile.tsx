@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  Linking,
   Platform,
   Pressable,
   RefreshControl,
@@ -15,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useToast } from 'react-native-toast-notifications';
 
+import { ORIGINE_API } from '@/constants/config';
 import Avatar from '@/components/Avatar';
 import Button from '@/components/Button';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -351,6 +353,28 @@ export default function ProfileScreen() {
           style={styles.logout}
           icon={<Ionicons name="log-out-outline" size={18} color={COLORS.textInverse} />}
         />
+
+        {/*
+          Les deux liens que les magasins vérifient. La suppression doit se
+          trouver dans l'application, pas dans un courriel au support : c'est
+          la règle 5.1.1(v) d'Apple, et Google demande la même chose.
+        */}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/compte/supprimer')}
+          style={styles.lienDiscret}
+          testID="profile-delete-account"
+        >
+          <Text style={styles.lienDiscretTexte}>{t('profil.supprimer')}</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => Linking.openURL(`${ORIGINE_API}/confidentialite`)}
+          style={styles.lienDiscret}
+        >
+          <Text style={styles.lienDiscretTexte}>{t('profil.confidentialite')}</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -393,5 +417,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
   },
   statsRow: { flexDirection: 'row', gap: SPACING.sm },
+  lienDiscret: { alignItems: 'center', paddingVertical: SPACING.md },
+  lienDiscretTexte: { ...TYPOGRAPHY.caption, color: COLORS.textMuted, textDecorationLine: 'underline' },
   logout: { marginTop: SPACING.xl },
 });

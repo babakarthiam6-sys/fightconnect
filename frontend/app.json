@@ -19,9 +19,14 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.fightconnect.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Utilise l'appareil photo pour votre photo de profil."
+        "NSCameraUsageDescription": "FightConnect utilise l’appareil photo pour votre photo de profil, afin qu’un partenaire sache qui il retrouve à la salle.",
+        "NSPhotoLibraryUsageDescription": "FightConnect accède à vos photos pour choisir votre photo de profil.",
+        "ITSAppUsesNonExemptEncryption": false
       },
-      "userInterfaceStyle": "dark"
+      "userInterfaceStyle": "dark",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.fightconnect.app",
@@ -31,7 +36,8 @@
       },
       "permissions": [
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "POST_NOTIFICATIONS"
       ],
       "userInterfaceStyle": "dark"
     },
@@ -61,6 +67,7 @@
         "projectId": "00000000-0000-0000-0000-000000000000"
       }
     },
-    "icon": "./assets/icon.png"
+    "icon": "./assets/icon.png",
+    "privacy": "public"
   }
 }

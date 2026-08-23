@@ -144,6 +144,18 @@ export const authService = {
     return user;
   },
 
+  /**
+   * Supprime définitivement le compte, puis vide l'appareil.
+   *
+   * L'ordre compte : si le serveur refuse — mot de passe faux, séance payée à
+   * venir — la session locale doit rester intacte, sans quoi l'utilisateur se
+   * retrouverait déconnecté d'un compte qui existe toujours.
+   */
+  async deleteAccount(password: string): Promise<void> {
+    await http.delete(ENDPOINTS.auth.deleteMe, { password });
+    await authService.logout();
+  },
+
   async logout(): Promise<void> {
     setAuthToken(null);
     await storage.removeMany([

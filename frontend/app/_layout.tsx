@@ -85,6 +85,10 @@ function RootNavigator() {
         options={{ title: 'Paiement', presentation: 'card' }}
       />
       <Stack.Screen name="payments" options={{ title: t('paiement.titre') }} />
+      <Stack.Screen
+        name="compte/supprimer"
+        options={{ title: t('suppression.titre'), presentation: 'card' }}
+      />
       <Stack.Screen name="chat/index" options={{ title: t('discussion.titre') }} />
       <Stack.Screen name="chat/[id]" options={{ title: 'Conversation' }} />
     </Stack>

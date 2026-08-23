@@ -10,6 +10,7 @@ export const ENDPOINTS = {
     login: '/auth/login',
     me: '/auth/me',
     updateMe: '/auth/me',
+    deleteMe: '/auth/me',
   },
   partners: {
     list: '/partners',
@@ -23,6 +24,11 @@ export const ENDPOINTS = {
     cancel: (id: string) => `/bookings/${id}/cancel`,
     complete: (id: string) => `/bookings/${id}/complete`,
     reviews: (id: string) => `/bookings/${id}/reviews`,
+  },
+  securite: {
+    reports: '/securite/reports',
+    blocks: '/securite/blocks',
+    block: (id: string) => `/securite/blocks/${id}`,
   },
   chat: {
     conversations: '/chat/conversations',
