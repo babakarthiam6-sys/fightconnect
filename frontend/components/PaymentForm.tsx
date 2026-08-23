@@ -107,7 +107,7 @@ export function PaymentForm({ booking, onSuccess, onError, disabled = false, lab
   return (
     <View style={styles.container}>
       <View style={styles.summary}>
-        <Text style={styles.summaryLabel}>Montant à régler</Text>
+        <Text style={styles.summaryLabel}>{t('paiement.montant')}</Text>
         <Text style={styles.summaryValue}>{formatPrice(booking.total, booking.currency)}</Text>
       </View>
 
@@ -123,7 +123,7 @@ export function PaymentForm({ booking, onSuccess, onError, disabled = false, lab
 
       <View style={styles.secureRow}>
         <Ionicons name="shield-checkmark-outline" size={14} color={COLORS.textMuted} />
-        <Text style={styles.secureText}>Paiement sécurisé par Stripe</Text>
+        <Text style={styles.secureText}>{t('paiement.securise')}</Text>
       </View>
     </View>
   );

@@ -89,8 +89,8 @@ export default function SignupScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Créer un compte</Text>
-        <Text style={styles.subtitle}>Quelques informations et vous pouvez sparrer.</Text>
+        <Text style={styles.title}>{t('accueil.creer')}</Text>
+        <Text style={styles.subtitle}>{t('inscription.sousTitre')}</Text>
 
         <View style={styles.row}>
           <View style={styles.rowItem}>
@@ -122,7 +122,7 @@ export default function SignupScreen() {
           value={email}
           onChangeText={setEmail}
           error={errors.email}
-          placeholder="vous@exemple.com"
+          placeholder={t('inscription.emailExemple')}
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
@@ -198,7 +198,7 @@ export default function SignupScreen() {
         <View style={styles.footer}>
           <Text style={styles.footerText}>{t('inscription.dejaUnCompte')}</Text>
           <Link href="/(auth)/login" style={styles.link}>
-            Se connecter
+            {t('connexion.titre')}
           </Link>
         </View>
       </ScrollView>

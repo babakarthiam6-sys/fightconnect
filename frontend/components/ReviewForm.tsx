@@ -51,7 +51,7 @@ export function ReviewForm({ bookingId, onSubmitted, onError }: Props) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Laisser un avis</Text>
+      <Text style={styles.title}>{t('avis.titre')}</Text>
 
       <View style={styles.ratingRow}>
         <RatingStars value={rating} size={28} onChange={setRating} />

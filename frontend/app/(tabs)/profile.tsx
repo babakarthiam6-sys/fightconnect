@@ -151,7 +151,7 @@ export default function ProfileScreen() {
         }
       >
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Mon profil</Text>
+          <Text style={styles.title}>{t('profil.titre')}</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('discussion.titre')}
@@ -176,7 +176,7 @@ export default function ProfileScreen() {
             <Text style={styles.ratingLabel}>
               {isNew ? t('profil.nouveau') : formatRating(user.averageRating)}
             </Text>
-            <Text style={styles.meta}>({user.ratingsCount} avis)</Text>
+            <Text style={styles.meta}>{t('partenaire.avis', { n: user.ratingsCount })}</Text>
           </View>
         </View>
 
@@ -252,14 +252,14 @@ export default function ProfileScreen() {
           icon="time"
           label={t('profil.experience')}
           value={String(user.experienceYears)}
-          suffix={user.experienceYears > 1 ? 'ans' : 'an'}
+          suffix={t(user.experienceYears > 1 ? 'profil.ans' : 'profil.an')}
           kind="number"
           current={user.experienceYears}
           placeholder="0"
           onSave={(value) => save({ experienceYears: (value as number) ?? 0 })}
         />
 
-        <Text style={styles.sectionTitle}>Localisation et tarif</Text>
+        <Text style={styles.sectionTitle}>{t('profil.localisation')}</Text>
 
         <ProfileField
           icon="location"
@@ -310,7 +310,7 @@ export default function ProfileScreen() {
           onSave={(value) => save({ pricePerRound: (value as number) ?? undefined })}
         />
 
-        <Text style={styles.sectionTitle}>Description</Text>
+        <Text style={styles.sectionTitle}>{t('profil.description')}</Text>
         <ProfileField
           icon="document-text"
           label={t('profil.presentation')}
@@ -321,10 +321,10 @@ export default function ProfileScreen() {
           onSave={(value) => save({ bio: (value as string) ?? '' })}
         />
 
-        <Text style={styles.sectionTitle}>Mes revenus</Text>
+        <Text style={styles.sectionTitle}>{t('profil.revenus')}</Text>
         <View style={styles.statsRow}>
           <StatCard
-            label="Gains"
+            label={t('profil.gains')}
             value={formatPrice(stats?.totalEarnings ?? 0, stats?.currency)}
             icon="cash-outline"
             tint={COLORS.success}
@@ -335,7 +335,7 @@ export default function ProfileScreen() {
             icon="checkmark-done-outline"
           />
           <StatCard
-            label="Demandes"
+            label={t('profil.demandes')}
             value={String(stats?.totalBookings ?? 0)}
             icon="calendar-outline"
             tint={COLORS.secondary}

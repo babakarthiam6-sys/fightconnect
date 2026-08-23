@@ -37,7 +37,7 @@ export default function WelcomeScreen() {
         <Text style={styles.logo}>
           Fight<Text style={styles.logoAccent}>Connect</Text>
         </Text>
-        <Text style={styles.tagline}>Trouve ton partenaire de sparring</Text>
+        <Text style={styles.tagline}>{t('accueil.tagline')}</Text>
       </View>
 
       <View style={styles.features}>

@@ -78,7 +78,7 @@ export function BookingCard({
       {booking.paid ? (
         <View style={styles.metaRow}>
           <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
-          <Text style={styles.paid}>Payée</Text>
+          <Text style={styles.paid}>{t('demandes.payee')}</Text>
         </View>
       ) : null}
 

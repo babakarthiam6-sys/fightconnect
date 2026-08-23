@@ -42,10 +42,8 @@ export function PayoutCard({ status, onChanged, onError }: Props) {
   if (!status.stripeConfigured) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>Recevoir mes paiements</Text>
-        <Text style={styles.body}>
-          Les paiements ne sont pas encore activés sur cette installation.
-        </Text>
+        <Text style={styles.title}>{t('versements.recevoir')}</Text>
+        <Text style={styles.body}>{t('versements.nonInstalle')}</Text>
       </View>
     );
   }
@@ -54,13 +52,10 @@ export function PayoutCard({ status, onChanged, onError }: Props) {
     return (
       <View style={styles.card}>
         <View style={styles.header}>
-          <Text style={styles.title}>Recevoir mes paiements</Text>
-          <Badge label="Actif" tone="success" icon="checkmark-circle-outline" />
+          <Text style={styles.title}>{t('versements.recevoir')}</Text>
+          <Badge label={t('versements.actif')} tone="success" icon="checkmark-circle-outline" />
         </View>
-        <Text style={styles.body}>
-          Stripe verse automatiquement votre part sur votre compte bancaire après chaque séance
-          payée.
-        </Text>
+        <Text style={styles.body}>{t('versements.explication')}</Text>
       </View>
     );
   }
@@ -72,7 +67,7 @@ export function PayoutCard({ status, onChanged, onError }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>Recevoir mes paiements</Text>
+        <Text style={styles.title}>{t('versements.recevoir')}</Text>
         <Badge
           label={enCours ? t('versements.verification') : t('versements.aConfigurer')}
           tone={enCours ? 'warning' : 'danger'}
@@ -99,10 +94,7 @@ export function PayoutCard({ status, onChanged, onError }: Props) {
         style={styles.action}
       />
 
-      <Text style={styles.legal}>
-        Pièce d’identité et coordonnées bancaires sont collectées par Stripe, jamais par
-        FightConnect.
-      </Text>
+      <Text style={styles.legal}>{t('versements.identite')}</Text>
     </View>
   );
 }

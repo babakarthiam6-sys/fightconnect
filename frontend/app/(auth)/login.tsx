@@ -61,7 +61,7 @@ export default function LoginScreen() {
           <Text style={styles.logo}>
             Fight<Text style={styles.logoAccent}>Connect</Text>
           </Text>
-          <Text style={styles.tagline}>Trouvez votre prochain partenaire de sparring.</Text>
+          <Text style={styles.tagline}>{t('connexion.tagline')}</Text>
         </View>
 
         <Input
@@ -69,7 +69,7 @@ export default function LoginScreen() {
           value={email}
           onChangeText={setEmail}
           error={errors.email}
-          placeholder="vous@exemple.com"
+          placeholder={t('inscription.emailExemple')}
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
@@ -98,9 +98,9 @@ export default function LoginScreen() {
         />
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Pas encore de compte ?</Text>
+          <Text style={styles.footerText}>{t('connexion.pasDeCompte')}</Text>
           <Link href="/(auth)/signup" style={styles.link}>
-            Créer un compte
+            {t('accueil.creer')}
           </Link>
         </View>
       </ScrollView>

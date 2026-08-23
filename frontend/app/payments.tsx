@@ -106,7 +106,7 @@ export default function PaymentsScreen() {
 
       {payments.length > 0 ? (
         <View style={styles.summary}>
-          <Text style={styles.summaryLabel}>Total dépensé</Text>
+          <Text style={styles.summaryLabel}>{t('paiement.totalDepense')}</Text>
           <Text style={styles.summaryValue}>{formatPrice(total)}</Text>
         </View>
       ) : null}
