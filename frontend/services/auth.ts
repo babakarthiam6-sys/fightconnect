@@ -119,6 +119,8 @@ export const authService = {
   async updateProfile(changes: ProfileInput): Promise<User> {
     const body: Record<string, unknown> = {};
     const wire: Record<keyof ProfileInput, string> = {
+      country: 'country',
+      currency: 'currency',
       firstName: 'first_name',
       lastName: 'last_name',
       city: 'city',

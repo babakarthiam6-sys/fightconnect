@@ -24,6 +24,7 @@ function partnerPayload(overrides: Record<string, unknown> = {}) {
     first_name: 'Luis',
     last_name: 'Dupont',
     city: 'Valence',
+    country: 'FR',
     style: 'boxing',
     level: 'amateur',
     weight_class: 'middleweight',
@@ -44,12 +45,19 @@ describe('recherche de partenaires', () => {
     mockedHttp.get.mockResolvedValue({ items: [], total: 0 });
 
     await partnerService.list({
-      filters: { city: '  Lyon  ', style: 'mma', level: 'pro', weightClass: 'lightweight' },
+      filters: {
+        city: '  Lyon  ',
+        country: 'FR',
+        style: 'mma',
+        level: 'pro',
+        weightClass: 'lightweight',
+      },
     });
 
     const config = mockedHttp.get.mock.calls[0]?.[1];
     expect(config?.params).toMatchObject({
       city: 'Lyon',
+      country: 'FR',
       style: 'mma',
       level: 'pro',
       weight_class: 'lightweight',

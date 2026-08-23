@@ -7,25 +7,25 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const emailSchema = z
   .string()
   .trim()
-  .min(1, 'L’email est obligatoire.')
-  .regex(EMAIL_RE, 'Format d’email invalide.')
+  .min(1, 'valid.emailObligatoire')
+  .regex(EMAIL_RE, 'valid.emailInvalide')
   .transform((value) => value.toLowerCase());
 
 export const passwordSchema = z
   .string()
-  .min(CONFIG.minPasswordLength, `Au moins ${CONFIG.minPasswordLength} caractères.`)
-  .regex(/[A-Z]/, 'Au moins une majuscule.')
-  .regex(/[0-9]/, 'Au moins un chiffre.');
+  .min(CONFIG.minPasswordLength, 'valid.motDePasseMin')
+  .regex(/[A-Z]/, 'valid.majuscule')
+  .regex(/[0-9]/, 'valid.chiffre');
 
 const nameSchema = z
   .string()
   .trim()
-  .min(2, 'Au moins 2 caractères.')
-  .max(50, 'Au plus 50 caractères.');
+  .min(2, 'valid.min2')
+  .max(50, 'valid.max50');
 
 export const loginSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, 'Le mot de passe est obligatoire.'),
+  password: z.string().min(1, 'valid.motDePasseObligatoire'),
 });
 
 export const signupSchema = z.object({
@@ -34,23 +34,23 @@ export const signupSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema,
   dischargeAccepted: z.literal(true, {
-    errorMap: () => ({ message: 'Vous devez accepter la décharge de responsabilité.' }),
+    errorMap: () => ({ message: 'valid.decharge' }),
   }),
 });
 
 export const bookingSchema = z.object({
   scheduledAt: z
     .string()
-    .min(1, 'Choisissez une date.')
+    .min(1, 'valid.date')
     .refine((value) => {
       const time = Date.parse(value);
       return Number.isFinite(time) && time > Date.now();
-    }, 'La séance doit être programmée dans le futur.'),
+    }, 'valid.dateFuture'),
   rounds: z
-    .number({ invalid_type_error: 'Nombre invalide.' })
-    .int('Nombre entier attendu.')
-    .min(1, 'Au moins 1 round.')
-    .max(20, 'Au plus 20 rounds.'),
+    .number({ invalid_type_error: 'valid.nombre' })
+    .int('valid.entier')
+    .min(1, 'valid.min1Round')
+    .max(20, 'valid.max20Rounds'),
 });
 
 /**
@@ -60,10 +60,14 @@ export const bookingSchema = z.object({
  * un compte tout juste créé n'en a encore aucun.
  */
 export const profileSchema = z.object({
+  // Validés côté serveur contre la liste ISO : ici on ne vérifie que la forme,
+  // sans recopier deux cent quarante-neuf codes dans le mobile.
+  country: z.string().length(2).optional(),
+  currency: z.string().length(3).optional(),
   firstName: nameSchema.optional(),
   lastName: nameSchema.optional(),
-  city: z.string().trim().max(80, 'Au plus 80 caractères.').optional(),
-  bio: z.string().trim().max(600, 'Au plus 600 caractères.').optional(),
+  city: z.string().trim().max(80, 'valid.max80').optional(),
+  bio: z.string().trim().max(600, 'valid.max600').optional(),
   level: z.enum(['beginner', 'amateur', 'pro']).optional(),
   style: z
     .enum(['boxing', 'muay_thai', 'kickboxing', 'mma', 'bjj', 'wrestling', 'karate', 'judo'])
@@ -81,41 +85,41 @@ export const profileSchema = z.object({
     ])
     .optional(),
   heightCm: z
-    .number({ invalid_type_error: 'Taille invalide.' })
-    .int('Nombre entier attendu.')
-    .min(120, 'Au moins 120 cm.')
-    .max(250, 'Au plus 250 cm.')
+    .number({ invalid_type_error: 'valid.tailleInvalide' })
+    .int('valid.entier')
+    .min(120, 'valid.tailleMin')
+    .max(250, 'valid.tailleMax')
     .optional(),
   fightsCount: z
-    .number({ invalid_type_error: 'Nombre invalide.' })
-    .int('Nombre entier attendu.')
-    .min(0, 'Ne peut pas être négatif.')
-    .max(2000, 'Au plus 2000.')
+    .number({ invalid_type_error: 'valid.nombre' })
+    .int('valid.entier')
+    .min(0, 'valid.negatif')
+    .max(2000, 'valid.max2000')
     .optional(),
   experienceYears: z
-    .number({ invalid_type_error: 'Nombre invalide.' })
-    .int('Nombre entier attendu.')
-    .min(0, 'Ne peut pas être négatif.')
-    .max(80, 'Au plus 80 ans.')
+    .number({ invalid_type_error: 'valid.nombre' })
+    .int('valid.entier')
+    .min(0, 'valid.negatif')
+    .max(80, 'valid.max80ans')
     .optional(),
   pricePerRound: z
-    .number({ invalid_type_error: 'Tarif invalide.' })
-    .min(0, 'Le tarif ne peut pas être négatif.')
-    .max(1000, 'Au plus 1000 € par round.')
+    .number({ invalid_type_error: 'valid.tarifInvalide' })
+    .min(0, 'valid.tarifNegatif')
+    .max(1000, 'valid.tarifMax')
     .optional(),
   available: z.boolean().optional(),
 });
 
 export const reviewSchema = z.object({
   rating: z
-    .number({ invalid_type_error: 'Note invalide.' })
+    .number({ invalid_type_error: 'valid.noteInvalide' })
     .int()
-    .min(1, 'Donnez une note entre 1 et 5.')
-    .max(5, 'Donnez une note entre 1 et 5.'),
+    .min(1, 'valid.note1a5')
+    .max(5, 'valid.note1a5'),
   comment: z
     .string()
     .trim()
-    .min(10, 'Au moins 10 caractères.')
+    .min(10, 'valid.min10')
     .max(CONFIG.maxReviewLength, `Au plus ${CONFIG.maxReviewLength} caractères.`),
 });
 
@@ -140,9 +144,18 @@ export interface ValidationResult<T> {
  * Zod peut produire plusieurs erreurs pour un même champ ; n'en afficher qu'une
  * évite d'empiler trois messages sous un seul input.
  */
+/**
+ * Valide une saisie et rend les erreurs prêtes à afficher.
+ *
+ * Les schémas Zod sont des constantes de module : ils ne peuvent pas appeler de
+ * hook, et portent donc des **clés** de traduction plutôt que des phrases. La
+ * traduction se fait ici, au moment précis où le message devient visible. Sans
+ * traducteur, la clé ressort — laide, donc repérable.
+ */
 export function validate<S extends z.ZodTypeAny>(
   schema: S,
   input: unknown,
+  t?: (cle: never) => string,
 ): ValidationResult<z.infer<S>> {
   const result = schema.safeParse(input);
   if (result.success) {
@@ -153,14 +166,18 @@ export function validate<S extends z.ZodTypeAny>(
   for (const issue of result.error.issues) {
     const key = issue.path[0];
     if (typeof key !== 'string' || key in errors) continue;
-    errors[key] = issue.message;
+    errors[key] = t ? t(issue.message as never) : issue.message;
   }
 
   return { success: false, data: null, errors: errors as FieldErrors<z.infer<S>> };
 }
 
 /** Force de mot de passe, pour la jauge affichée à l'inscription. */
-export function passwordStrength(password: string): { score: 0 | 1 | 2 | 3; label: string } {
+export function passwordStrength(password: string): {
+  score: 0 | 1 | 2 | 3;
+  /** Clé de traduction du libellé, à passer au traducteur de l'écran. */
+  label: 'valid.force0' | 'valid.force1' | 'valid.force2' | 'valid.force3';
+} {
   const checks = [
     password.length >= CONFIG.minPasswordLength,
     /[A-Z]/.test(password),
@@ -168,8 +185,8 @@ export function passwordStrength(password: string): { score: 0 | 1 | 2 | 3; labe
     /[^A-Za-z0-9]/.test(password) && password.length >= 12,
   ].filter(Boolean).length;
 
-  if (checks <= 1) return { score: 0, label: 'Trop faible' };
-  if (checks === 2) return { score: 1, label: 'Faible' };
-  if (checks === 3) return { score: 2, label: 'Correct' };
-  return { score: 3, label: 'Solide' };
+  if (checks <= 1) return { score: 0, label: 'valid.force0' };
+  if (checks === 2) return { score: 1, label: 'valid.force1' };
+  if (checks === 3) return { score: 2, label: 'valid.force2' };
+  return { score: 3, label: 'valid.force3' };
 }

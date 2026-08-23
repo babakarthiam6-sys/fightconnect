@@ -22,6 +22,7 @@ function buildParams(options: ListOptions): Record<string, string | number> {
 
   if (filters?.city?.trim()) params.city = filters.city.trim();
   if (filters?.level) params.level = filters.level;
+  if (filters?.country) params.country = filters.country;
   if (filters?.style) params.style = filters.style;
   if (filters?.weightClass) params.weight_class = filters.weightClass;
 
@@ -40,6 +41,7 @@ function applyFiltersLocally(items: Partner[], filters?: Partial<PartnerFilters>
 
   return items.filter((item) => {
     if (city && !(item.city ?? '').toLowerCase().startsWith(city)) return false;
+    if (filters.country && item.country !== filters.country) return false;
     if (filters.level && item.level !== filters.level) return false;
     if (filters.style && item.style !== filters.style) return false;
     if (filters.weightClass && item.weightClass !== filters.weightClass) return false;

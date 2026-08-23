@@ -26,6 +26,7 @@ const LUIS: Partner = {
   ratingsCount: 0,
   payoutsEnabled: true,
   city: 'Valence',
+  country: 'FR',
   bio: 'Boxeur amateur.',
   style: 'boxing',
   level: 'amateur',

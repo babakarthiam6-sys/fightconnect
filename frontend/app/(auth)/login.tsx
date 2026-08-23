@@ -37,7 +37,7 @@ export default function LoginScreen() {
   }, [clearError, error, toast]);
 
   const handleSubmit = useCallback(async () => {
-    const result = validate(loginSchema, { email, password });
+    const result = validate(loginSchema, { email, password }, t as never);
     setErrors(result.errors);
     if (!result.success || !result.data) return;
 

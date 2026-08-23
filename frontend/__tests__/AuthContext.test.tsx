@@ -34,6 +34,7 @@ const USER = {
   payoutsEnabled: false,
   expoPushToken: null,
   city: null,
+  country: 'FR',
   bio: null,
   style: null,
   level: null,

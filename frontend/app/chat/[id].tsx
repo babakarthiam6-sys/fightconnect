@@ -18,6 +18,7 @@ import EmptyState from '@/components/EmptyState';
 import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import { useChatSocket } from '@/hooks/useChatSocket';
 import { chatService } from '@/services/chat';
@@ -26,6 +27,7 @@ import { formatTime, formatUserName } from '@/utils/formatting';
 import type { AppError, Message } from '@/types';
 
 export default function ConversationScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const toast = useToast();
@@ -83,15 +85,15 @@ export default function ConversationScreen() {
     if (!content || !id) return;
 
     if (!send(id, content)) {
-      toast.show('Message non envoyé : connexion interrompue.', { type: 'danger' });
+      toast.show(t('discussion.nonEnvoye'), { type: 'danger' });
       return;
     }
     setDraft('');
-  }, [draft, id, send, toast]);
+  }, [t, draft, id, send, toast]);
 
   const mine = useMemo(() => user?.id ?? '', [user]);
 
-  if (isLoading) return <LoadingSpinner fullScreen label="Chargement de la conversation…" />;
+  if (isLoading) return <LoadingSpinner fullScreen label={t('discussion.chargementFil')} />;
   if (error) return <ErrorView error={error} onRetry={load} />;
 
   return (
@@ -128,8 +130,8 @@ export default function ConversationScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="chatbubble-outline"
-              title="Rien encore"
-              message="Dites bonjour, et calez l’heure et le lieu."
+              title={t('discussion.rienEncore')}
+              message={t('discussion.direBonjour')}
             />
           }
         />
@@ -138,7 +140,7 @@ export default function ConversationScreen() {
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder="Votre message…"
+            placeholder={t('discussion.placeholder')}
             placeholderTextColor={COLORS.textMuted}
             style={styles.champ}
             multiline

@@ -25,20 +25,21 @@ import RatingStars from '@/components/RatingStars';
 import StatCard from '@/components/StatCard';
 import {
   COLORS,
-  LEVEL_LABELS,
   RADIUS,
   SHADOW,
   SPACING,
-  STYLE_LABELS,
   TYPOGRAPHY,
-  WEIGHT_LABELS,
 } from '@/constants/theme';
+import { LEVEL_IDS, STYLE_IDS, WEIGHT_IDS } from '@/constants/sports';
+import { NOMS_DE_LANGUE, useI18n, type Langue } from '@/i18n';
+import { nomDuPays, optionsDevise, optionsPays } from '@/i18n/pays';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { payoutService } from '@/services/payout';
 import {
   formatLevel,
   formatPrice,
+  formatRating,
   formatStyle,
   formatUserName,
   formatWeightClass,
@@ -54,7 +55,19 @@ import type { ProfileInput } from '@/utils/validation';
 const WEB_SWITCH_THUMB: Record<string, unknown> =
   Platform.OS === 'web' ? { activeThumbColor: COLORS.textInverse } : {};
 
+/** Table `identifiant → libellé traduit`, attendue par la feuille de choix. */
+function optionsTraduites(
+  ids: readonly string[],
+  prefixe: string,
+  t: (cle: never) => string,
+): Record<string, string> {
+  return Object.fromEntries(ids.map((id) => [id, t(`${prefixe}.${id}` as never)]));
+}
+
 export default function ProfileScreen() {
+  const { t, langue, changerLangue, locale } = useI18n();
+  const choix = (ids: readonly string[], prefixe: string) =>
+    optionsTraduites(ids, prefixe, t as never);
   const router = useRouter();
   const { user, logout, refreshUser, updateProfile } = useAuth();
   const { stats, isConnected, refreshStats } = useApp();
@@ -111,14 +124,14 @@ export default function ProfileScreen() {
   );
 
   const confirmLogout = useCallback(() => {
-    Alert.alert('Déconnexion', 'Voulez-vous vraiment vous déconnecter ?', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Se déconnecter', style: 'destructive', onPress: () => void logout() },
+    Alert.alert(t('profil.deconnexion'), t('profil.deconnexionConfirme'), [
+      { text: t('general.annuler'), style: 'cancel' },
+      { text: t('profil.seDeconnecter'), style: 'destructive', onPress: () => void logout() },
     ]);
-  }, [logout]);
+  }, [t, logout]);
 
-  if (!user) return <LoadingSpinner fullScreen label="Chargement du profil…" />;
-  if (isLoading) return <LoadingSpinner fullScreen label="Chargement du profil…" />;
+  if (!user) return <LoadingSpinner fullScreen label={t('profil.chargement')} />;
+  if (isLoading) return <LoadingSpinner fullScreen label={t('profil.chargement')} />;
 
   const isNew = user.ratingsCount === 0;
 
@@ -141,7 +154,7 @@ export default function ProfileScreen() {
           <Text style={styles.title}>Mon profil</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Messages"
+            accessibilityLabel={t('discussion.titre')}
             onPress={() => router.push('/chat')}
             style={({ pressed }) => [styles.messages, pressed && styles.pressed]}
           >
@@ -161,7 +174,7 @@ export default function ProfileScreen() {
               ratingsCount={user.ratingsCount}
             />
             <Text style={styles.ratingLabel}>
-              {isNew ? 'Nouveau' : user.averageRating?.toFixed(1)}
+              {isNew ? t('profil.nouveau') : formatRating(user.averageRating)}
             </Text>
             <Text style={styles.meta}>({user.ratingsCount} avis)</Text>
           </View>
@@ -174,7 +187,7 @@ export default function ProfileScreen() {
             color={user.available ? COLORS.success : COLORS.textMuted}
           />
           <Text style={styles.availabilityLabel}>
-            {user.available ? 'Disponible pour sparring' : 'En pause'}
+            {user.available ? t('profil.disponible') : t('profil.enPause')}
           </Text>
           <Switch
             value={user.available}
@@ -185,23 +198,23 @@ export default function ProfileScreen() {
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Informations sportives</Text>
+        <Text style={styles.sectionTitle}>{t('profil.infosSportives')}</Text>
 
         <ProfileField
           icon="pulse"
-          label="Sport"
-          value={user.style ? formatStyle(user.style) : null}
+          label={t('profil.sport')}
+          value={formatStyle(user.style, t)}
           kind="choice"
-          options={STYLE_LABELS}
+          options={choix(STYLE_IDS, 'sport')}
           current={user.style}
           onSave={(value) => save({ style: (value as ProfileInput['style']) ?? undefined })}
         />
         <ProfileField
           icon="barbell"
-          label="Catégorie de poids"
-          value={user.weightClass ? formatWeightClass(user.weightClass) : null}
+          label={t('profil.poids')}
+          value={formatWeightClass(user.weightClass, t)}
           kind="choice"
-          options={WEIGHT_LABELS}
+          options={choix(WEIGHT_IDS, 'poids')}
           current={user.weightClass}
           onSave={(value) =>
             save({ weightClass: (value as ProfileInput['weightClass']) ?? undefined })
@@ -209,16 +222,16 @@ export default function ProfileScreen() {
         />
         <ProfileField
           icon="trophy"
-          label="Niveau"
-          value={user.level ? formatLevel(user.level) : null}
+          label={t('profil.niveau')}
+          value={formatLevel(user.level, t)}
           kind="choice"
-          options={LEVEL_LABELS}
+          options={choix(LEVEL_IDS, 'niveau')}
           current={user.level}
           onSave={(value) => save({ level: (value as ProfileInput['level']) ?? undefined })}
         />
         <ProfileField
           icon="resize"
-          label="Taille"
+          label={t('profil.taille')}
           value={user.heightCm ? String(user.heightCm) : null}
           suffix="cm"
           kind="number"
@@ -228,7 +241,7 @@ export default function ProfileScreen() {
         />
         <ProfileField
           icon="medal"
-          label="Combats"
+          label={t('profil.combats')}
           value={String(user.fightsCount)}
           kind="number"
           current={user.fightsCount}
@@ -237,7 +250,7 @@ export default function ProfileScreen() {
         />
         <ProfileField
           icon="time"
-          label="Expérience"
+          label={t('profil.experience')}
           value={String(user.experienceYears)}
           suffix={user.experienceYears > 1 ? 'ans' : 'an'}
           kind="number"
@@ -250,15 +263,46 @@ export default function ProfileScreen() {
 
         <ProfileField
           icon="location"
-          label="Ville"
+          label={t('profil.ville')}
           value={user.city}
           current={user.city}
           placeholder="Valence"
           onSave={(value) => save({ city: (value as string) ?? '' })}
         />
         <ProfileField
+          icon="flag"
+          label={t('profil.pays')}
+          value={nomDuPays(user.country, locale)}
+          kind="choice"
+          options={optionsPays(locale)}
+          current={user.country}
+          onSave={(value) => save({ country: (value as string) ?? undefined })}
+        />
+        <ProfileField
+          icon="swap-horizontal"
+          label={t('profil.devise')}
+          value={user.currency}
+          kind="choice"
+          options={optionsDevise(locale)}
+          current={user.currency}
+          onSave={(value) => save({ currency: (value as string) ?? undefined })}
+        />
+        <ProfileField
+          icon="language"
+          label={t('profil.langue')}
+          value={NOMS_DE_LANGUE[langue]}
+          kind="choice"
+          options={NOMS_DE_LANGUE}
+          current={langue}
+          // La langue ne part pas au serveur : elle vit sur l'appareil, et
+          // c'est l'en-tête `Accept-Language` qui la lui annonce à chaque appel.
+          onSave={async (value) => {
+            if (value) changerLangue(value as Langue);
+          }}
+        />
+        <ProfileField
           icon="cash"
-          label="Prix par round"
+          label={t('profil.tarif')}
           value={user.pricePerRound !== null ? formatPrice(user.pricePerRound, user.currency) : null}
           kind="number"
           current={user.pricePerRound}
@@ -269,11 +313,11 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Description</Text>
         <ProfileField
           icon="document-text"
-          label="Présentation"
+          label={t('profil.presentation')}
           value={user.bio}
           current={user.bio}
           multiline
-          placeholder="Boxeur amateur, toujours prêt pour un bon sparring."
+          placeholder={t('profil.presentationExemple')}
           onSave={(value) => save({ bio: (value as string) ?? '' })}
         />
 
@@ -286,7 +330,7 @@ export default function ProfileScreen() {
             tint={COLORS.success}
           />
           <StatCard
-            label="Séances"
+            label={t('profil.seances')}
             value={String(stats?.completedBookings ?? 0)}
             icon="checkmark-done-outline"
           />
@@ -301,7 +345,7 @@ export default function ProfileScreen() {
         {payouts ? <PayoutCard status={payouts} onChanged={load} /> : null}
 
         <Button
-          label="Déconnexion"
+          label={t('profil.deconnexion')}
           variant="danger"
           onPress={confirmLogout}
           style={styles.logout}

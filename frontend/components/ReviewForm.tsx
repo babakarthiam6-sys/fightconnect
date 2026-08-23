@@ -26,7 +26,7 @@ export function ReviewForm({ bookingId, onSubmitted, onError }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = useCallback(async () => {
-    const result = validate(reviewSchema, { rating, comment });
+    const result = validate(reviewSchema, { rating, comment }, t as never);
     setErrors(result.errors);
     if (!result.success || !result.data) return;
 
@@ -47,7 +47,7 @@ export function ReviewForm({ bookingId, onSubmitted, onError }: Props) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [bookingId, comment, onError, onSubmitted, rating]);
+  }, [t, bookingId, comment, onError, onSubmitted, rating]);
 
   return (
     <View style={styles.card}>

@@ -33,6 +33,27 @@ export const en: Record<keyof typeof fr, string> = {
   'inscription.decharge': 'liability waiver',
 
   'decharge.titre': 'Liability waiver',
+  'decharge.c1.titre': 'Nature of the activity',
+  'decharge.c1.corps': 'Sparring is a contact activity. It carries an inherent risk of injury, including serious injury, even when the rules are followed and protective gear is worn.',
+  'decharge.c2.titre': 'Physical fitness',
+  'decharge.c2.corps': 'You declare that you are in a physical condition compatible with combat sports and that you have no known medical contraindication.',
+  'decharge.c3.titre': 'Equipment',
+  'decharge.c3.corps': 'You undertake to use compliant protective equipment (gloves, mouthguard, groin guard, shin guards depending on the discipline) in good condition.',
+  'decharge.c4.titre': 'FightConnect’s role',
+  'decharge.c4.corps': 'FightConnect is an introduction service. The platform does not organise sessions, does not supervise participants, and is not liable for harm occurring during a session.',
+  'decharge.c5.titre': 'Insurance',
+  'decharge.c5.corps': 'It is up to you to hold personal accident insurance and public liability cover for combat sports.',
+  'decharge.c6.titre': 'Conduct',
+  'decharge.c6.corps': 'Any dangerous conduct, conduct under the influence of substances, or conduct contrary to the rules of the discipline results in account suspension.',
+  'decharge.intro':
+    'Read these terms carefully. They must be accepted to create an account and take part in a sparring session.',
+  'decharge.legal':
+    'By accepting, you acknowledge that you have read and understood all of these clauses and waive any claim against FightConnect for the risks inherent to the practice.',
+  'decharge.droitLocal':
+    'This text is written under French law. Outside France it is information, not a waiver: local law prevails.',
+  'decharge.accepter': 'I accept',
+  'decharge.refuser': 'Decline',
+  'inscription.indiceMotDePasse': 'At least 8 characters, one capital letter and one digit.',
 
   'recherche.titre': 'Find a sparring partner',
   'recherche.ville': 'Search by city…',
@@ -248,5 +269,8 @@ export const en: Record<keyof typeof fr, string> = {
   'valid.noteInvalide': 'Invalid rating.',
   'valid.note1a5': 'Give a rating between 1 and 5.',
   'valid.min10': 'At least 10 characters.',
-  'valid.motDePasseFaible': 'Too weak',
+  'valid.force0': 'Too weak',
+  'valid.force1': 'Weak',
+  'valid.force2': 'Fair',
+  'valid.force3': 'Strong',
 };

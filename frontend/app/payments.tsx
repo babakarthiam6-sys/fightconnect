@@ -10,6 +10,7 @@ import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import OfflineBanner from '@/components/OfflineBanner';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { useApp } from '@/context/AppContext';
 import { paymentService } from '@/services/payment';
 import { formatDateTime, formatPrice, formatStatus } from '@/utils/formatting';
@@ -34,6 +35,7 @@ const STATUS_ICONS: Record<PaymentStatus, keyof typeof Ionicons.glyphMap> = {
 };
 
 function PaymentRow({ payment }: { payment: Payment }) {
+  const t = useT();
   return (
     <View style={styles.row}>
       <View style={styles.rowIcon}>
@@ -42,10 +44,10 @@ function PaymentRow({ payment }: { payment: Payment }) {
 
       <View style={styles.rowBody}>
         <Text style={styles.rowTitle} numberOfLines={1}>
-          {payment.partnerName ?? 'Séance de sparring'}
+          {payment.partnerName ?? t('paiement.seance')}
         </Text>
         <Text style={styles.rowDate}>{formatDateTime(payment.createdAt)}</Text>
-        <Badge label={formatStatus(payment.status)} tone={STATUS_TONES[payment.status]} />
+        <Badge label={formatStatus(payment.status, t)} tone={STATUS_TONES[payment.status]} />
       </View>
 
       <Text style={styles.rowAmount}>{formatPrice(payment.amount, payment.currency)}</Text>
@@ -54,6 +56,7 @@ function PaymentRow({ payment }: { payment: Payment }) {
 }
 
 export default function PaymentsScreen() {
+  const t = useT();
   const router = useRouter();
   const { isConnected } = useApp();
 
@@ -95,7 +98,7 @@ export default function PaymentsScreen() {
     .filter((payment) => payment.status === 'succeeded')
     .reduce((sum, payment) => sum + payment.amount, 0);
 
-  if (isLoading) return <LoadingSpinner fullScreen label="Chargement de vos paiements…" />;
+  if (isLoading) return <LoadingSpinner fullScreen label={t('paiement.chargement')} />;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -125,9 +128,9 @@ export default function PaymentsScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="card-outline"
-              title="Aucun paiement"
-              message="Vos règlements de sparrings apparaîtront ici."
-              actionLabel="Voir les sparrings"
+              title={t('paiement.aucun')}
+              message={t('paiement.aucunTexte')}
+              actionLabel={t('paiement.voirSparrings')}
               onAction={() => router.push('/(tabs)/search')}
             />
           }

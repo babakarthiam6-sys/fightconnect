@@ -9,6 +9,7 @@ import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import RatingStars from '@/components/RatingStars';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { partnerService } from '@/services/partner';
 import {
   formatLevel,
@@ -21,6 +22,7 @@ import {
 import type { AppError, Partner } from '@/types';
 
 export default function PartnerScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -44,7 +46,7 @@ export default function PartnerScreen() {
     void load();
   }, [load]);
 
-  if (isLoading) return <LoadingSpinner fullScreen label="Chargement du profil…" />;
+  if (isLoading) return <LoadingSpinner fullScreen label={t('partenaire.chargement')} />;
   if (error) return <ErrorView error={error} onRetry={load} />;
   if (!partner) return null;
 
@@ -59,7 +61,7 @@ export default function PartnerScreen() {
 
           <View style={styles.metaRow}>
             <Ionicons name="location-outline" size={15} color={COLORS.textMuted} />
-            <Text style={styles.meta}>{partner.city ?? 'Ville non précisée'}</Text>
+            <Text style={styles.meta}>{partner.city ?? t('partenaire.villeInconnue')}</Text>
           </View>
 
           <View style={styles.ratingRow}>
@@ -69,40 +71,40 @@ export default function PartnerScreen() {
               ratingsCount={partner.ratingsCount}
             />
             <Text style={styles.ratingLabel}>
-              {isNew ? 'Nouveau' : formatRating(partner.averageRating)}
+              {isNew ? t('partenaire.nouveau') : formatRating(partner.averageRating)}
             </Text>
             <Text style={styles.meta}>
-              ({partner.ratingsCount} avis)
+              {t('partenaire.avis', { n: partner.ratingsCount })}
             </Text>
           </View>
 
           <View style={styles.priceTag}>
             <Text style={styles.price}>{formatPrice(partner.pricePerRound, partner.currency)}</Text>
-            <Text style={styles.perRound}> par round</Text>
+            <Text style={styles.perRound}>{t('partenaire.parRound')}</Text>
           </View>
         </View>
 
         <View style={styles.tiles}>
-          <Tile icon="pulse" value={formatStyle(partner.style)} label="Sport" />
-          <Tile icon="trophy" value={formatLevel(partner.level)} label="Niveau" />
+          <Tile icon="pulse" value={formatStyle(partner.style, t)} label={t('profil.sport')} />
+          <Tile icon="trophy" value={formatLevel(partner.level, t)} label={t('profil.niveau')} />
           <Tile
             icon="barbell"
-            value={partner.weightClass ? formatWeightClass(partner.weightClass) : '—'}
-            label="Poids"
+            value={formatWeightClass(partner.weightClass, t)}
+            label={t('profil.poids')}
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Statistiques</Text>
+        <Text style={styles.sectionTitle}>{t('partenaire.statistiques')}</Text>
         <View style={styles.tiles}>
-          <Stat value={String(partner.fightsCount)} label="Combats" />
-          <Stat value={String(partner.experienceYears)} label="Années d’exp." />
-          <Stat value={partner.heightCm ? String(partner.heightCm) : '—'} label="Taille (cm)" />
+          <Stat value={String(partner.fightsCount)} label={t('partenaire.combats')} />
+          <Stat value={String(partner.experienceYears)} label={t('partenaire.experience')} />
+          <Stat value={partner.heightCm ? String(partner.heightCm) : '—'} label={t('partenaire.taille')} />
         </View>
 
-        <Text style={styles.sectionTitle}>À propos</Text>
+        <Text style={styles.sectionTitle}>{t('partenaire.aPropos')}</Text>
         <View style={styles.card}>
           <Text style={partner.bio ? styles.bio : styles.bioEmpty}>
-            {partner.bio ?? 'Ce partenaire n’a pas encore écrit de présentation.'}
+            {partner.bio ?? t('partenaire.sansPresentation')}
           </Text>
         </View>
       </ScrollView>
@@ -111,7 +113,7 @@ export default function PartnerScreen() {
         <View style={styles.actions}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Écrire à ${formatUserName(partner)}`}
+            accessibilityLabel={t('partenaire.ecrireA', { nom: formatUserName(partner) })}
             onPress={() => router.push(`/chat/${partner.id}`)}
             style={({ pressed }) => [styles.discuter, pressed && styles.pressed]}
             testID="partner-chat"
@@ -120,7 +122,7 @@ export default function PartnerScreen() {
           </Pressable>
 
           <Button
-            label="Réserver"
+            label={t('partenaire.reserver')}
             onPress={() => router.push(`/booking/${partner.id}`)}
             disabled={!partner.available}
             icon={<Ionicons name="calendar" size={18} color={COLORS.textInverse} />}
@@ -136,12 +138,11 @@ export default function PartnerScreen() {
         */}
         {!partner.available ? (
           <Text style={styles.unavailable}>
-            Ce partenaire s’est mis en pause. Il n’accepte pas de demande pour l’instant.
+            {t('partenaire.enPause')}
           </Text>
         ) : !partner.payoutsEnabled ? (
           <Text style={styles.unavailable} testID="partner-no-payouts">
-            Ce partenaire n’a pas encore activé les paiements. Vous pouvez lui écrire, mais la
-            séance ne sera pas payable tant qu’il ne l’a pas fait.
+            {t('partenaire.sansVersements')}
           </Text>
         ) : null}
       </View>

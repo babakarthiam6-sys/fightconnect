@@ -5,6 +5,7 @@ import {
   Pressable,
   RefreshControl,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,25 +20,28 @@ import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import OfflineBanner from '@/components/OfflineBanner';
 import PartnerCard from '@/components/PartnerCard';
-import { COLORS, LEVEL_LABELS, RADIUS, SPACING, STYLE_LABELS, TYPOGRAPHY, WEIGHT_LABELS } from '@/constants/theme';
+import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { LEVEL_IDS, STYLE_IDS, WEIGHT_IDS } from '@/constants/sports';
+import { useI18n, type Traducteur } from '@/i18n';
+import { optionsPays } from '@/i18n/pays';
 import { partnerService } from '@/services/partner';
 import { useFilterStore } from '@/store/filters';
 import type { AppError, Partner, SparringLevel, SparringStyle, WeightClass } from '@/types';
 
-const STYLE_IDS = Object.keys(STYLE_LABELS) as SparringStyle[];
-const LEVEL_IDS = Object.keys(LEVEL_LABELS) as SparringLevel[];
-const WEIGHT_IDS = Object.keys(WEIGHT_LABELS) as WeightClass[];
 
 export default function SearchScreen() {
+  const { t, locale } = useI18n();
   const router = useRouter();
 
   // Sélecteurs champ par champ : consommer le store entier re-rendrait l'écran
   // à chaque frappe, y compris pour des champs qu'il n'affiche pas.
   const city = useFilterStore((state) => state.city);
+  const country = useFilterStore((state) => state.country);
   const level = useFilterStore((state) => state.level);
   const style = useFilterStore((state) => state.style);
   const weightClass = useFilterStore((state) => state.weightClass);
   const setCity = useFilterStore((state) => state.setCity);
+  const setCountry = useFilterStore((state) => state.setCountry);
   const setLevel = useFilterStore((state) => state.setLevel);
   const setStyle = useFilterStore((state) => state.setStyle);
   const setWeightClass = useFilterStore((state) => state.setWeightClass);
@@ -52,11 +56,11 @@ export default function SearchScreen() {
   const [showFilters, setShowFilters] = useState(false);
 
   const filters = useMemo(
-    () => ({ city, level, style, weightClass }),
-    [city, level, style, weightClass],
+    () => ({ city, country, level, style, weightClass }),
+    [city, country, level, style, weightClass],
   );
 
-  const activeCount = [level, style, weightClass].filter((value) => value !== null).length;
+  const activeCount = [country, level, style, weightClass].filter((v) => v !== null).length;
 
   const load = useCallback(async () => {
     try {
@@ -96,9 +100,9 @@ export default function SearchScreen() {
       <OfflineBanner visible={fromCache} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Trouver un sparring</Text>
+        <Text style={styles.title}>{t('recherche.titre')}</Text>
         <Text style={styles.subtitle}>
-          {total} partenaire{total > 1 ? 's' : ''} disponible{total > 1 ? 's' : ''}
+          {t(total > 1 ? 'recherche.disponiblesPluriel' : 'recherche.disponibles', { n: total })}
         </Text>
       </View>
 
@@ -108,7 +112,7 @@ export default function SearchScreen() {
           <TextInput
             value={city}
             onChangeText={setCity}
-            placeholder="Rechercher par ville…"
+            placeholder={t('recherche.ville')}
             placeholderTextColor={COLORS.textMuted}
             style={styles.searchInput}
             autoCapitalize="words"
@@ -118,7 +122,7 @@ export default function SearchScreen() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Filtres"
+          accessibilityLabel={t('recherche.filtres')}
           onPress={() => setShowFilters(true)}
           style={styles.filterButton}
         >
@@ -132,7 +136,7 @@ export default function SearchScreen() {
       </View>
 
       {isLoading ? (
-        <LoadingSpinner fullScreen label="Recherche des partenaires…" />
+        <LoadingSpinner fullScreen label={t('recherche.chargement')} />
       ) : error ? (
         <ErrorView error={error} onRetry={load} />
       ) : (
@@ -155,13 +159,13 @@ export default function SearchScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="people-outline"
-              title="Aucun partenaire"
+              title={t('recherche.aucun')}
               message={
                 activeCount > 0 || city
-                  ? 'Élargissez vos critères : peu de monde correspond pour l’instant.'
-                  : 'Personne n’est encore disponible. Complétez votre profil pour être le premier.'
+                  ? t('recherche.aucunAvecFiltres')
+                  : t('recherche.aucunSansFiltre')
               }
-              actionLabel={activeCount > 0 || city ? 'Effacer les filtres' : undefined}
+              actionLabel={activeCount > 0 || city ? t('recherche.effacer') : undefined}
               onAction={
                 activeCount > 0 || city
                   ? () => {
@@ -184,45 +188,60 @@ export default function SearchScreen() {
           <View style={styles.modalHeader}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Fermer"
+              accessibilityLabel={t('general.fermer')}
               onPress={() => setShowFilters(false)}
               hitSlop={12}
             >
               <Ionicons name="close" size={26} color={COLORS.text} />
             </Pressable>
-            <Text style={styles.modalTitle}>Filtres</Text>
+            <Text style={styles.modalTitle}>{t('recherche.filtres')}</Text>
             <Pressable accessibilityRole="button" onPress={reset} hitSlop={12}>
               <Text style={styles.clear}>Effacer</Text>
             </Pressable>
           </View>
 
           <View style={styles.modalBody}>
+            {/*
+              Le pays passe avant la discipline : c'est le filtre qui décide si
+              les autres ont un sens. Il est en liste déroulante et non en puces
+              — deux cent quarante-neuf pays ne tiennent pas à l'écran.
+            */}
+            <PaysChoisi
+              label={t('recherche.pays')}
+              tous={t('recherche.toutPays')}
+              locale={locale}
+              selected={country}
+              onSelect={setCountry}
+            />
             <ChipGroup
-              label="Sport"
+              label={t('recherche.sport')}
+              prefixe="sport"
               options={STYLE_IDS}
-              labels={STYLE_LABELS}
               selected={style}
               onSelect={(value) => setStyle(value as SparringStyle | null)}
+              t={t}
             />
             <ChipGroup
-              label="Catégorie de poids"
+              label={t('recherche.poids')}
+              prefixe="poids"
               options={WEIGHT_IDS}
-              labels={WEIGHT_LABELS}
               selected={weightClass}
               onSelect={(value) => setWeightClass(value as WeightClass | null)}
+              t={t}
             />
             <ChipGroup
-              label="Niveau"
+              label={t('recherche.niveau')}
+              prefixe="niveau"
               options={LEVEL_IDS}
-              labels={LEVEL_LABELS}
               selected={level}
               onSelect={(value) => setLevel(value as SparringLevel | null)}
+              t={t}
             />
           </View>
 
           <View style={styles.modalFooter}>
             <Button
-              label={`Voir ${total} résultat${total > 1 ? 's' : ''}`}
+              label={t('recherche.voirResultats', { n: total })}
               onPress={() => setShowFilters(false)}
             />
           </View>
@@ -232,15 +251,101 @@ export default function SearchScreen() {
   );
 }
 
-interface ChipGroupProps {
+/**
+ * Choix du pays, en liste déroulante filtrable.
+ *
+ * Les noms viennent d'`Intl.DisplayNames`, donc traduits par le système :
+ * recopier deux cent quarante-neuf pays dans le catalogue reviendrait à
+ * maintenir une table qui vieillit, pour un résultat moins bon.
+ */
+function PaysChoisi({
+  label,
+  tous,
+  locale,
+  selected,
+  onSelect,
+}: {
   label: string;
-  options: string[];
-  labels: Record<string, string>;
+  tous: string;
+  locale: string;
   selected: string | null;
-  onSelect: (value: string | null) => void;
+  onSelect: (code: string | null) => void;
+}) {
+  const [ouvert, setOuvert] = React.useState(false);
+  const [filtre, setFiltre] = React.useState('');
+  const pays = React.useMemo(() => optionsPays(locale), [locale]);
+  const visibles = Object.entries(pays).filter(([, nom]) =>
+    nom.toLowerCase().includes(filtre.trim().toLowerCase()),
+  );
+
+  return (
+    <View style={styles.group}>
+      <Text style={styles.groupLabel}>{label}</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPress={() => setOuvert((v) => !v)}
+        style={[styles.chip, selected ? styles.chipActive : null]}
+      >
+        <Text style={[styles.chipLabel, selected ? styles.chipLabelActive : null]}>
+          {selected ? (pays[selected] ?? selected) : tous}
+        </Text>
+      </Pressable>
+
+      {ouvert ? (
+        <>
+          <TextInput
+            value={filtre}
+            onChangeText={setFiltre}
+            placeholder={tous}
+            placeholderTextColor={COLORS.textMuted}
+            style={styles.paysRecherche}
+          />
+          <ScrollView style={styles.paysListe} keyboardShouldPersistTaps="handled">
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                onSelect(null);
+                setOuvert(false);
+              }}
+              style={styles.paysLigne}
+            >
+              <Text style={styles.chipLabel}>{tous}</Text>
+            </Pressable>
+            {visibles.map(([code, nom]) => (
+              <Pressable
+                key={code}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selected === code }}
+                onPress={() => {
+                  onSelect(code);
+                  setOuvert(false);
+                }}
+                style={styles.paysLigne}
+              >
+                <Text style={selected === code ? styles.chipLabelActive : styles.chipLabel}>
+                  {nom}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
+    </View>
+  );
 }
 
-function ChipGroup({ label, options, labels, selected, onSelect }: ChipGroupProps) {
+interface ChipGroupProps {
+  label: string;
+  /** Préfixe de la clé de traduction : « sport », « poids » ou « niveau ». */
+  prefixe: 'sport' | 'poids' | 'niveau';
+  options: readonly string[];
+  selected: string | null;
+  onSelect: (value: string | null) => void;
+  t: Traducteur;
+}
+
+function ChipGroup({ label, prefixe, options, selected, onSelect, t }: ChipGroupProps) {
   return (
     <View style={styles.group}>
       <Text style={styles.groupLabel}>{label}</Text>
@@ -258,7 +363,7 @@ function ChipGroup({ label, options, labels, selected, onSelect }: ChipGroupProp
               style={[styles.chip, isActive && styles.chipActive]}
             >
               <Text style={[styles.chipLabel, isActive && styles.chipLabelActive]}>
-                {labels[option]}
+                {t(`${prefixe}.${option}` as Parameters<Traducteur>[0])}
               </Text>
             </Pressable>
           );
@@ -334,6 +439,19 @@ const styles = StyleSheet.create({
   group: { gap: SPACING.sm },
   groupLabel: { ...TYPOGRAPHY.title, color: COLORS.text },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  paysRecherche: {
+    ...TYPOGRAPHY.body,
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    color: COLORS.text,
+    marginTop: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  paysListe: { marginTop: SPACING.sm, maxHeight: 220 },
+  paysLigne: { paddingVertical: SPACING.sm },
   chip: {
     backgroundColor: COLORS.surface,
     borderColor: COLORS.border,

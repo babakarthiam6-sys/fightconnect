@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import Button from '@/components/Button';
@@ -44,6 +44,7 @@ export function ProfileField({
 }: Props) {
   const t = useT();
   const [isOpen, setIsOpen] = useState(false);
+  const [filtre, setFiltre] = useState('');
   const [draft, setDraft] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -102,8 +103,29 @@ export function ProfileField({
           <Text style={styles.sheetTitle}>{label}</Text>
 
           {kind === 'choice' && options ? (
+            <>
+              {/*
+                Au-delà d'une douzaine de choix — les pays, les devises — la
+                liste ne se parcourt plus à l'œil. Un champ de filtre apparaît
+                alors ; en dessous il encombrerait pour rien.
+              */}
+              {Object.keys(options).length > 12 ? (
+                <TextInput
+                  value={filtre}
+                  onChangeText={setFiltre}
+                  placeholder={t('general.rechercher')}
+                  placeholderTextColor={COLORS.textMuted}
+                  autoFocus
+                  style={styles.input}
+                />
+              ) : null}
+            <ScrollView style={styles.choicesScroll} keyboardShouldPersistTaps="handled">
             <View style={styles.choices}>
-              {Object.entries(options).map(([id, optionLabel]) => {
+              {Object.entries(options)
+                .filter(([, optionLabel]) =>
+                  optionLabel.toLowerCase().includes(filtre.trim().toLowerCase()),
+                )
+                .map(([id, optionLabel]) => {
                 const isActive = current === id;
                 return (
                   <Pressable
@@ -123,6 +145,8 @@ export function ProfileField({
                 );
               })}
             </View>
+            </ScrollView>
+            </>
           ) : (
             <>
               <TextInput
@@ -185,6 +209,8 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
   inputMultiline: { minHeight: 120, textAlignVertical: 'top' },
+  // Plafonnée pour que le bouton « Fermer » reste atteignable sous une longue liste.
+  choicesScroll: { maxHeight: 320 },
   choices: { gap: SPACING.sm },
   choice: {
     alignItems: 'center',

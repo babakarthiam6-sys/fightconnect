@@ -11,6 +11,7 @@ import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { CONFIG } from '@/constants/config';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { useApp } from '@/context/AppContext';
 import { bookingService } from '@/services/booking';
 import { partnerService } from '@/services/partner';
@@ -22,11 +23,15 @@ const MIN_ROUNDS = 1;
 const MAX_ROUNDS = 20;
 
 /** « round » au singulier, « rounds » au-delà. Un seul endroit pour la règle. */
-function plural(rounds: number): string {
-  return rounds > 1 ? 'rounds' : 'round';
+type CleRound = 'reservation.round' | 'reservation.rounds';
+
+/** Une clé par forme : le catalogue porte le pluriel de chaque langue. */
+function cleRound(rounds: number): CleRound {
+  return rounds > 1 ? 'reservation.rounds' : 'reservation.round';
 }
 
 export default function BookingScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const toast = useToast();
@@ -75,7 +80,7 @@ export default function BookingScreen() {
   }, [pricePerRound, rounds]);
 
   const submit = useCallback(async () => {
-    const result = validate(bookingSchema, { scheduledAt: scheduledAt.toISOString(), rounds });
+    const result = validate(bookingSchema, { scheduledAt: scheduledAt.toISOString(), rounds }, t as never);
     setErrors(result.errors);
     if (!result.success || !result.data || !partner) return;
 
@@ -87,14 +92,14 @@ export default function BookingScreen() {
         rounds: result.data.rounds,
       });
       invalidateBookings();
-      toast.show('Demande envoyée', { type: 'success' });
+      toast.show(t('reservation.envoyee'), { type: 'success' });
       router.replace('/(tabs)/bookings?direction=sent');
     } catch (caught) {
       toast.show((caught as AppError).message, { type: 'danger' });
     } finally {
       setIsSubmitting(false);
     }
-  }, [invalidateBookings, partner, rounds, router, scheduledAt, toast]);
+  }, [t, invalidateBookings, partner, rounds, router, scheduledAt, toast]);
 
   if (isLoading) return <LoadingSpinner fullScreen label="Chargement…" />;
   if (error) return <ErrorView error={error} onRetry={load} />;
@@ -107,7 +112,7 @@ export default function BookingScreen() {
           <Avatar user={partner} size={56} />
           <View style={styles.identity}>
             <Text style={styles.name}>{formatUserName(partner)}</Text>
-            <Text style={styles.meta}>{partner.city ?? 'Ville non précisée'}</Text>
+            <Text style={styles.meta}>{partner.city ?? t('partenaire.villeInconnue')}</Text>
           </View>
           <View style={styles.priceBlock}>
             <Text style={styles.price}>{formatPrice(pricePerRound, partner.currency)}</Text>
@@ -117,11 +122,11 @@ export default function BookingScreen() {
 
         <DateTimeField value={scheduledAt} onChange={setScheduledAt} error={errors.scheduledAt} />
 
-        <Text style={styles.sectionTitle}>Nombre de rounds</Text>
+        <Text style={styles.sectionTitle}>{t('reservation.nombreDeRounds')}</Text>
         <View style={styles.stepper}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Retirer un round"
+            accessibilityLabel={t('reservation.retirerRound')}
             onPress={() => setRounds((value) => Math.max(MIN_ROUNDS, value - 1))}
             disabled={rounds <= MIN_ROUNDS}
             style={({ pressed }) => [
@@ -135,12 +140,12 @@ export default function BookingScreen() {
 
           <View style={styles.roundsBlock}>
             <Text style={styles.rounds}>{rounds}</Text>
-            <Text style={styles.meta}>{plural(rounds)}</Text>
+            <Text style={styles.meta}>{t(cleRound(rounds))}</Text>
           </View>
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Ajouter un round"
+            accessibilityLabel={t('reservation.ajouterRound')}
             onPress={() => setRounds((value) => Math.min(MAX_ROUNDS, value + 1))}
             disabled={rounds >= MAX_ROUNDS}
             style={({ pressed }) => [
@@ -154,7 +159,7 @@ export default function BookingScreen() {
         </View>
         {errors.rounds ? <Text style={styles.error}>{errors.rounds}</Text> : null}
 
-        <Text style={styles.sectionTitle}>Récapitulatif</Text>
+        <Text style={styles.sectionTitle}>{t('reservation.recapitulatif')}</Text>
         <View style={styles.summary}>
           {/*
             L'ordre des trois premières lignes raconte le trajet de l'argent : ce
@@ -165,14 +170,14 @@ export default function BookingScreen() {
           */}
           <View style={styles.summaryRow}>
             <Text style={styles.meta}>
-              {rounds} {plural(rounds)} × {formatPrice(pricePerRound, partner.currency)}
+              {rounds} {t(cleRound(rounds))} × {formatPrice(pricePerRound, partner.currency)}
             </Text>
             <Text style={styles.summaryValue}>{formatPrice(quote.total, partner.currency)}</Text>
           </View>
 
           <View style={styles.summaryRow}>
             <Text style={styles.meta}>
-              Commission plateforme ({Math.round(CONFIG.commissionRate * 100)} %)
+              {t('reservation.commission', { taux: Math.round(CONFIG.commissionRate * 100) })}
             </Text>
             <Text style={styles.summaryValue} testID="booking-commission">
               {formatPrice(quote.commission, partner.currency, { cents: true, negative: true })}
@@ -180,14 +185,14 @@ export default function BookingScreen() {
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={styles.meta}>Le partenaire reçoit</Text>
+            <Text style={styles.meta}>{t('reservation.partenaireRecoit')}</Text>
             <Text style={styles.summaryValue} testID="booking-payout">
               {formatPrice(quote.payout, partner.currency, { cents: true })}
             </Text>
           </View>
 
           <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total à payer</Text>
+            <Text style={styles.totalLabel}>{t('reservation.totalAPayer')}</Text>
             <Text style={styles.total} testID="booking-total">
               {formatPrice(quote.total, partner.currency)}
             </Text>
@@ -195,14 +200,13 @@ export default function BookingScreen() {
         </View>
 
         <Text style={styles.note}>
-          La commission est prélevée sur la part du partenaire. Vous payez le tarif annoncé,
-          sans supplément.
+          {t('reservation.note')}
         </Text>
       </ScrollView>
 
       <View style={styles.footer}>
         <Button
-          label={`Envoyer la demande · ${formatPrice(quote.total, partner.currency)}`}
+          label={t('reservation.envoyer', { montant: formatPrice(quote.total, partner.currency) })}
           onPress={submit}
           loading={isSubmitting}
           testID="booking-submit"

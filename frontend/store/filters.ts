@@ -4,6 +4,7 @@ import type { PartnerFilters } from '@/types';
 
 const EMPTY_FILTERS: PartnerFilters = {
   city: '',
+  country: null,
   level: null,
   style: null,
   weightClass: null,
@@ -11,6 +12,7 @@ const EMPTY_FILTERS: PartnerFilters = {
 
 interface FilterStore extends PartnerFilters {
   setCity: (city: string) => void;
+  setCountry: (country: PartnerFilters['country']) => void;
   setLevel: (level: PartnerFilters['level']) => void;
   setStyle: (style: PartnerFilters['style']) => void;
   setWeightClass: (weightClass: PartnerFilters['weightClass']) => void;
@@ -28,12 +30,13 @@ interface FilterStore extends PartnerFilters {
 export const useFilterStore = create<FilterStore>((set, get) => ({
   ...EMPTY_FILTERS,
   setCity: (city) => set({ city }),
+  setCountry: (country) => set({ country }),
   setLevel: (level) => set({ level }),
   setStyle: (style) => set({ style }),
   setWeightClass: (weightClass) => set({ weightClass }),
   reset: () => set({ ...EMPTY_FILTERS }),
   activeCount: () => {
-    const { level, style, weightClass } = get();
-    return [level, style, weightClass].filter((value) => value !== null).length;
+    const { country, level, style, weightClass } = get();
+    return [country, level, style, weightClass].filter((value) => value !== null).length;
   },
 }));

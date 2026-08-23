@@ -31,6 +31,27 @@ export const fr = {
   'inscription.decharge': 'décharge de responsabilité',
 
   'decharge.titre': 'Décharge de responsabilité',
+  'decharge.c1.titre': 'Nature de l’activité',
+  'decharge.c1.corps': 'Le sparring est une activité de contact. Elle comporte un risque intrinsèque de blessure, y compris de blessure grave, malgré le respect des règles et le port des protections.',
+  'decharge.c2.titre': 'Aptitude physique',
+  'decharge.c2.corps': 'Vous déclarez être en condition physique compatible avec la pratique des sports de combat et ne présenter aucune contre-indication médicale connue.',
+  'decharge.c3.titre': 'Équipement',
+  'decharge.c3.corps': 'Vous vous engagez à utiliser un équipement de protection conforme (gants, protège-dents, coquille, protège-tibias selon la discipline) et en bon état.',
+  'decharge.c4.titre': 'Rôle de FightConnect',
+  'decharge.c4.corps': 'FightConnect est un intermédiaire de mise en relation. La plateforme n’organise pas les séances, n’encadre pas les pratiquants et n’est pas responsable des dommages survenus pendant une séance.',
+  'decharge.c5.titre': 'Assurance',
+  'decharge.c5.corps': 'Il vous appartient de disposer d’une assurance individuelle accident et d’une responsabilité civile couvrant la pratique des sports de combat.',
+  'decharge.c6.titre': 'Comportement',
+  'decharge.c6.corps': 'Tout comportement dangereux, sous emprise de substances, ou contraire aux règles de la discipline entraîne la suspension du compte.',
+  'decharge.intro':
+    'Lisez attentivement ces conditions. Elles doivent être acceptées pour créer un compte et participer à un sparring.',
+  'decharge.legal':
+    'En acceptant, vous reconnaissez avoir lu et compris l’ensemble de ces clauses et renoncez à tout recours contre FightConnect au titre des risques inhérents à la pratique.',
+  'decharge.droitLocal':
+    'Ce texte est rédigé au regard du droit français. Hors de France, il vaut information et non renonciation : le droit local prévaut.',
+  'decharge.accepter': 'J’accepte',
+  'decharge.refuser': 'Refuser',
+  'inscription.indiceMotDePasse': '8 caractères minimum, une majuscule et un chiffre.',
 
   // — Recherche ————————————————————————————————————
   'recherche.titre': 'Trouver un sparring',
@@ -262,7 +283,10 @@ export const fr = {
   'valid.noteInvalide': 'Note invalide.',
   'valid.note1a5': 'Donnez une note entre 1 et 5.',
   'valid.min10': 'Au moins 10 caractères.',
-  'valid.motDePasseFaible': 'Trop faible',
+  'valid.force0': 'Trop faible',
+  'valid.force1': 'Faible',
+  'valid.force2': 'Correct',
+  'valid.force3': 'Solide',
 } as const;
 
 export type Cle = keyof typeof fr;

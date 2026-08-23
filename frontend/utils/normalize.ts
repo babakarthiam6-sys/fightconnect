@@ -164,6 +164,9 @@ export function normalizeUserSummary(input: unknown): UserSummary | null {
 function normalizeSportProfile(raw: Raw): SportProfile {
   return {
     city: optionalStr(raw, ['city', 'location']),
+    // Le serveur renvoie déjà le code en majuscules ; on l'y ramène quand même,
+    // le normaliseur ne suppose jamais que l'amont a bien fait son travail.
+    country: optionalStr(raw, ['country'])?.toUpperCase() ?? null,
     bio: optionalStr(raw, ['bio', 'description', 'about']),
     style: raw.style == null ? null : oneOf<SparringStyle>(raw.style, STYLES, 'boxing'),
     level: raw.level == null ? null : oneOf<SparringLevel>(raw.level, LEVELS, 'beginner'),

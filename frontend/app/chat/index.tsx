@@ -7,11 +7,13 @@ import EmptyState from '@/components/EmptyState';
 import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { chatService } from '@/services/chat';
 import { formatRelative, formatUserName } from '@/utils/formatting';
 import type { AppError, Conversation } from '@/types';
 
 export default function ConversationsScreen() {
+  const t = useT();
   const router = useRouter();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -42,7 +44,7 @@ export default function ConversationsScreen() {
     }, [load]),
   );
 
-  if (isLoading) return <LoadingSpinner fullScreen label="Chargement des messages…" />;
+  if (isLoading) return <LoadingSpinner fullScreen label={t('discussion.chargement')} />;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -55,7 +57,7 @@ export default function ConversationsScreen() {
           renderItem={({ item }) => (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Conversation avec ${formatUserName(item.other)}`}
+              accessibilityLabel={t('discussion.avec', { nom: formatUserName(item.other) })}
               onPress={() => item.other && router.push(`/chat/${item.other.id}`)}
               style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             >
@@ -98,9 +100,9 @@ export default function ConversationsScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="chatbubbles-outline"
-              title="Aucun message"
-              message="Écrivez à un partenaire depuis sa fiche pour caler les détails d’une séance."
-              actionLabel="Trouver un partenaire"
+              title={t('discussion.aucun')}
+              message={t('discussion.aucunTexte')}
+              actionLabel={t('discussion.trouverPartenaire')}
               onAction={() => router.push('/(tabs)/search')}
             />
           }

@@ -8,12 +8,14 @@ import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import PaymentForm from '@/components/PaymentForm';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { useApp } from '@/context/AppContext';
 import { bookingService } from '@/services/booking';
 import { formatDateTime, formatPrice, formatUserName } from '@/utils/formatting';
 import type { AppError, Booking } from '@/types';
 
 export default function PayBookingScreen() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const toast = useToast();
@@ -48,10 +50,10 @@ export default function PayBookingScreen() {
   }, [load]);
 
   const onSuccess = useCallback(() => {
-    toast.show('Paiement accepté', { type: 'success' });
+    toast.show(t('paiement.accepte'), { type: 'success' });
     invalidateBookings();
     router.replace('/(tabs)/bookings?direction=sent');
-  }, [invalidateBookings, router, toast]);
+  }, [t, invalidateBookings, router, toast]);
 
   if (isLoading) return <LoadingSpinner fullScreen label="Chargement…" />;
   if (error) return <ErrorView error={error} onRetry={load} />;
@@ -59,7 +61,7 @@ export default function PayBookingScreen() {
     return (
       <ErrorView
         error={{
-          message: 'Cette demande n’existe plus.',
+          message: t('paiement.demandeDisparue'),
           status: 404,
           isNetworkError: false,
           fieldErrors: null,
@@ -83,7 +85,8 @@ export default function PayBookingScreen() {
 
           <View style={styles.row}>
             <Text style={styles.meta}>
-              {booking.rounds} round{booking.rounds > 1 ? 's' : ''} ×{' '}
+              {booking.rounds}{' '}
+              {t(booking.rounds > 1 ? 'reservation.rounds' : 'reservation.round')} ×{' '}
               {formatPrice(booking.pricePerRound, booking.currency)}
             </Text>
             <Text style={styles.total}>{formatPrice(booking.total, booking.currency)}</Text>

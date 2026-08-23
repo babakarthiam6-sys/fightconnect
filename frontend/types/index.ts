@@ -43,6 +43,8 @@ export type RiskLevel = 'low' | 'medium' | 'high';
 /** Champs sportifs, communs au profil privé et à la fiche publique. */
 export interface SportProfile {
   city: string | null;
+  /** ISO 3166-1 alpha-2, en majuscules. `null` tant qu'il n'est pas déclaré. */
+  country: string | null;
   bio: string | null;
   style: SparringStyle | null;
   level: SparringLevel | null;
@@ -203,6 +205,8 @@ export interface Paginated<T> {
 
 export interface PartnerFilters {
   city: string;
+  /** ISO 3166-1 alpha-2. Sans lui, « Paris » ramène la France et le Texas. */
+  country: string | null;
   level: SparringLevel | null;
   style: SparringStyle | null;
   weightClass: WeightClass | null;

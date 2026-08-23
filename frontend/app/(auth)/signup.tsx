@@ -69,15 +69,15 @@ export default function SignupScreen() {
       email,
       password,
       dischargeAccepted,
-    });
+    }, t as never);
     setErrors(result.errors);
     if (!result.success || !result.data) return;
 
     const success = await signup(result.data);
     if (success) {
-      toast.show('Bienvenue sur FightConnect !', { type: 'success' });
+      toast.show(t('inscription.bienvenue'), { type: 'success' });
     }
-  }, [dischargeAccepted, email, firstName, lastName, password, signup, toast]);
+  }, [t, dischargeAccepted, email, firstName, lastName, password, signup, toast]);
 
   return (
     <KeyboardAvoidingView
@@ -134,7 +134,7 @@ export default function SignupScreen() {
           value={password}
           onChangeText={setPassword}
           error={errors.password}
-          hint="8 caractères minimum, une majuscule et un chiffre."
+          hint={t('inscription.indiceMotDePasse')}
           placeholder="••••••••"
           secure
           autoCapitalize="none"
@@ -156,7 +156,7 @@ export default function SignupScreen() {
               />
             </View>
             <Text style={[styles.strengthLabel, { color: STRENGTH_COLORS[strength.score] }]}>
-              {strength.label}
+              {t(strength.label)}
             </Text>
           </View>
         ) : null}
