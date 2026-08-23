@@ -5,6 +5,7 @@ import Avatar from '@/components/Avatar';
 import Badge from '@/components/Badge';
 import RatingStars from '@/components/RatingStars';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { formatRelative, formatUserName } from '@/utils/formatting';
 import type { Review } from '@/types';
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function ReviewCard({ review }: Props) {
+  const t = useT();
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -28,7 +30,7 @@ export function ReviewCard({ review }: Props) {
 
       {review.flagged ? (
         <View style={styles.moderation}>
-          <Badge label="Signalé par la modération IA" tone="warning" icon="warning-outline" />
+          <Badge label={t('avis.signale')} tone="warning" icon="warning-outline" />
           {review.flagReason ? <Text style={styles.reason}>Motif : {review.flagReason}</Text> : null}
         </View>
       ) : null}

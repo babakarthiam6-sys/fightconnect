@@ -1,3 +1,4 @@
+import { traduire, type Cle } from '@/i18n';
 import {
   formatDuration,
   formatLevel,
@@ -29,10 +30,17 @@ describe('formatage', () => {
     expect(formatDuration(null)).toBe('—');
   });
 
-  it('traduit niveaux et disciplines, et retombe sur la valeur brute', () => {
-    expect(formatLevel('amateur')).toBe('Amateur');
-    expect(formatStyle('muay_thai')).toBe('Muay-thaï');
-    expect(formatStyle('sumo')).toBe('sumo');
+  it('traduit niveaux et disciplines dans la langue demandée', () => {
+    const fr = (cle: Cle) => traduire('fr', cle);
+    const en = (cle: Cle) => traduire('en', cle);
+
+    expect(formatLevel('amateur', fr)).toBe('Amateur');
+    expect(formatStyle('muay_thai', fr)).toBe('Muay-thaï');
+    expect(formatLevel('pro', en)).toBe('Professional');
+    expect(formatStyle('boxing', en)).toBe('Boxing');
+
+    // Sans traducteur, l'identifiant brut ressort : visible, donc corrigeable.
+    expect(formatStyle('muay_thai')).toBe('muay_thai');
     expect(formatLevel(null)).toBe('—');
   });
 

@@ -15,6 +15,7 @@ import { useToast } from 'react-native-toast-notifications';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import { useDischargeStore } from '@/store/discharge';
 import {
@@ -28,6 +29,7 @@ import {
 const STRENGTH_COLORS = [COLORS.error, COLORS.warning, COLORS.accent, COLORS.success];
 
 export default function SignupScreen() {
+  const t = useT();
   const { signup, isSubmitting, error, clearError } = useAuth();
   const router = useRouter();
   const toast = useToast();
@@ -93,7 +95,7 @@ export default function SignupScreen() {
         <View style={styles.row}>
           <View style={styles.rowItem}>
             <Input
-              label="Prénom"
+              label={t('inscription.prenom')}
               value={firstName}
               onChangeText={setFirstName}
               error={errors.firstName}
@@ -104,7 +106,7 @@ export default function SignupScreen() {
           </View>
           <View style={styles.rowItem}>
             <Input
-              label="Nom"
+              label={t('inscription.nom')}
               value={lastName}
               onChangeText={setLastName}
               error={errors.lastName}
@@ -116,7 +118,7 @@ export default function SignupScreen() {
         </View>
 
         <Input
-          label="Email"
+          label={t('inscription.email')}
           value={email}
           onChangeText={setEmail}
           error={errors.email}
@@ -128,7 +130,7 @@ export default function SignupScreen() {
         />
 
         <Input
-          label="Mot de passe"
+          label={t('inscription.motDePasse')}
           value={password}
           onChangeText={setPassword}
           error={errors.password}
@@ -171,15 +173,14 @@ export default function SignupScreen() {
             ) : null}
           </View>
           <Text style={styles.checkboxLabel}>
-            J’accepte la{' '}
+            {t('inscription.jAccepteLa')}
             <Text
               style={styles.link}
               onPress={() => router.push('/(auth)/discharge')}
               suppressHighlighting
             >
-              décharge de responsabilité
-            </Text>{' '}
-            liée à la pratique des sports de combat.
+              {t('inscription.decharge')}
+            </Text>
           </Text>
         </Pressable>
         {errors.dischargeAccepted ? (
@@ -187,7 +188,7 @@ export default function SignupScreen() {
         ) : null}
 
         <Button
-          label="Créer mon compte"
+          label={t('inscription.titre')}
           onPress={handleSubmit}
           loading={isSubmitting}
           style={styles.submit}
@@ -195,7 +196,7 @@ export default function SignupScreen() {
         />
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Déjà inscrit ?</Text>
+          <Text style={styles.footerText}>{t('inscription.dejaUnCompte')}</Text>
           <Link href="/(auth)/login" style={styles.link}>
             Se connecter
           </Link>

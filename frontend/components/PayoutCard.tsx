@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Badge from '@/components/Badge';
 import Button from '@/components/Button';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { payoutService } from '@/services/payout';
 import type { AppError, PayoutStatus } from '@/types';
 
@@ -21,6 +22,7 @@ interface Props {
  * aucune pièce d'identité ni coordonnée bancaire, elle ouvre un lien.
  */
 export function PayoutCard({ status, onChanged, onError }: Props) {
+  const t = useT();
   const [isLoading, setIsLoading] = useState(false);
 
   const open = useCallback(async () => {
@@ -72,7 +74,7 @@ export function PayoutCard({ status, onChanged, onError }: Props) {
       <View style={styles.header}>
         <Text style={styles.title}>Recevoir mes paiements</Text>
         <Badge
-          label={enCours ? 'Vérification en cours' : 'À configurer'}
+          label={enCours ? t('versements.verification') : t('versements.aConfigurer')}
           tone={enCours ? 'warning' : 'danger'}
           icon="alert-circle-outline"
         />
@@ -80,12 +82,12 @@ export function PayoutCard({ status, onChanged, onError }: Props) {
 
       <Text style={styles.body}>
         {enCours
-          ? 'Stripe vérifie vos informations. Cela prend généralement quelques minutes.'
-          : 'Tant que ce n’est pas fait, personne ne peut réserver vos séances payantes.'}
+          ? t('versements.enCours')
+          : t('versements.pasFait')}
       </Text>
 
       <Button
-        label={enCours ? 'Reprendre la vérification' : 'Configurer mes versements'}
+        label={enCours ? t('versements.reprendre') : t('versements.configurer')}
         onPress={open}
         loading={isLoading}
         variant={enCours ? 'outline' : 'primary'}

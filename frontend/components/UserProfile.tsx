@@ -6,6 +6,7 @@ import Avatar from '@/components/Avatar';
 import Badge from '@/components/Badge';
 import RatingStars from '@/components/RatingStars';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { formatRating } from '@/utils/formatting';
 import type { User, UserRiskProfile } from '@/types';
 
@@ -17,12 +18,13 @@ interface Props {
 }
 
 const RISK_TONES = {
-  low: { tone: 'success', label: 'Profil fiable' },
-  medium: { tone: 'warning', label: 'Vigilance modérée' },
-  high: { tone: 'danger', label: 'Profil à risque' },
+  low: { tone: 'success', cle: 'profil.fiable' },
+  medium: { tone: 'warning', cle: 'profil.vigilance' },
+  high: { tone: 'danger', cle: 'profil.risque' },
 } as const;
 
 export function UserProfile({ user, riskProfile, showEmail = true }: Props) {
+  const t = useT();
   const risk = riskProfile ? RISK_TONES[riskProfile.riskLevel] : null;
 
   return (
@@ -39,17 +41,21 @@ export function UserProfile({ user, riskProfile, showEmail = true }: Props) {
         <RatingStars value={user.averageRating ?? 0} size={18} ratingsCount={user.ratingsCount} />
         <Text style={styles.ratingText}>
           {formatRating(user.averageRating)}
-          {user.ratingsCount > 0 ? ` (${user.ratingsCount} avis)` : ' (aucun avis)'}
+          {user.ratingsCount > 0
+            ? ` ${t('partenaire.avis', { n: user.ratingsCount })}`
+            : t('profil.aucunAvis')}
         </Text>
       </View>
 
       <View style={styles.badges}>
         {user.dischargeAccepted ? (
-          <Badge label="Décharge signée" tone="secondary" icon="document-text-outline" />
+          <Badge label={t('profil.dechargeSignee')} tone="secondary" icon="document-text-outline" />
         ) : (
-          <Badge label="Décharge à signer" tone="danger" icon="alert-circle-outline" />
+          <Badge label={t('profil.dechargeASigner')} tone="danger" icon="alert-circle-outline" />
         )}
-        {risk ? <Badge label={risk.label} tone={risk.tone} icon="shield-checkmark-outline" /> : null}
+        {risk ? (
+          <Badge label={t(risk.cle)} tone={risk.tone} icon="shield-checkmark-outline" />
+        ) : null}
       </View>
 
       {riskProfile && riskProfile.reasons.length > 0 ? (

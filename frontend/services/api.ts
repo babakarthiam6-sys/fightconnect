@@ -16,6 +16,18 @@ import type { AppError } from '@/types';
 /** Token gardé en mémoire pour éviter un accès disque à chaque requête. */
 let authToken: string | null = null;
 
+/**
+ * Langue annoncée au serveur, qui traduit ses messages d'erreur en retour.
+ *
+ * Gardée ici plutôt que lue dans un contexte React : la couche réseau n'est pas
+ * un composant, et un intercepteur ne peut pas appeler de hook.
+ */
+let acceptLanguage = 'fr';
+
+export function setAcceptLanguage(langue: string): void {
+  acceptLanguage = langue;
+}
+
 /** Appelé quand le serveur répond 401 : l'AuthContext s'y abonne pour déconnecter. */
 let onUnauthorized: (() => void) | null = null;
 
@@ -47,6 +59,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (authToken) {
     config.headers.set('Authorization', `Bearer ${authToken}`);
   }
+  config.headers.set('Accept-Language', acceptLanguage);
   return config;
 });
 

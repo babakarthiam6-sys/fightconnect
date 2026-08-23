@@ -6,6 +6,7 @@ import Avatar from '@/components/Avatar';
 import Badge from '@/components/Badge';
 import Button from '@/components/Button';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { formatDateTime, formatPrice, formatStatus, formatUserName } from '@/utils/formatting';
 import type { Booking, BookingStatus } from '@/types';
 
@@ -39,6 +40,7 @@ export function BookingCard({
   onCancel,
   onPay,
 }: Props) {
+  const t = useT();
   const other = direction === 'received' ? booking.requester : booking.partner;
 
   // Une demande à laquelle personne n'a encore répondu, ou déjà acceptée, peut
@@ -62,12 +64,12 @@ export function BookingCard({
             </Text>
           </View>
         </View>
-        <Badge label={formatStatus(booking.status)} tone={STATUS_TONES[booking.status]} />
+        <Badge label={formatStatus(booking.status, t)} tone={STATUS_TONES[booking.status]} />
       </View>
 
       <View style={styles.summary}>
         <Text style={styles.meta}>
-          {booking.rounds} round{booking.rounds > 1 ? 's' : ''} ×{' '}
+          {booking.rounds} {t(booking.rounds > 1 ? 'reservation.rounds' : 'reservation.round')} ×{' '}
           {formatPrice(booking.pricePerRound, booking.currency)}
         </Text>
         <Text style={styles.total}>{formatPrice(booking.total, booking.currency)}</Text>
@@ -85,14 +87,14 @@ export function BookingCard({
           {canRespond ? (
             <>
               <Button
-                label="Accepter"
+                label={t('demandes.accepter')}
                 onPress={() => onAccept?.(booking)}
                 loading={busy}
                 fullWidth={false}
                 style={styles.action}
               />
               <Button
-                label="Refuser"
+                label={t('demandes.refuser')}
                 variant="outline"
                 onPress={() => onDecline?.(booking)}
                 disabled={busy}

@@ -3,8 +3,10 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS } from '@/constants/theme';
+import { useT } from '@/i18n';
 
 export default function TabsLayout() {
+  const t = useT();
   return (
     <Tabs
       // `sceneContainerStyle` est une prop du navigateur, pas une screenOption.
@@ -27,21 +29,21 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Recherche',
+          title: t('general.onglet.recherche'),
           tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="bookings"
         options={{
-          title: 'Réservations',
+          title: t('general.onglet.reservations'),
           tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: t('general.onglet.profil'),
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />

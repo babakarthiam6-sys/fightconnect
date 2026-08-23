@@ -13,10 +13,12 @@ import { useToast } from 'react-native-toast-notifications';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { useAuth } from '@/context/AuthContext';
 import { loginSchema, validate, type FieldErrors, type LoginInput } from '@/utils/validation';
 
 export default function LoginScreen() {
+  const t = useT();
   const { login, isSubmitting, error, clearError } = useAuth();
   const toast = useToast();
 
@@ -41,9 +43,9 @@ export default function LoginScreen() {
 
     const success = await login(result.data);
     if (success) {
-      toast.show('Connexion réussie', { type: 'success' });
+      toast.show(t('connexion.reussie'), { type: 'success' });
     }
-  }, [email, login, password, toast]);
+  }, [email, login, password, t, toast]);
 
   return (
     <KeyboardAvoidingView
@@ -63,7 +65,7 @@ export default function LoginScreen() {
         </View>
 
         <Input
-          label="Email"
+          label={t('inscription.email')}
           value={email}
           onChangeText={setEmail}
           error={errors.email}
@@ -76,11 +78,11 @@ export default function LoginScreen() {
         />
 
         <Input
-          label="Mot de passe"
+          label={t('connexion.motDePasse')}
           value={password}
           onChangeText={setPassword}
           error={errors.password}
-          placeholder="Votre mot de passe"
+          placeholder={t('connexion.motDePassePlaceholder')}
           secure
           autoCapitalize="none"
           autoComplete="password"
@@ -89,7 +91,7 @@ export default function LoginScreen() {
         />
 
         <Button
-          label="Se connecter"
+          label={t('connexion.titre')}
           onPress={handleSubmit}
           loading={isSubmitting}
           testID="login-submit"

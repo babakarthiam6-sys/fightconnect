@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import Button from '@/components/Button';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { formatDateTime } from '@/utils/formatting';
 
 export interface DateTimeFieldProps {
@@ -24,8 +25,9 @@ export function DateTimeField({
   value,
   onChange,
   error,
-  label = 'Date et heure',
+  label,
 }: DateTimeFieldProps) {
+  const t = useT();
   const [mode, setMode] = useState<'date' | 'time' | null>(null);
 
   const handleChange = useCallback(
@@ -40,7 +42,7 @@ export function DateTimeField({
 
   return (
     <View>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label}>{label ?? t('reservation.dateEtHeure')}</Text>
 
       <View style={styles.row}>
         <Pressable style={styles.dateButton} onPress={() => setMode('date')}>
@@ -50,7 +52,7 @@ export function DateTimeField({
         <Pressable
           style={styles.timeButton}
           onPress={() => setMode('time')}
-          accessibilityLabel="Choisir l’heure"
+          accessibilityLabel={t('reservation.choisirHeure')}
         >
           <Ionicons name="time-outline" size={18} color={COLORS.primary} />
         </Pressable>
@@ -68,7 +70,7 @@ export function DateTimeField({
             onChange={handleChange}
           />
           {Platform.OS === 'ios' ? (
-            <Button label="Valider" onPress={() => setMode(null)} variant="ghost" />
+            <Button label={t('general.enregistrer')} onPress={() => setMode(null)} variant="ghost" />
           ) : null}
         </View>
       ) : null}

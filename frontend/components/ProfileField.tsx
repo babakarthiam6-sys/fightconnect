@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import Button from '@/components/Button';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 
 type Kind = 'text' | 'number' | 'choice';
 
@@ -41,6 +42,7 @@ export function ProfileField({
   suffix,
   onSave,
 }: Props) {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -75,14 +77,14 @@ export function ProfileField({
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${label} : ${value ?? 'non défini'}`}
+        accessibilityLabel={`${label} : ${value ?? t('general.nonDefiniMinuscule')}`}
         onPress={() => setIsOpen(true)}
         style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       >
         <Ionicons name={icon} size={20} color={COLORS.primary} />
         <Text style={styles.label}>{label}</Text>
         <Text style={value ? styles.value : styles.empty} numberOfLines={1}>
-          {value ?? 'Non défini'}
+          {value ?? t('general.nonDefini')}
           {value && suffix ? ` ${suffix}` : ''}
         </Text>
         <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
@@ -133,11 +135,11 @@ export function ProfileField({
                 autoFocus
                 style={[styles.input, multiline && styles.inputMultiline]}
               />
-              <Button label="Enregistrer" onPress={saveText} loading={isSaving} />
+              <Button label={t('general.enregistrer')} onPress={saveText} loading={isSaving} />
             </>
           )}
 
-          <Button label="Fermer" variant="ghost" onPress={() => setIsOpen(false)} />
+          <Button label={t('general.fermer')} variant="ghost" onPress={() => setIsOpen(false)} />
         </View>
       </Modal>
     </>

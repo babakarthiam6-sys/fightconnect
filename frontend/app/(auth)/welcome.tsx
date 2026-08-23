@@ -5,11 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import Button from '@/components/Button';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
-
-interface Feature {
-  icon: keyof typeof Ionicons.glyphMap;
-  text: string;
-}
+import { useT } from '@/i18n';
 
 /**
  * Trois promesses, pas plus.
@@ -17,13 +13,14 @@ interface Feature {
  * C'est le premier écran d'un visiteur qui ne connaît pas encore l'application :
  * il doit comprendre à quoi elle sert avant qu'on lui demande son adresse email.
  */
-const FEATURES: Feature[] = [
-  { icon: 'search', text: 'Trouve des partenaires par discipline, niveau et ville' },
-  { icon: 'calendar', text: 'Réserve une séance de sparring en deux appuis' },
-  { icon: 'star', text: 'Notations et réputation : tu sais avec qui tu montes' },
-];
+const FEATURES = [
+  { icon: 'search', cle: 'accueil.argument.recherche' },
+  { icon: 'calendar', cle: 'accueil.argument.reservation' },
+  { icon: 'star', cle: 'accueil.argument.reputation' },
+] as const;
 
 export default function WelcomeScreen() {
+  const t = useT();
   const router = useRouter();
 
   return (
@@ -47,19 +44,19 @@ export default function WelcomeScreen() {
         {FEATURES.map((feature) => (
           <View key={feature.icon} style={styles.feature}>
             <Ionicons name={feature.icon} size={22} color={COLORS.primary} />
-            <Text style={styles.featureText}>{feature.text}</Text>
+            <Text style={styles.featureText}>{t(feature.cle)}</Text>
           </View>
         ))}
       </View>
 
       <View style={styles.actions}>
         <Button
-          label="Créer un compte"
+          label={t('accueil.creer')}
           onPress={() => router.push('/(auth)/signup')}
           testID="welcome-signup"
         />
         <Button
-          label="Se connecter"
+          label={t('accueil.connexion')}
           variant="outline"
           onPress={() => router.push('/(auth)/login')}
           testID="welcome-login"

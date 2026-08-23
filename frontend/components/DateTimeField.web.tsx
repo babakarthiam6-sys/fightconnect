@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import type { DateTimeFieldProps } from '@/components/DateTimeField';
 
 /**
@@ -25,8 +26,10 @@ export function DateTimeField({
   value,
   onChange,
   error,
-  label = 'Date et heure',
+  label,
 }: DateTimeFieldProps) {
+  const t = useT();
+  const intitule = label ?? t('reservation.dateEtHeure');
   const handleChange = useCallback(
     (event: { target: { value: string } }) => {
       const parsed = new Date(event.target.value);
@@ -39,14 +42,14 @@ export function DateTimeField({
 
   return (
     <View>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label}>{intitule}</Text>
 
       {React.createElement('input', {
         type: 'datetime-local',
         value: toInputValue(value),
         min: toInputValue(new Date()),
         onChange: handleChange,
-        'aria-label': label,
+        'aria-label': intitule,
         style: {
           width: '100%',
           minHeight: 50,

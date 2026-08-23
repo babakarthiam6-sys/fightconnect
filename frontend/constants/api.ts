@@ -58,4 +58,5 @@ export const STORAGE_KEYS = {
   paymentsCache: '@fightconnect/cache/payments',
   statsCache: '@fightconnect/cache/stats',
   filters: '@fightconnect/filters',
+  language: '@fightconnect/language',
 } as const;

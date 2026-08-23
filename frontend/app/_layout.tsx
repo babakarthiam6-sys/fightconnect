@@ -13,6 +13,7 @@ import { usePushToken } from '@/hooks/usePushToken';
 import { AppProvider } from '@/context/AppContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { COLORS } from '@/constants/theme';
+import { I18nProvider, useT } from '@/i18n';
 import { IS_STRIPE_CONFIGURED, STRIPE_MERCHANT_ID, STRIPE_PUBLISHABLE_KEY } from '@/constants/config';
 
 // Le splash reste visible tant que la session n'est pas restaurée.
@@ -43,6 +44,7 @@ function useAuthRedirect() {
 }
 
 function RootNavigator() {
+  const t = useT();
   const { isAuthenticated, isBootstrapping } = useAuth();
   useAuthRedirect();
   usePushToken(isAuthenticated);
@@ -56,7 +58,7 @@ function RootNavigator() {
   if (isBootstrapping) {
     return (
       <View style={styles.bootstrap}>
-        <LoadingSpinner fullScreen label="Connexion à votre compte…" />
+        <LoadingSpinner fullScreen label={t('general.chargementCompte')} />
       </View>
     );
   }
@@ -73,17 +75,17 @@ function RootNavigator() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="partner/[id]" options={{ title: 'Profil du partenaire' }} />
+      <Stack.Screen name="partner/[id]" options={{ title: t('partenaire.titre') }} />
       <Stack.Screen
         name="booking/[id]"
-        options={{ title: 'Réserver', presentation: 'card' }}
+        options={{ title: t('reservation.titre'), presentation: 'card' }}
       />
       <Stack.Screen
         name="booking/pay/[id]"
         options={{ title: 'Paiement', presentation: 'card' }}
       />
-      <Stack.Screen name="payments" options={{ title: 'Mes paiements' }} />
-      <Stack.Screen name="chat/index" options={{ title: 'Messages' }} />
+      <Stack.Screen name="payments" options={{ title: t('paiement.titre') }} />
+      <Stack.Screen name="chat/index" options={{ title: t('discussion.titre') }} />
       <Stack.Screen name="chat/[id]" options={{ title: 'Conversation' }} />
     </Stack>
   );
@@ -92,10 +94,14 @@ function RootNavigator() {
 function Providers({ children }: { children: React.ReactNode }) {
   // StripeProvider n'est monté que si une clé publique est disponible : sans
   // clé, le SDK lève une exception au montage et bloquerait toute l'app.
+  // La langue enveloppe tout le reste : l'écran de connexion, les messages
+  // d'erreur du réseau et les libellés de navigation en dépendent déjà.
   const content = (
-    <AuthProvider>
-      <AppProvider>{children}</AppProvider>
-    </AuthProvider>
+    <I18nProvider>
+      <AuthProvider>
+        <AppProvider>{children}</AppProvider>
+      </AuthProvider>
+    </I18nProvider>
   );
 
   if (!IS_STRIPE_CONFIGURED) return content;

@@ -5,6 +5,7 @@ import Button from '@/components/Button';
 import Input from '@/components/Input';
 import RatingStars from '@/components/RatingStars';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { CONFIG } from '@/constants/config';
 import { moderationService } from '@/services/moderation';
 import { reviewSchema, validate, type FieldErrors, type ReviewInput } from '@/utils/validation';
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function ReviewForm({ bookingId, onSubmitted, onError }: Props) {
+  const t = useT();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [errors, setErrors] = useState<FieldErrors<ReviewInput>>({});
@@ -53,7 +55,7 @@ export function ReviewForm({ bookingId, onSubmitted, onError }: Props) {
 
       <View style={styles.ratingRow}>
         <RatingStars value={rating} size={28} onChange={setRating} />
-        <Text style={styles.ratingHint}>{rating > 0 ? `${rating}/5` : 'Votre note'}</Text>
+        <Text style={styles.ratingHint}>{rating > 0 ? `${rating}/5` : t('avis.note')}</Text>
       </View>
       {errors.rating ? <Text style={styles.error}>{errors.rating}</Text> : null}
 
@@ -63,12 +65,12 @@ export function ReviewForm({ bookingId, onSubmitted, onError }: Props) {
         onChangeText={setComment}
         error={errors.comment}
         hint={`${comment.length}/${CONFIG.maxReviewLength} — les avis sont analysés automatiquement.`}
-        placeholder="Comment s’est passée la séance ?"
+        placeholder={t('avis.question')}
         multiline
         maxLength={CONFIG.maxReviewLength}
       />
 
-      <Button label="Publier l’avis" onPress={handleSubmit} loading={isSubmitting} />
+      <Button label={t('avis.publier')} onPress={handleSubmit} loading={isSubmitting} />
     </View>
   );
 }

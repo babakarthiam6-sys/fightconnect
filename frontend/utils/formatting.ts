@@ -1,7 +1,8 @@
 import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import type { Locale } from 'date-fns';
 
-import { LEVEL_LABELS, STATUS_LABELS, STYLE_LABELS, WEIGHT_LABELS } from '@/constants/theme';
+import type { Cle, Traducteur } from '@/i18n';
 
 function toDate(value: string | number | Date | null | undefined): Date | null {
   if (value === null || value === undefined) return null;
@@ -20,6 +21,23 @@ export interface PriceOptions {
   cents?: boolean;
   /** Préfixe le montant d'un signe moins : « −6,00 € ». */
   negative?: boolean;
+  /** Force une langue d'affichage. Sans elle, celle de l'application. */
+  locale?: string;
+}
+
+/**
+ * Langue d'affichage des nombres et des dates.
+ *
+ * Posée une fois par le fournisseur de langue. Ces fonctions sont appelées
+ * depuis des services et des utilitaires, pas seulement des composants : elles
+ * ne peuvent pas lire un contexte React.
+ */
+let localeCourante = 'fr-FR';
+let locuteurDates: Locale = fr;
+
+export function setLocaleAffichage(locale: string, dateLocale: Locale): void {
+  localeCourante = locale;
+  locuteurDates = dateLocale;
 }
 
 /**
@@ -37,7 +55,7 @@ export function formatPrice(
   const decimals = options.cents || !Number.isInteger(safe) ? 2 : 0;
   let rendu: string;
   try {
-    rendu = new Intl.NumberFormat('fr-FR', {
+    rendu = new Intl.NumberFormat(options.locale ?? localeCourante, {
       style: 'currency',
       currency: currency || 'EUR',
       minimumFractionDigits: decimals,
@@ -55,21 +73,23 @@ export function formatPrice(
 export function formatDateTime(value: string | null | undefined): string {
   const date = toDate(value);
   if (!date) return 'Date à confirmer';
-  return format(date, "EEE d MMM yyyy 'à' HH:mm", { locale: fr });
+  // Le mot de liaison fait partie de la langue, pas du format.
+  const liaison = localeCourante.startsWith('fr') ? 'à' : 'at';
+  return format(date, `EEE d MMM yyyy '${liaison}' HH:mm`, { locale: locuteurDates });
 }
 
 /** « 12 mai 2025 ». */
 export function formatDate(value: string | null | undefined): string {
   const date = toDate(value);
   if (!date) return '—';
-  return format(date, 'd MMM yyyy', { locale: fr });
+  return format(date, 'd MMM yyyy', { locale: locuteurDates });
 }
 
 /** « il y a 3 jours ». */
 /** « 18:30 » — l'heure seule, pour les bulles d'une conversation. */
 export function formatTime(value: string | null | undefined): string {
   const date = toDate(value);
-  return date ? format(date, 'HH:mm', { locale: fr }) : '';
+  return date ? format(date, 'HH:mm', { locale: locuteurDates }) : '';
 }
 
 export function formatRelative(value: string | null | undefined): string {
@@ -89,24 +109,32 @@ export function formatDuration(minutes: number | null | undefined): string {
   return `${hours} h ${rest.toString().padStart(2, '0')}`;
 }
 
-export function formatLevel(level: string | null | undefined): string {
-  if (!level) return '—';
-  return LEVEL_LABELS[level] ?? level;
+/**
+ * Libellés traduits.
+ *
+ * Le traducteur est passé en paramètre plutôt que lu dans un contexte : ces
+ * fonctions servent aussi hors composant, et un hook n'y serait pas appelable.
+ * Sans traducteur, l'identifiant brut ressort — visible, donc corrigeable.
+ */
+function libelle(prefixe: string, valeur: string | null | undefined, t?: Traducteur): string {
+  if (!valeur) return '—';
+  return t ? t(`${prefixe}.${valeur}` as Cle) : valeur;
 }
 
-export function formatStyle(style: string | null | undefined): string {
-  if (!style) return '—';
-  return STYLE_LABELS[style] ?? style;
+export function formatLevel(level: string | null | undefined, t?: Traducteur): string {
+  return libelle('niveau', level, t);
 }
 
-export function formatWeightClass(weightClass: string | null | undefined): string {
-  if (!weightClass) return '—';
-  return WEIGHT_LABELS[weightClass] ?? weightClass;
+export function formatStyle(style: string | null | undefined, t?: Traducteur): string {
+  return libelle('sport', style, t);
 }
 
-export function formatStatus(status: string | null | undefined): string {
-  if (!status) return '—';
-  return STATUS_LABELS[status] ?? status;
+export function formatWeightClass(weightClass: string | null | undefined, t?: Traducteur): string {
+  return libelle('poids', weightClass, t);
+}
+
+export function formatStatus(status: string | null | undefined, t?: Traducteur): string {
+  return libelle('statut', status, t);
 }
 
 /** « Jean D. » — utilisé partout où l'on affiche un tiers. */
@@ -132,7 +160,14 @@ export function getInitials(
 /** Note moyenne : « 4,7 » ou « — » si aucune note. */
 export function formatRating(rating: number | null | undefined): string {
   if (typeof rating !== 'number' || !Number.isFinite(rating) || rating <= 0) return '—';
-  return rating.toFixed(1).replace('.', ',');
+  try {
+    return new Intl.NumberFormat(localeCourante, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(rating);
+  } catch {
+    return rating.toFixed(1);
+  }
 }
 
 export function truncate(text: string, max: number): string {

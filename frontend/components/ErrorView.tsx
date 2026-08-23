@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import Button from '@/components/Button';
 import type { AppError } from '@/types';
 
@@ -13,6 +14,8 @@ interface Props {
 
 /** Écran d'erreur bloquante, avec relance manuelle. */
 export function ErrorView({ error, onRetry }: Props) {
+  const t = useT();
+
   return (
     <View style={styles.container}>
       <Ionicons
@@ -21,11 +24,17 @@ export function ErrorView({ error, onRetry }: Props) {
         color={COLORS.error}
       />
       <Text style={styles.title}>
-        {error.isNetworkError ? 'Connexion indisponible' : 'Oups…'}
+        {error.isNetworkError ? t('general.connexionIndisponible') : 'Oups…'}
       </Text>
       <Text style={styles.message}>{error.message}</Text>
       {onRetry ? (
-        <Button label="Réessayer" onPress={onRetry} variant="outline" fullWidth={false} style={styles.action} />
+        <Button
+          label={t('general.reessayer')}
+          onPress={onRetry}
+          variant="outline"
+          fullWidth={false}
+          style={styles.action}
+        />
       ) : null}
     </View>
   );

@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 
 interface Props extends Omit<TextInputProps, 'onChangeText' | 'value'> {
   label: string;
@@ -35,6 +36,7 @@ export function Input({
   testID,
   ...rest
 }: Props) {
+  const t = useT();
   const [isFocused, setIsFocused] = useState(false);
   const [isHidden, setIsHidden] = useState(secure);
 
@@ -66,7 +68,9 @@ export function Input({
         {secure ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={isHidden ? 'Afficher le mot de passe' : 'Masquer le mot de passe'}
+            accessibilityLabel={
+              isHidden ? t('general.afficherMotDePasse') : t('general.masquerMotDePasse')
+            }
             hitSlop={10}
             onPress={() => setIsHidden((hidden) => !hidden)}
           >

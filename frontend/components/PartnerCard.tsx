@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Avatar from '@/components/Avatar';
 import Badge from '@/components/Badge';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import {
   formatLevel,
   formatPrice,
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function PartnerCard({ partner, onPress, compact = false }: Props) {
+  const t = useT();
   const isNew = partner.ratingsCount === 0;
 
   return (
@@ -41,7 +43,7 @@ export function PartnerCard({ partner, onPress, compact = false }: Props) {
           <View style={styles.metaRow}>
             <Ionicons name="location-outline" size={13} color={COLORS.textMuted} />
             <Text style={styles.meta} numberOfLines={1}>
-              {partner.city ?? 'Ville non précisée'}
+              {partner.city ?? t('partenaire.villeInconnue')}
             </Text>
           </View>
         </View>
@@ -53,10 +55,10 @@ export function PartnerCard({ partner, onPress, compact = false }: Props) {
       </View>
 
       <View style={styles.badges}>
-        <Badge label={formatStyle(partner.style)} tone="primary" icon="flame-outline" />
-        <Badge label={formatLevel(partner.level)} tone="secondary" />
+        <Badge label={formatStyle(partner.style, t)} tone="primary" icon="flame-outline" />
+        <Badge label={formatLevel(partner.level, t)} tone="secondary" />
         {partner.weightClass ? (
-          <Badge label={formatWeightClass(partner.weightClass)} tone="neutral" />
+          <Badge label={formatWeightClass(partner.weightClass, t)} tone="neutral" />
         ) : null}
       </View>
 

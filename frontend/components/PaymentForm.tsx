@@ -5,6 +5,7 @@ import { useStripe } from '@stripe/stripe-react-native';
 
 import Button from '@/components/Button';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { IS_STRIPE_CONFIGURED } from '@/constants/config';
 import { paymentService } from '@/services/payment';
 import { formatPrice } from '@/utils/formatting';
@@ -26,6 +27,7 @@ interface Props {
  * confirmation. Aucune donnée de carte ne transite par ce composant.
  */
 export function PaymentForm({ booking, onSuccess, onError, disabled = false, label }: Props) {
+  const t = useT();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export function PaymentForm({ booking, onSuccess, onError, disabled = false, lab
   const handlePay = useCallback(async () => {
     if (!IS_STRIPE_CONFIGURED) {
       fail({
-        message: 'Paiement indisponible : clé publique Stripe non configurée.',
+        message: t('paiement.indisponible'),
         status: null,
         isNetworkError: false,
         fieldErrors: null,
@@ -100,7 +102,7 @@ export function PaymentForm({ booking, onSuccess, onError, disabled = false, lab
     } finally {
       setIsProcessing(false);
     }
-  }, [booking.id, fail, initPaymentSheet, onSuccess, presentPaymentSheet]);
+  }, [t, booking.id, fail, initPaymentSheet, onSuccess, presentPaymentSheet]);
 
   return (
     <View style={styles.container}>
@@ -110,7 +112,7 @@ export function PaymentForm({ booking, onSuccess, onError, disabled = false, lab
       </View>
 
       <Button
-        label={label ?? 'Payer et rejoindre'}
+        label={label ?? t('paiement.payer')}
         onPress={handlePay}
         loading={isProcessing}
         disabled={disabled}

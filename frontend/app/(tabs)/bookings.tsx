@@ -8,16 +8,18 @@ import EmptyState from '@/components/EmptyState';
 import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { useT } from '@/i18n';
 import { useApp } from '@/context/AppContext';
 import { bookingService, type Direction } from '@/services/booking';
 import type { AppError, Booking } from '@/types';
 
-const TABS: { id: Direction; label: string }[] = [
-  { id: 'received', label: 'Reçues' },
-  { id: 'sent', label: 'Envoyées' },
-];
+const TABS = [
+  { id: 'received', cle: 'demandes.recues' },
+  { id: 'sent', cle: 'demandes.envoyees' },
+] as const;
 
 export default function BookingsScreen() {
+  const t = useT();
   const router = useRouter();
   const toast = useToast();
   const { bookingsVersion, invalidateBookings, refreshStats } = useApp();
@@ -83,7 +85,7 @@ export default function BookingsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mes réservations</Text>
+        <Text style={styles.title}>{t('demandes.titre')}</Text>
       </View>
 
       <View style={styles.tabs}>
@@ -97,14 +99,14 @@ export default function BookingsScreen() {
               onPress={() => setDirection(tab.id)}
               style={[styles.tab, isActive && styles.tabActive]}
             >
-              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{tab.label}</Text>
+              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{t(tab.cle)}</Text>
             </Pressable>
           );
         })}
       </View>
 
       {isLoading ? (
-        <LoadingSpinner fullScreen label="Chargement des demandes…" />
+        <LoadingSpinner fullScreen label={t('demandes.chargement')} />
       ) : error ? (
         <ErrorView error={error} onRetry={load} />
       ) : (
@@ -116,9 +118,9 @@ export default function BookingsScreen() {
               booking={item}
               direction={direction}
               busy={busyId === item.id}
-              onAccept={(booking) => act(booking, bookingService.accept, 'Demande acceptée')}
-              onDecline={(booking) => act(booking, bookingService.decline, 'Demande refusée')}
-              onCancel={(booking) => act(booking, bookingService.cancel, 'Demande annulée')}
+              onAccept={(booking) => act(booking, bookingService.accept, t('demandes.acceptee'))}
+              onDecline={(booking) => act(booking, bookingService.decline, t('demandes.refusee'))}
+              onCancel={(booking) => act(booking, bookingService.cancel, t('demandes.annulee'))}
               onPay={(booking) => router.push(`/booking/pay/${booking.id}`)}
             />
           )}
@@ -137,13 +139,13 @@ export default function BookingsScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="calendar-outline"
-              title="Aucune réservation"
+              title={t('demandes.aucune')}
               message={
                 direction === 'sent'
-                  ? 'Vous n’avez pas encore envoyé de demande de sparring.'
-                  : 'Personne ne vous a encore adressé de demande.'
+                  ? t('demandes.aucuneEnvoyee')
+                  : t('demandes.aucuneRecue')
               }
-              actionLabel={direction === 'sent' ? 'Trouver un partenaire' : undefined}
+              actionLabel={direction === 'sent' ? t('demandes.trouverPartenaire') : undefined}
               onAction={
                 direction === 'sent' ? () => router.push('/(tabs)/search') : undefined
               }
