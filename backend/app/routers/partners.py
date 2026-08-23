@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from app.i18n import t
 from app.dependencies import CurrentUser, Database
 from app.geo import normalise_pays
+from app.routers.securite import est_bloque, ids_bloques
 from app.schemas import LEVELS, STYLES, WEIGHT_CLASSES, PartnerList, PartnerOut
 from app.serializers import serialize_partner, to_object_id
 
@@ -44,8 +45,13 @@ async def list_partners(
 ) -> dict[str, Any]:
     # Un profil sans tarif ni discipline n'est pas encore présentable : le
     # proposer ferait perdre son temps à celui qui cherche.
+    # Un blocage vaut dans les deux sens : ni le bloqueur ni le bloqué ne doivent
+    # se retrouver dans la liste de l'autre. Un blocage à sens unique laisserait
+    # le bloqueur croiser le nom qu'il vient d'écarter.
+    ecartes = await ids_bloques(database, current_user["_id"])
+
     query: dict[str, Any] = {
-        "_id": {"$ne": current_user["_id"]},
+        "_id": {"$nin": [current_user["_id"], *ecartes]},
         "available": True,
         "style": {"$ne": None},
         "price_per_round": {"$ne": None},
@@ -89,9 +95,19 @@ async def list_partners(
 
 
 @router.get("/{partner_id}", response_model=PartnerOut)
-async def get_partner(partner_id: str, database: Database, _: CurrentUser) -> dict[str, Any]:
+async def get_partner(
+    partner_id: str, database: Database, current_user: CurrentUser
+) -> dict[str, Any]:
     object_id = to_object_id(partner_id)
     document = await database.users.find_one({"_id": object_id}) if object_id else None
     if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=t("partenaire.introuvable"))
+
+    # Masquer quelqu'un de la recherche sans fermer sa fiche laisserait un lien
+    # direct fonctionner, et le blocage ne vaudrait rien. On répond 404 plutôt
+    # que 403 : dire « cette personne vous a bloqué » est une information qui ne
+    # sert qu'à contourner le blocage.
+    if await est_bloque(database, current_user["_id"], document["_id"]):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=t("partenaire.introuvable"))
+
     return serialize_partner(document)

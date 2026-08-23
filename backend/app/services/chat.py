@@ -14,6 +14,7 @@ from fastapi import WebSocket
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.i18n import t
+from app.routers.securite import est_bloque
 from app.serializers import serialize_message, serialize_user_summary
 from app.services.moderation import moderate_message
 from app.services.notifications import send_push
@@ -104,7 +105,13 @@ async def handle_message(
 
     recipient = await database.users.find_one({"_id": recipient_id})
     if recipient is None:
-        return {"type": "error", "reason": "Destinataire introuvable."}
+        return {"type": "error", "reason": t("discussion.interlocuteur_introuvable")}
+
+    # C'est ici que le blocage compte vraiment. Le masquer de la recherche sans
+    # arrêter les messages laisserait passer exactement ce dont il protège :
+    # quelqu'un qui écrit à qui ne veut plus l'entendre.
+    if await est_bloque(database, sender["_id"], recipient_id):
+        return {"type": "blocked", "reason": "blocked", "message": t("securite.bloque")}
 
     document = {
         "conversation_id": conversation_key(sender["_id"], recipient_id),

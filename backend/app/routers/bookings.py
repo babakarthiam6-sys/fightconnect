@@ -12,6 +12,7 @@ from app.i18n import t
 from app.config import get_settings
 from app.dependencies import CurrentUser, Database
 from app.repositories import expand_booking, expand_bookings
+from app.routers.securite import est_bloque
 from app.schemas import BookingCreate, BookingList, BookingOut, ReviewList
 from app.serializers import serialize_review, to_object_id
 from app.services.payments import refund_payment
@@ -96,6 +97,9 @@ async def create_booking(
             status_code=status.HTTP_409_CONFLICT,
             detail=t("demande.soi_meme"),
         )
+    if await est_bloque(database, current_user["_id"], partner["_id"]):
+        raise HTTPException(status_code=403, detail=t("securite.bloque"))
+
     if not partner.get("available"):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

@@ -1,5 +1,6 @@
 """L'application web servie par l'API ne doit masquer aucune route de l'API."""
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
@@ -61,3 +62,27 @@ async def test_l_api_reste_prioritaire_sur_le_montage(client_avec_web):
 
 async def test_la_documentation_reste_accessible(client_avec_web):
     assert (await client_avec_web.get("/docs")).status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_les_pages_legales_repondent_sans_authentification(client):
+    """Google exige que la page de suppression soit atteignable sans installer
+    l'application : quelqu'un qui a désinstallé doit pouvoir effacer ses
+    données. Une page derrière un jeton ne vaudrait rien."""
+    for chemin in ("/confidentialite", "/suppression"):
+        response = await client.get(chemin)
+
+        assert response.status_code == 200, chemin
+        assert "text/html" in response.headers["content-type"]
+        assert "FightConnect" in response.text
+
+
+@pytest.mark.asyncio
+async def test_la_page_de_confidentialite_dit_l_essentiel(client):
+    """Les deux magasins lisent cette page. Trois affirmations doivent y être :
+    ce qu'on ne voit pas, comment effacer, et qui d'autre a accès."""
+    texte = (await client.get("/confidentialite")).text
+
+    assert "Stripe" in texte
+    assert "Supprimer mon compte" in texte
+    assert "ne vendons aucune donnée" in texte

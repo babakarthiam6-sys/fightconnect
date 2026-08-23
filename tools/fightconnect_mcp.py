@@ -1,19 +1,35 @@
 #!/usr/bin/env python3
-"""Serveur MCP FightConnect — une fenêtre en lecture seule sur l'application.
+"""Serveur MCP FightConnect — regarder, et le peu qu'il faut pour agir.
 
 À quoi ça sert
 --------------
 
-Branché à Claude Code ou à l'application Claude, ce serveur donne à l'assistant
-trois outils pour regarder l'application en production sans qu'un humain ait à
-copier-coller quoi que ce soit : sa santé, ses compteurs, ses routes.
+Branché à Claude Code ou à l'application Claude, ce serveur permet à
+l'assistant de suivre l'application en production sans qu'un humain ait à
+copier-coller quoi que ce soit : santé, compteurs, routes montées, file des
+signalements, journal des actions.
 
-Ce qu'il ne fait pas
---------------------
+Deux jetons, deux niveaux
+--------------------------
 
-Il n'écrit rien, nulle part. Aucun outil ne crée, ne modifie ni ne supprime.
-Les compteurs qu'il rapporte ne contiennent aucune donnée personnelle — c'est le
-serveur lui-même qui l'garantit, et un test le vérifie côté API.
+`FIGHTCONNECT_ADMIN_TOKEN` ouvre la **lecture**. Les compteurs ne contiennent
+aucune donnée personnelle — c'est le serveur lui-même qui le garantit, et un
+test le vérifie côté API.
+
+`FIGHTCONNECT_ADMIN_WRITE_TOKEN` ouvre les quatre **actions** : suspendre un
+compte, lever la suspension, masquer un avis, clore un signalement. Sans lui,
+ces outils ne sont même pas proposés. Séparer les deux n'est pas de la
+cérémonie : le jeton de lecture finit dans un fichier de configuration, sur une
+machine de bureau, dans des notes ; celui qui suspend un compte ne le doit pas.
+
+Ce qui reste impossible
+------------------------
+
+Créer un compte ou un faux profil — remplir une recherche vide de partenaires
+inventés tromperait les premiers vrais utilisateurs. Supprimer quoi que ce soit
+— suspendre se défait, supprimer non. Lire un message ou un avis — la
+modération agit sur une cible désignée, elle n'ouvre pas les conversations.
+Chaque action laisse une trace, lisible avec le seul jeton de lecture.
 
 Comment le brancher
 -------------------
@@ -49,9 +65,12 @@ from typing import Any
 
 BASE = os.environ.get("FIGHTCONNECT_URL", "https://fightconnect-production.up.railway.app")
 JETON = os.environ.get("FIGHTCONNECT_ADMIN_TOKEN", "")
+# Jeton distinct pour agir. Absent, le serveur ne propose que la lecture : les
+# outils d'action ne sont même pas listés, plutôt que d'échouer à l'usage.
+JETON_ACTION = os.environ.get("FIGHTCONNECT_ADMIN_WRITE_TOKEN", "")
 TIMEOUT = 30
 
-OUTILS = [
+OUTILS_LECTURE = [
     {
         "name": "sante",
         "description": (
@@ -81,6 +100,77 @@ OUTILS = [
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "signalements",
+        "description": (
+            "File des signalements ouverts : type de cible, identifiant, motif, "
+            "date. Ne contient aucun contenu signalé ni aucune identité — traiter "
+            "un signalement, c'est agir sur une cible désignée, pas lire la "
+            "conversation d'autrui."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "journal",
+        "description": (
+            "Historique des actions d'administration déjà effectuées : quoi, sur "
+            "quelle cible, quand. À consulter avant d'agir, pour ne pas refaire "
+            "ce qui a déjà été fait."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+]
+
+# Ces quatre-là écrivent. Elles n'apparaissent que si le jeton d'action existe.
+OUTILS_ACTION = [
+    {
+        "name": "suspendre_compte",
+        "description": (
+            "Rend un compte invisible dans la recherche et non réservable. "
+            "Réversible. Le compte peut encore se connecter — pour contester et "
+            "pour supprimer ses données, ce qu'on ne peut pas lui refuser. "
+            "À utiliser sur un compte signalé pour harcèlement ou arnaque."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"user_id": {"type": "string", "description": "Identifiant du compte"}},
+            "required": ["user_id"],
+        },
+    },
+    {
+        "name": "lever_suspension",
+        "description": (
+            "Annule une suspension. Ne remet pas le compte en ligne : c'est à "
+            "son propriétaire de se rendre à nouveau visible."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"user_id": {"type": "string"}},
+            "required": ["user_id"],
+        },
+    },
+    {
+        "name": "masquer_avis",
+        "description": (
+            "Retire un avis de la fiche publique et de la note moyenne. L'avis "
+            "n'est pas détruit, il est marqué : une erreur de modération doit "
+            "rester réparable."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"review_id": {"type": "string"}},
+            "required": ["review_id"],
+        },
+    },
+    {
+        "name": "clore_signalement",
+        "description": "Marque un signalement comme traité. Ne change rien d'autre.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"report_id": {"type": "string"}},
+            "required": ["report_id"],
+        },
+    },
 ]
 
 
@@ -109,6 +199,31 @@ def _appel(chemin: str, avec_jeton: bool = False) -> Any:
         return {"erreur": f"{type(erreur).__name__}: {erreur}"}
 
 
+def _poste(chemin: str) -> Any:
+    """Appel qui écrit : les deux jetons sont exigés ensemble."""
+    if not JETON or not JETON_ACTION:
+        return {
+            "erreur": "Jeton d'action manquant.",
+            "remede": (
+                "Définir ADMIN_WRITE_TOKEN dans Railway, puis la même valeur dans "
+                "FIGHTCONNECT_ADMIN_WRITE_TOKEN côté client MCP. Le jeton de lecture "
+                "seul ne permet pas d'agir, c'est délibéré."
+            ),
+        }
+
+    requete = urllib.request.Request(f"{BASE.rstrip('/')}{chemin}", data=b"", method="POST")
+    requete.add_header("Accept", "application/json")
+    requete.add_header("X-Admin-Token", JETON)
+    requete.add_header("X-Admin-Write-Token", JETON_ACTION)
+    try:
+        with urllib.request.urlopen(requete, timeout=TIMEOUT) as reponse:
+            return json.loads(reponse.read().decode())
+    except urllib.error.HTTPError as erreur:
+        return {"erreur": f"HTTP {erreur.code}", "reponse": erreur.read().decode()[:400]}
+    except Exception as erreur:
+        return {"erreur": f"{type(erreur).__name__}: {erreur}"}
+
+
 def outil_sante() -> Any:
     return _appel("/health")
 
@@ -130,7 +245,27 @@ def outil_routes() -> Any:
     }
 
 
-EXECUTEURS = {"sante": outil_sante, "apercu": outil_apercu, "routes": outil_routes}
+EXECUTEURS = {
+    "sante": lambda _: outil_sante(),
+    "apercu": lambda _: outil_apercu(),
+    "routes": lambda _: outil_routes(),
+    "signalements": lambda _: _appel("/api/v1/admin/reports", avec_jeton=True),
+    "journal": lambda _: _appel("/api/v1/admin/journal", avec_jeton=True),
+    "suspendre_compte": lambda a: _poste(f"/api/v1/admin/users/{a['user_id']}/suspend"),
+    "lever_suspension": lambda a: _poste(f"/api/v1/admin/users/{a['user_id']}/unsuspend"),
+    "masquer_avis": lambda a: _poste(f"/api/v1/admin/reviews/{a['review_id']}/hide"),
+    "clore_signalement": lambda a: _poste(f"/api/v1/admin/reports/{a['report_id']}/resolve"),
+}
+
+
+def outils_disponibles() -> list[dict[str, Any]]:
+    """Les outils d'action ne sont listés que si le jeton existe.
+
+    Les annoncer sans pouvoir les exécuter ferait perdre un aller-retour à
+    chaque tentative, et donnerait l'impression d'une panne là où il n'y a
+    qu'une configuration absente.
+    """
+    return OUTILS_LECTURE + (OUTILS_ACTION if JETON_ACTION else [])
 
 
 def _reponse(identifiant: Any, resultat: Any) -> dict[str, Any]:
@@ -153,10 +288,12 @@ def traite(message: dict[str, Any]) -> dict[str, Any] | None:
         )
 
     if methode == "tools/list":
-        return _reponse(identifiant, {"tools": OUTILS})
+        return _reponse(identifiant, {"tools": outils_disponibles()})
 
     if methode == "tools/call":
-        nom = message.get("params", {}).get("name", "")
+        params = message.get("params", {})
+        nom = params.get("name", "")
+        arguments = params.get("arguments") or {}
         executeur = EXECUTEURS.get(nom)
         if executeur is None:
             return {
@@ -164,7 +301,10 @@ def traite(message: dict[str, Any]) -> dict[str, Any] | None:
                 "id": identifiant,
                 "error": {"code": -32602, "message": f"Outil inconnu : {nom}"},
             }
-        resultat = executeur()
+        try:
+            resultat = executeur(arguments)
+        except KeyError as manquant:
+            resultat = {"erreur": f"Argument manquant : {manquant}"}
         return _reponse(
             identifiant,
             {"content": [{"type": "text", "text": json.dumps(resultat, ensure_ascii=False, indent=2)}]},

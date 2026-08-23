@@ -173,3 +173,162 @@ async def test_l_argent_ne_compte_que_les_séances_payées(client, client_admin,
     assert apres.json()["argent"] == {
         "EUR": {"seances": 1, "volume": 40.0, "commission": 6.0}
     }
+
+
+JETON_ACTION = "jeton-d-action-pour-les-tests"
+
+
+@pytest.fixture
+async def client_actions(database, monkeypatch):
+    """Application montée avec les deux jetons : lecture et action."""
+    monkeypatch.setenv("ADMIN_TOKEN", JETON)
+    monkeypatch.setenv("ADMIN_WRITE_TOKEN", JETON_ACTION)
+    get_settings.cache_clear()
+
+    app = create_app()
+    app.dependency_overrides[get_database] = lambda: database
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", timeout=20
+    ) as http:
+        yield http
+
+    get_settings.cache_clear()
+
+
+DEUX = {"X-Admin-Token": JETON, "X-Admin-Write-Token": JETON_ACTION}
+
+
+@pytest.mark.asyncio
+async def test_le_jeton_de_lecture_ne_donne_pas_le_droit_d_agir(client_actions, client):
+    """Le test central de cette séparation.
+
+    Le jeton de lecture vit dans la configuration d'un assistant, sur une
+    machine de bureau, dans un fichier de notes. S'il suffisait à suspendre un
+    compte, la séparation ne servirait à rien.
+    """
+    luis = await make_partner(client)
+
+    response = await client_actions.post(
+        f"/api/v1/admin/users/{luis['user']['id']}/suspend",
+        headers={"X-Admin-Token": JETON},
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_sans_jeton_d_action_configure_les_routes_n_existent_pas(
+    client_admin, client, database
+):
+    """`client_admin` n'a que `ADMIN_TOKEN` : les actions ne sont pas montées.
+
+    On ne vérifie pas un code précis — un POST sur un chemin non monté ressort
+    en 405 par le routeur, ou en page d'accueil par l'application web, selon ce
+    qui attrape le chemin en premier. Ce qui compte est qu'il ne se soit rien
+    passé en base, même en présentant les deux jetons.
+    """
+    luis = await make_partner(client)
+
+    response = await client_admin.post(
+        f"/api/v1/admin/users/{luis['user']['id']}/suspend",
+        headers={"X-Admin-Token": JETON, "X-Admin-Write-Token": JETON_ACTION},
+    )
+
+    assert response.status_code != 200
+    utilisateur = await database.users.find_one({"email": "luis@exemple.com"})
+    assert utilisateur.get("suspended") is not True
+    assert await database.admin_log.count_documents({}) == 0
+
+
+@pytest.mark.asyncio
+async def test_suspendre_retire_de_la_recherche(client_actions, client, database):
+    luis = await make_partner(client)
+    ana = await register(client, email="ana@exemple.com", first_name="Ana")
+
+    avant = await client.get("/api/v1/partners", headers=ana["headers"])
+    assert avant.json()["total"] == 1
+
+    response = await client_actions.post(
+        f"/api/v1/admin/users/{luis['user']['id']}/suspend", headers=DEUX
+    )
+
+    assert response.status_code == 200
+    apres = await client.get("/api/v1/partners", headers=ana["headers"])
+    assert apres.json()["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_un_compte_suspendu_peut_encore_se_connecter(client_actions, client):
+    """Le RGPD ne permet pas de retirer à quelqu'un l'accès à ses propres
+    données : un compte suspendu doit pouvoir contester et se supprimer."""
+    luis = await make_partner(client)
+    await client_actions.post(
+        f"/api/v1/admin/users/{luis['user']['id']}/suspend", headers=DEUX
+    )
+
+    profil = await client.get("/api/v1/auth/me", headers=luis["headers"])
+
+    assert profil.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_lever_la_suspension_ne_remet_pas_en_ligne(client_actions, client, database):
+    """Décider à sa place qu'il souhaite reprendre serait présumer de son
+    intention."""
+    luis = await make_partner(client)
+    await client_actions.post(
+        f"/api/v1/admin/users/{luis['user']['id']}/suspend", headers=DEUX
+    )
+    await client_actions.post(
+        f"/api/v1/admin/users/{luis['user']['id']}/unsuspend", headers=DEUX
+    )
+
+    utilisateur = await database.users.find_one({"email": "luis@exemple.com"})
+    assert utilisateur["suspended"] is False
+    assert utilisateur["available"] is False
+
+
+@pytest.mark.asyncio
+async def test_chaque_action_laisse_une_trace(client_actions, client):
+    """Une action d'administration sans trace est une action que personne ne
+    peut contester trois mois plus tard."""
+    luis = await make_partner(client)
+    await client_actions.post(
+        f"/api/v1/admin/users/{luis['user']['id']}/suspend", headers=DEUX
+    )
+
+    journal = await client_actions.get(
+        "/api/v1/admin/journal", headers={"X-Admin-Token": JETON}
+    )
+
+    lignes = journal.json()["items"]
+    assert len(lignes) == 1
+    assert lignes[0]["action"] == "suspend"
+    assert lignes[0]["cible"] == luis["user"]["id"]
+
+
+@pytest.mark.asyncio
+async def test_la_file_des_signalements_ne_montre_aucun_contenu(client_actions, client):
+    """Traiter un signalement, c'est agir sur une cible désignée, pas lire la
+    conversation d'autrui."""
+    luis = await make_partner(client)
+    ana = await register(client, email="ana@exemple.com", first_name="Ana")
+    await client.post(
+        "/api/v1/securite/reports",
+        json={
+            "target_type": "user",
+            "target_id": luis["user"]["id"],
+            "reason": "harcelement",
+            "details": "Il m'a envoyé des insultes répétées le 12 août",
+        },
+        headers=ana["headers"],
+    )
+
+    file = await client_actions.get(
+        "/api/v1/admin/reports", headers={"X-Admin-Token": JETON}
+    )
+
+    brut = file.text
+    assert file.json()["ouverts"] == 1
+    assert "insultes répétées" not in brut
+    assert "ana@exemple.com" not in brut

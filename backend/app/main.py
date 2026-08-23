@@ -4,9 +4,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 from app.config import get_settings
 from app.database import connect, disconnect, ping
+from app.legal import CONFIDENTIALITE_FR, SUPPRESSION_FR
 from app.i18n import choisir_langue, definir_langue
 from app.routers import (
     admin,
@@ -18,6 +20,7 @@ from app.routers import (
     payments,
     payouts,
     revenue,
+    securite,
 )
 from app.webapp import is_web_app_available, mount_web_app
 
@@ -74,6 +77,7 @@ def create_app() -> FastAPI:
         payouts.router,
         revenue.router,
         moderation.router,
+        securite.router,
     ):
         app.include_router(router, prefix=API_PREFIX)
 
@@ -82,8 +86,24 @@ def create_app() -> FastAPI:
     # théorie ; en pratique, une porte absente ne s'ouvre pas par oubli.
     if settings.admin_token:
         app.include_router(admin.router, prefix=API_PREFIX)
+        # Les actions n'apparaissent qu'avec leur propre jeton : lire ne donne
+        # jamais le droit d'écrire, même par erreur de configuration.
+        if settings.admin_write_token:
+            app.include_router(admin.actions, prefix=API_PREFIX)
 
     web_disponible = is_web_app_available(settings.web_dir)
+
+    # Ces deux pages sont déclarées aux magasins d'applications. Les servir ici
+    # plutôt que sur un site à part évite le piège classique : une adresse
+    # hébergée ailleurs qui expire, et fait retirer l'application des mois plus
+    # tard sans que personne ne comprenne pourquoi.
+    @app.get("/confidentialite", response_class=HTMLResponse, tags=["légal"])
+    async def confidentialite() -> str:
+        return CONFIDENTIALITE_FR
+
+    @app.get("/suppression", response_class=HTMLResponse, tags=["légal"])
+    async def suppression() -> str:
+        return SUPPRESSION_FR
 
     @app.get("/health", tags=["système"])
     async def health() -> dict[str, object]:

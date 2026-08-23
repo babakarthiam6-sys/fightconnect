@@ -1,18 +1,21 @@
 """Inscription, connexion et profil courant."""
 
 from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 
 from app.i18n import t
 from app.dependencies import CurrentUser, Database
 from app.geo import CURRENCIES, DEFAULT_CURRENCY, devise_par_defaut, normalise_pays, tarif_max
+from app.services.comptes import supprimer_le_compte
 from app.schemas import (
     LEVELS,
     STYLES,
     WEIGHT_CLASSES,
     AuthResponse,
     LoginRequest,
+    AccountDeletion,
     ProfileUpdate,
     SignupRequest,
     UserOut,
@@ -112,6 +115,30 @@ async def login(payload: LoginRequest, database: Database) -> dict:
 @router.get("/me", response_model=UserOut)
 async def me(current_user: CurrentUser) -> dict:
     return serialize_user(current_user)
+
+
+@router.delete("/me", status_code=status.HTTP_200_OK)
+async def delete_me(
+    payload: AccountDeletion,
+    database: Database,
+    current_user: CurrentUser,
+) -> dict[str, Any]:
+    """Supprime définitivement le compte.
+
+    Exigée par Apple (5.1.1(v)) et par Google : une application qui permet de
+    créer un compte doit permettre de le supprimer, depuis l'application, sans
+    écrire à personne. Son absence est un motif de rejet, puis de retrait.
+
+    Le détail de ce qui est effacé et de ce qui est seulement anonymisé vit dans
+    `app/services/comptes.py`, avec les raisons.
+    """
+    if not verify_password(payload.password, current_user.get("password_hash", "")):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=t("compte.mot_de_passe_requis"),
+        )
+
+    return await supprimer_le_compte(database, current_user)
 
 
 ALLOWED_VALUES = {

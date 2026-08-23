@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     # définir une variable.
     admin_token: str = ""
 
+    # Jeton distinct pour les rares actions qui écrivent. Lire et agir ne se
+    # donnent pas ensemble : le premier peut vivre dans la configuration d'un
+    # assistant, le second ne le doit pas.
+    admin_write_token: str = ""
+
     # --- Modération IA ---
     openai_api_key: str = ""
     openai_moderation_model: str = "omni-moderation-latest"

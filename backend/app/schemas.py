@@ -29,6 +29,17 @@ WEIGHT_CLASSES = (
 BOOKING_STATUSES = ("pending", "accepted", "declined", "cancelled", "completed")
 
 
+class AccountDeletion(BaseModel):
+    """Suppression du compte, confirmée par le mot de passe.
+
+    Le redemander n'est pas de la paperasse : c'est le seul geste irréversible
+    de l'application, et un téléphone déverrouillé oublié sur une table ne doit
+    pas suffire à l'accomplir.
+    """
+
+    password: str = Field(min_length=1)
+
+
 class SignupRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)

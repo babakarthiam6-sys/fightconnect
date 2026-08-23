@@ -40,6 +40,20 @@ MESSAGES: dict[str, dict[str, str]] = {
         "fr": "Utilisateur introuvable.",
         "en": "User not found.",
     },
+    "compte.suppression_bloquee": {
+        "fr": (
+            "{n} séance(s) payée(s) et à venir empêchent la suppression. "
+            "Annulez-les d\u2019abord : vous serez remboursé."
+        ),
+        "en": (
+            "{n} paid upcoming session(s) prevent deletion. "
+            "Cancel them first: you will be refunded."
+        ),
+    },
+    "compte.mot_de_passe_requis": {
+        "fr": "Confirmez votre mot de passe pour supprimer votre compte.",
+        "en": "Confirm your password to delete your account.",
+    },
     "compte.profil_incomplet": {
         "fr": "Renseignez votre discipline et votre tarif avant de vous rendre disponible.",
         "en": "Set your discipline and your rate before making yourself available.",
@@ -59,6 +73,23 @@ MESSAGES: dict[str, dict[str, str]] = {
     "compte.tarif_trop_eleve": {
         "fr": "Tarif trop élevé : au plus {plafond} {devise} par round.",
         "en": "Rate too high: at most {plafond} {devise} per round.",
+    },
+    # Sécurité
+    "securite.cible_inconnue": {
+        "fr": "Type de signalement inconnu : {valeur}.",
+        "en": "Unknown report target: {valeur}.",
+    },
+    "securite.motif_inconnu": {
+        "fr": "Motif de signalement inconnu : {valeur}.",
+        "en": "Unknown report reason: {valeur}.",
+    },
+    "securite.pas_soi_meme": {
+        "fr": "On ne peut pas se signaler ni se bloquer soi-même.",
+        "en": "You cannot report or block yourself.",
+    },
+    "securite.bloque": {
+        "fr": "Vous ne pouvez pas contacter cette personne.",
+        "en": "You cannot contact this person.",
     },
     # Recherche
     "recherche.filtre_inconnu": {
