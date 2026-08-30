@@ -157,6 +157,9 @@ export default function SearchScreen() {
             />
           }
           ListEmptyComponent={
+            // Sans filtre actif, la recherche vide est ce que voit tout nouvel
+            // inscrit. Le message lui disait « complétez votre profil » sans lui
+            // donner le moindre bouton pour le faire.
             <EmptyState
               icon="people-outline"
               title={t('recherche.aucun')}
@@ -165,13 +168,13 @@ export default function SearchScreen() {
                   ? t('recherche.aucunAvecFiltres')
                   : t('recherche.aucunSansFiltre')
               }
-              actionLabel={activeCount > 0 || city ? t('recherche.effacer') : undefined}
+              actionLabel={
+                activeCount > 0 || city ? t('recherche.effacer') : t('recherche.completerProfil')
+              }
               onAction={
                 activeCount > 0 || city
-                  ? () => {
-                      reset();
-                    }
-                  : undefined
+                  ? () => reset()
+                  : () => router.push('/(tabs)/profile')
               }
             />
           }

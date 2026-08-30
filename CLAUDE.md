@@ -22,7 +22,7 @@ pytest                     # 170 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 po
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
-npm test                   # 222 tests
+npm test                   # 234 tests
 npm run typecheck && npm run lint
 npm run build:web           # export web + thème sombre de la coquille HTML
 ```

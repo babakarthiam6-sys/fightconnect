@@ -318,5 +318,15 @@ export const en: Record<keyof typeof fr, string> = {
   'motif.hors_plateforme': 'Wants to pay outside the app',
   'motif.autre': 'Other',
   'profil.confidentialite': 'Privacy policy',
+  'visibilite.titreIncomplet': 'You do not appear in search yet',
+  'visibilite.titrePret': 'One step left: make yourself visible',
+  'visibilite.titreVisible': 'You are visible',
+  'visibilite.manquePour': '{n} detail is missing before others can find you.',
+  'visibilite.manquePourPluriel': '{n} details are missing before others can find you.',
+  'visibilite.pretTexte': 'Your profile is complete. Turn on “Available for sparring” above and you enter the search.',
+  'visibilite.visibleTexte': 'Other members can find you and send you a request.',
+  'visibilite.mieuxTrouve': 'Add {champs} to show up in filtered searches.',
+  'visibilite.completer': 'Complete my profile',
+  'recherche.completerProfil': 'Complete my profile',
 
 };

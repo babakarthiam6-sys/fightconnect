@@ -333,6 +333,16 @@ export const fr = {
   'motif.hors_plateforme': 'Veut payer hors de l’application',
   'motif.autre': 'Autre',
   'profil.confidentialite': 'Politique de confidentialité',
+  'visibilite.titreIncomplet': 'Vous n’apparaissez pas encore dans la recherche',
+  'visibilite.titrePret': 'Il ne reste qu’à vous rendre visible',
+  'visibilite.titreVisible': 'Vous êtes visible',
+  'visibilite.manquePour': 'Il manque {n} information pour que les autres puissent vous trouver.',
+  'visibilite.manquePourPluriel': 'Il manque {n} informations pour que les autres puissent vous trouver.',
+  'visibilite.pretTexte': 'Votre profil est complet. Activez « Disponible pour sparring » ci-dessus et vous entrez dans la recherche.',
+  'visibilite.visibleTexte': 'Les autres membres peuvent vous trouver et vous envoyer une demande.',
+  'visibilite.mieuxTrouve': 'Ajoutez {champs} pour remonter dans les recherches filtrées.',
+  'visibilite.completer': 'Compléter mon profil',
+  'recherche.completerProfil': 'Compléter mon profil',
 } as const;
 
 export type Cle = keyof typeof fr;

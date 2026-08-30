@@ -18,6 +18,8 @@ import { useToast } from 'react-native-toast-notifications';
 
 import { ORIGINE_API } from '@/constants/config';
 import Avatar from '@/components/Avatar';
+import CarteVisibilite from '@/components/CarteVisibilite';
+import { evaluerVisibilite } from '@/utils/visibilite';
 import Button from '@/components/Button';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import OfflineBanner from '@/components/OfflineBanner';
@@ -72,6 +74,9 @@ export default function ProfileScreen() {
     optionsTraduites(ids, prefixe, t as never);
   const router = useRouter();
   const { user, logout, refreshUser, updateProfile } = useAuth();
+  // Recalculée à chaque rendu : elle suit l'utilisateur champ par champ,
+  // sans attendre un rechargement du profil.
+  const visibilite = evaluerVisibilite(user);
   const { stats, isConnected, refreshStats } = useApp();
   const toast = useToast();
 
@@ -199,6 +204,8 @@ export default function ProfileScreen() {
             {...WEB_SWITCH_THUMB}
           />
         </View>
+
+        <CarteVisibilite visibilite={visibilite} />
 
         <Text style={styles.sectionTitle}>{t('profil.infosSportives')}</Text>
 
