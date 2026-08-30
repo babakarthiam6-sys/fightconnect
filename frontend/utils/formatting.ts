@@ -1,3 +1,4 @@
+import { tGlobal } from '@/i18n/traduire';
 import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Locale } from 'date-fns';
@@ -72,7 +73,7 @@ export function formatPrice(
 /** « lun. 12 mai 2025 à 18:30 ». */
 export function formatDateTime(value: string | null | undefined): string {
   const date = toDate(value);
-  if (!date) return 'Date à confirmer';
+  if (!date) return tGlobal('general.dateAConfirmer');
   // Le mot de liaison fait partie de la langue, pas du format.
   const liaison = localeCourante.startsWith('fr') ? 'à' : 'at';
   return format(date, `EEE d MMM yyyy '${liaison}' HH:mm`, { locale: locuteurDates });
@@ -143,7 +144,10 @@ export function formatUserName(
 ): string {
   const first = user?.firstName?.trim() ?? '';
   const last = user?.lastName?.trim() ?? '';
-  if (!first && !last) return 'Utilisateur';
+  // Un tiers sans nom, dans cette API, est un compte supprimé : le serveur
+  // retire la ligne et le résumé revient à `null`. Le dire vaut mieux que
+  // « Utilisateur », qui ressemble à un défaut d'affichage.
+  if (!first && !last) return tGlobal('general.compteSupprime');
   if (!last) return first;
   return `${first} ${last.charAt(0).toUpperCase()}.`;
 }

@@ -1,3 +1,4 @@
+import { tGlobal } from '@/i18n/traduire';
 import { ENDPOINTS } from '@/constants/api';
 import { http } from '@/services/api';
 import { asRecord, normalizePayoutStatus } from '@/utils/normalize';
@@ -37,7 +38,7 @@ export const payoutService = {
 
     if (typeof url !== 'string' || !url.startsWith('http')) {
       throw {
-        message: 'Le serveur n’a pas renvoyé de lien Stripe valide.',
+        message: tGlobal('erreur.stripeLien'),
         status: null,
         isNetworkError: false,
         fieldErrors: null,

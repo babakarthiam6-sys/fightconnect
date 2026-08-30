@@ -17,18 +17,27 @@ import { join } from 'path';
  */
 
 const RACINE = join(__dirname, '..');
-const DOSSIERS = ['app', 'components'];
+// `utils` et `services` ont été ajoutés après coup : c'est là que se cachait
+// un « Utilisateur » en dur, affiché à la place du nom d'un compte supprimé.
+const DOSSIERS = ['app', 'components', 'utils', 'services', 'context', 'store', 'hooks'];
 
 /** Mots qui ne peuvent venir que d'une phrase française destinée à l'écran. */
 const FRANCAIS =
   /[àâäéèêëîïôöùûüçÀÉÈÊÎÔÛ]|\b(le|la|les|une|des|mon|ma|mes|vous|nous|pour|avec|dans|sur|est|sont|par|votre|vos|avis|ans?|profil|séances?|demandes?)\b/i;
+
+/**
+ * Une phrase sans accent ni mot-outil échappait au filtre ci-dessus :
+ * « Ressource introuvable. » est passée ainsi. Deux mots et un point final
+ * suffisent à en faire une phrase destinée à quelqu'un.
+ */
+const PHRASE = /^[A-ZÀÉÈ][^.!?]{4,}[.!?]$/;
 
 function fichiers(dossier: string): string[] {
   const trouves: string[] = [];
   for (const entree of readdirSync(dossier)) {
     const chemin = join(dossier, entree);
     if (statSync(chemin).isDirectory()) trouves.push(...fichiers(chemin));
-    else if (/\.tsx$/.test(entree)) trouves.push(chemin);
+    else if (/\.tsx?$/.test(entree)) trouves.push(chemin);
   }
   return trouves;
 }
@@ -43,7 +52,7 @@ function partieVisible(source: string): string {
 }
 
 function phrasesEnDur(chemin: string): string[] {
-  const visible = partieVisible(readFileSync(chemin, 'utf8'));
+  const visible = horsInterface(partieVisible(readFileSync(chemin, 'utf8')));
   const candidats: string[] = [];
 
   // Texte nu entre deux balises : <Text>Bonjour</Text>
@@ -57,7 +66,7 @@ function phrasesEnDur(chemin: string): string[] {
 
   return candidats.filter(
     (texte) =>
-      FRANCAIS.test(texte) &&
+      (FRANCAIS.test(texte) || PHRASE.test(texte.trim())) &&
       texte.length >= 5 &&
       !texte.startsWith('t(') &&
       // Les fragments de code attrapés par erreur portent presque toujours un
@@ -67,6 +76,16 @@ function phrasesEnDur(chemin: string): string[] {
       // contient « avec » mais ne s'affiche jamais telle quelle.
       !/^[a-z][\w]*\.[\w.]+$/.test(texte),
   );
+}
+
+/**
+ * Les messages de `throw new Error` ne sont pas de l'interface : ils signalent
+ * une faute de programmation — un hook appelé hors de son fournisseur — et ne
+ * remontent jamais à l'écran. Les traduire alourdirait le catalogue de phrases
+ * que personne ne lira jamais.
+ */
+function horsInterface(source: string): string {
+  return source.replace(/throw new Error\([\s\S]*?\);/g, '');
 }
 
 describe('aucune phrase française écrite en dur', () => {

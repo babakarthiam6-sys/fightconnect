@@ -31,17 +31,6 @@ def _price(document: dict[str, Any]) -> float | None:
     return float(value) if value is not None else None
 
 
-def _anonyme_si_supprime(document: dict[str, Any], resume: dict[str, Any]) -> dict[str, Any]:
-    """Remplace l'identité d'un auteur dont le compte a disparu.
-
-    « Compte supprimé » plutôt qu'une chaîne vide : le lecteur comprend ce qui
-    s'est passé au lieu de croire à un défaut d'affichage.
-    """
-    if not document.get("author_deleted") and not document.get("sender_deleted"):
-        return resume
-    return {**resume, "first_name": "Compte", "last_name": "supprimé", "avatar_url": None}
-
-
 def serialize_user_summary(document: dict[str, Any] | None) -> dict[str, Any] | None:
     if not document:
         return None

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { traduire } from '@/i18n/traduire';
 import { STORAGE_KEYS } from '@/constants/api';
 import { http, restoreAuthToken, setAuthToken } from '@/services/api';
 import { authService } from '@/services/auth';
@@ -63,8 +64,11 @@ describe('service d’authentification', () => {
   it('rejette une réponse sans token', async () => {
     mockedHttp.post.mockResolvedValue({ user: API_USER });
 
+    // On compare au catalogue plutôt qu'à un mot : le message est traduit, et
+    // chercher « token » dedans le rendait dépendant du choix de vocabulaire
+    // français — « jeton » l'a fait tomber.
     await expect(authService.login({ email: 'a@b.co', password: 'x' })).rejects.toMatchObject({
-      message: expect.stringContaining('token'),
+      message: traduire('fr', 'erreur.jetonManquant'),
     });
   });
 

@@ -47,7 +47,9 @@ describe('formatage', () => {
   it('abrège le nom de famille', () => {
     expect(formatUserName({ firstName: 'Jean', lastName: 'Dupont' })).toBe('Jean D.');
     expect(formatUserName({ firstName: 'Jean', lastName: '' })).toBe('Jean');
-    expect(formatUserName(null)).toBe('Utilisateur');
+    // Un tiers sans nom, dans cette API, est un compte supprimé : le serveur
+    // retire la ligne et le résumé revient à `null`.
+    expect(formatUserName(null)).toBe('Compte supprimé');
   });
 
   it('construit des initiales', () => {

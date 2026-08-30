@@ -1,3 +1,4 @@
+import { tGlobal } from '@/i18n/traduire';
 import { ENDPOINTS, STORAGE_KEYS } from '@/constants/api';
 import { http, isOnline } from '@/services/api';
 import { cache } from '@/utils/cache';
@@ -19,7 +20,7 @@ export const paymentService = {
 
     if (!intent.clientSecret) {
       throw {
-        message: 'Le serveur n’a pas renvoyé de client_secret Stripe.',
+        message: tGlobal('erreur.stripeSecret'),
         status: null,
         isNetworkError: false,
         fieldErrors: null,

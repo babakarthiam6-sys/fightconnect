@@ -1,3 +1,4 @@
+import { tGlobal } from '@/i18n/traduire';
 import { ENDPOINTS, STORAGE_KEYS } from '@/constants/api';
 import { http, restoreAuthToken, setAuthToken } from '@/services/api';
 import { asRecord, normalizeUser } from '@/utils/normalize';
@@ -58,7 +59,7 @@ export const authService = {
     const token = extractToken(payload);
     if (!token) {
       throw {
-        message: 'Réponse d’authentification invalide (token manquant).',
+        message: tGlobal('erreur.jetonManquant'),
         status: null,
         isNetworkError: false,
         fieldErrors: null,

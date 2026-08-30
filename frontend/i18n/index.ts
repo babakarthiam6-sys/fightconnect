@@ -2,63 +2,29 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 
 import { enGB as dateEn, fr as dateFr } from 'date-fns/locale';
 
-import { en } from '@/i18n/en';
 import { setAcceptLanguage } from '@/services/api';
 import { setLocaleAffichage } from '@/utils/formatting';
-import { fr, type Cle } from '@/i18n/fr';
+import type { Cle } from '@/i18n/fr';
+import {
+  LANGUES,
+  LANGUE_PAR_DEFAUT,
+  definirLangueGlobale,
+  langueDeLAppareil,
+  traduire,
+  type Langue,
+} from '@/i18n/traduire';
 import { STORAGE_KEYS } from '@/constants/api';
 import { storage } from '@/utils/storage';
 
-export type Langue = 'fr' | 'en';
-
-export const LANGUES: readonly Langue[] = ['fr', 'en'];
-export const LANGUE_PAR_DEFAUT: Langue = 'fr';
-
-const CATALOGUES: Record<Langue, Record<string, string>> = { fr, en };
-
-/** Nom de chaque langue dans sa propre langue : c'est ainsi qu'on la reconnaît. */
-export const NOMS_DE_LANGUE: Record<Langue, string> = { fr: 'Français', en: 'English' };
-
-/**
- * Langue de l'appareil, ramenée à celles que l'application connaît.
- *
- * `Intl` est le seul mécanisme disponible partout — navigateur comme Hermes —
- * et il répond déjà « fr-CH » ou « en-GB », qu'il suffit de tronquer.
- */
-export function langueDeLAppareil(): Langue {
-  try {
-    const locale = Intl.DateTimeFormat().resolvedOptions().locale ?? '';
-    const racine = (locale.split('-')[0] ?? '').toLowerCase() as Langue;
-    return LANGUES.includes(racine) ? racine : LANGUE_PAR_DEFAUT;
-  } catch {
-    return LANGUE_PAR_DEFAUT;
-  }
-}
-
-/**
- * Remplace `{nom}` par la valeur donnée.
- *
- * Volontairement minimal : pas de pluriel automatique ni de genre. Les rares
- * cas qui en ont besoin — « 1 round » contre « 2 rounds » — choisissent leur
- * clé eux-mêmes, ce qui reste lisible et n'impose aucune bibliothèque.
- */
-function interpole(modele: string, params?: Record<string, string | number>): string {
-  if (!params) return modele;
-  return modele.replace(/\{(\w+)\}/g, (entier, cle: string) =>
-    cle in params ? String(params[cle]) : entier,
-  );
-}
-
-export function traduire(
-  langue: Langue,
-  cle: Cle,
-  params?: Record<string, string | number>,
-): string {
-  // Une clé absente du catalogue choisi retombe sur le français plutôt que de
-  // laisser un trou : mieux vaut un mot dans la mauvaise langue que rien.
-  const modele = CATALOGUES[langue][cle] ?? fr[cle] ?? cle;
-  return interpole(modele, params);
-}
+export {
+  LANGUES,
+  LANGUE_PAR_DEFAUT,
+  NOMS_DE_LANGUE,
+  langueDeLAppareil,
+  traduire,
+  tGlobal,
+  type Langue,
+} from '@/i18n/traduire';
 
 export type Traducteur = (cle: Cle, params?: Record<string, string | number>) => string;
 
@@ -80,6 +46,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     // annonce la langue au serveur pour que ses erreurs reviennent traduites, et
     // le formatage des nombres et des dates, appelé aussi depuis des services.
     const locale = langue === 'fr' ? 'fr-FR' : 'en-GB';
+    definirLangueGlobale(langue);
     setAcceptLanguage(langue);
     setLocaleAffichage(locale, langue === 'fr' ? dateFr : dateEn);
   }, [langue]);

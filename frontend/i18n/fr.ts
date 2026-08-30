@@ -343,6 +343,21 @@ export const fr = {
   'visibilite.mieuxTrouve': 'Ajoutez {champs} pour remonter dans les recherches filtrées.',
   'visibilite.completer': 'Compléter mon profil',
   'recherche.completerProfil': 'Compléter mon profil',
+  'erreur.session': 'Session expirée, reconnectez-vous.',
+  'erreur.serveur': 'Le serveur rencontre un problème. Réessayez.',
+  'erreur.accesRefuse': 'Accès refusé.',
+  'erreur.dejaFait': 'Cette action a déjà été effectuée.',
+  'erreur.jetonManquant': 'Réponse d’authentification invalide (jeton manquant).',
+  'erreur.stripeSecret': 'Le serveur n’a pas renvoyé de client_secret Stripe.',
+  'erreur.stripeLien': 'Le serveur n’a pas renvoyé de lien Stripe valide.',
+  'general.dateAConfirmer': 'Date à confirmer',
+  'general.compteSupprime': 'Compte supprimé',
+  'erreur.requete': 'Requête échouée.',
+  'erreur.introuvable': 'Ressource introuvable.',
+  'erreur.generique': 'Une erreur est survenue.',
+  'erreur.lenteur': 'Le serveur met trop de temps à répondre.',
+  'erreur.horsLigne': 'Pas de connexion. Vérifiez votre réseau.',
+  'erreur.inattendue': 'Une erreur inattendue est survenue.',
 } as const;
 
 export type Cle = keyof typeof fr;

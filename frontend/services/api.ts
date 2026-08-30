@@ -1,3 +1,4 @@
+import { tGlobal } from '@/i18n/traduire';
 import NetInfo from '@react-native-community/netinfo';
 import { Platform } from 'react-native';
 import axios, {
@@ -123,12 +124,12 @@ function extractMessage(payload: unknown, status: number | null): string {
     if (typeof value === 'string' && value.length > 0) return value;
   }
 
-  if (status === 401) return 'Session expirée, reconnectez-vous.';
-  if (status === 403) return 'Accès refusé.';
-  if (status === 404) return 'Ressource introuvable.';
-  if (status === 409) return 'Cette action a déjà été effectuée.';
-  if (status !== null && status >= 500) return 'Le serveur rencontre un problème. Réessayez.';
-  return 'Une erreur est survenue.';
+  if (status === 401) return tGlobal('erreur.session');
+  if (status === 403) return tGlobal('erreur.accesRefuse');
+  if (status === 404) return tGlobal('erreur.introuvable');
+  if (status === 409) return tGlobal('erreur.dejaFait');
+  if (status !== null && status >= 500) return tGlobal('erreur.serveur');
+  return tGlobal('erreur.generique');
 }
 
 /** Convertit n'importe quel rejet en `AppError` : les écrans n'ont qu'un cas à gérer. */
@@ -142,8 +143,8 @@ export function toAppError(error: unknown): AppError {
       return {
         message:
           error.code === 'ECONNABORTED'
-            ? 'Le serveur met trop de temps à répondre.'
-            : 'Pas de connexion. Vérifiez votre réseau.',
+            ? tGlobal('erreur.lenteur')
+            : tGlobal('erreur.horsLigne'),
         status: null,
         isNetworkError: true,
         fieldErrors: null,
@@ -163,7 +164,7 @@ export function toAppError(error: unknown): AppError {
   }
 
   return {
-    message: 'Une erreur inattendue est survenue.',
+    message: tGlobal('erreur.inattendue'),
     status: null,
     isNetworkError: false,
     fieldErrors: null,
@@ -201,7 +202,7 @@ export async function request<T>(config: AxiosRequestConfig): Promise<T> {
     }
   }
 
-  throw lastError ?? toAppError(new Error('Requête échouée.'));
+  throw lastError ?? toAppError(new Error(tGlobal('erreur.requete')));
 }
 
 export const http = {

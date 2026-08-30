@@ -22,7 +22,7 @@ pytest                     # 170 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 po
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
-npm test                   # 234 tests
+npm test                   # 256 tests
 npm run typecheck && npm run lint
 npm run build:web           # export web + thème sombre de la coquille HTML
 ```
@@ -57,6 +57,11 @@ au total payé. Une discussion permet de caler les détails ; elle est modérée
 - Le point d'entrée WebSocket reçoit la base **par la dépendance**, jamais par un
   appel direct à `get_database()`. Sans cela il n'est pas testable, et il ne
   l'était pas.
+- `frontend/__tests__/aucunTexteEnDur.test.ts` balaie `app`, `components`,
+  `utils`, `services`, `context`, `store` et `hooks`. Il n'a longtemps regardé
+  que les deux premiers, et c'est ainsi que les messages d'erreur réseau —
+  les plus vus de tous — sont restés en français pendant tout le travail de
+  traduction.
 - Les textes de l'application vivent dans `frontend/i18n/fr.ts`, et `en.ts` en
   est typé comme une copie exacte : oublier une traduction fait échouer `tsc`.
   Une phrase écrite en dur dans un écran ne se voit pas, et ne se traduit jamais.
