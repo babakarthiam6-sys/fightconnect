@@ -62,6 +62,18 @@ au total payé. Une discussion permet de caler les détails ; elle est modérée
   décompte avant que la demande n'existe. `frontend/__tests__/commission.test.ts`
   échoue si les deux divergent.
 
+## Réglages Claude Code
+
+`.claude/settings.json` est versionné : il déclare le marché officiel et les
+greffons de l'équipe, et c'est le seul fichier de réglages qu'une session dans
+le nuage lit, puisqu'elle travaille sur un clone frais. `settings.local.json`
+n'y est jamais poussé — il porte ce qui ne vaut que pour un poste, à commencer
+par les hooks écrits par `graphify claude install`.
+
+Le greffon `claude-code-setup` y est activé. Dans le terminal, une déclaration
+ne suffit pas à installer un greffon venu d'un dépôt distant : lancer une fois
+`claude plugin install claude-code-setup@claude-plugins-official`.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
