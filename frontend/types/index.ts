@@ -40,6 +40,29 @@ export type PaymentStatus =
 
 export type RiskLevel = 'low' | 'medium' | 'high';
 
+/** Ce qu'une vidéo de galerie montre. */
+export type VideoKind = 'fight' | 'sparring' | 'shadow';
+
+/** Plateformes reconnues. La liste est fermée côté serveur. */
+export type VideoProvider = 'youtube' | 'tiktok' | 'instagram';
+
+/**
+ * Une vidéo de profil.
+ *
+ * Rien n'est hébergé : `url` pointe vers la plateforme d'origine, et c'est là
+ * que la lecture se fait. `thumbnailUrl` n'existe que pour YouTube, dont la
+ * vignette se déduit de l'identifiant ; ailleurs la grille affiche une tuile de
+ * repli.
+ */
+export interface ProfileVideo {
+  id: string;
+  url: string;
+  provider: VideoProvider;
+  kind: VideoKind;
+  caption: string | null;
+  thumbnailUrl: string | null;
+}
+
 /** Champs sportifs, communs au profil privé et à la fiche publique. */
 export interface SportProfile {
   city: string | null;
@@ -55,6 +78,8 @@ export interface SportProfile {
   currency: string;
   /** Visible dans la recherche et réservable. */
   available: boolean;
+  /** Galerie, dans l'ordre choisi par le propriétaire. La première fait couverture. */
+  videos: ProfileVideo[];
 }
 
 export interface User extends SportProfile {

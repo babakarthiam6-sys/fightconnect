@@ -8,6 +8,7 @@ import Button from '@/components/Button';
 import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import RatingStars from '@/components/RatingStars';
+import { VideoGallery } from '@/components/VideoGallery';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { partnerService } from '@/services/partner';
 import {
@@ -93,6 +94,13 @@ export default function PartnerScreen() {
           <Stat value={String(partner.experienceYears)} label="Années d’exp." />
           <Stat value={partner.heightCm ? String(partner.heightCm) : '—'} label="Taille (cm)" />
         </View>
+
+        {partner.videos.length > 0 ? (
+          <>
+            <Text style={styles.sectionTitle}>En action</Text>
+            <VideoGallery videos={partner.videos} />
+          </>
+        ) : null}
 
         <Text style={styles.sectionTitle}>À propos</Text>
         <View style={styles.card}>

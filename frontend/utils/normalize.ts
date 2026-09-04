@@ -4,6 +4,7 @@ import type {
   Conversation,
   Message,
   Partner,
+  ProfileVideo,
   Payment,
   PayoutStatus,
   PaymentIntent,
@@ -17,6 +18,8 @@ import type {
   User,
   UserRiskProfile,
   UserSummary,
+  VideoKind,
+  VideoProvider,
   WeightClass,
 } from '@/types';
 
@@ -92,6 +95,9 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback
 }
 
 const LEVELS = ['beginner', 'amateur', 'pro'] as const;
+
+const VIDEO_KINDS = ['fight', 'sparring', 'shadow'] as const;
+const VIDEO_PROVIDERS = ['youtube', 'tiktok', 'instagram'] as const;
 const STYLES = [
   'boxing',
   'muay_thai',
@@ -161,6 +167,34 @@ export function normalizeUserSummary(input: unknown): UserSummary | null {
  * n'est pas encore rempli. L'écran de profil s'en sert pour afficher
  * « Non défini » plutôt qu'une valeur inventée.
  */
+/**
+ * Une entrée de galerie.
+ *
+ * Une vidéo sans URL exploitable est écartée plutôt que rendue : une tuile qui
+ * n'ouvre rien est pire qu'une case vide.
+ */
+function normalizeVideo(input: unknown): ProfileVideo | null {
+  const raw = asRecord(input);
+  const url = str(raw, ['url']);
+  if (!url) return null;
+
+  return {
+    id: str(raw, ['id']) || url,
+    url,
+    provider: oneOf<VideoProvider>(raw.provider, VIDEO_PROVIDERS, 'youtube'),
+    kind: oneOf<VideoKind>(raw.kind, VIDEO_KINDS, 'sparring'),
+    caption: optionalStr(raw, ['caption']),
+    thumbnailUrl: optionalStr(raw, ['thumbnail_url', 'thumbnailUrl']),
+  };
+}
+
+export function normalizeVideos(input: unknown): ProfileVideo[] {
+  if (input == null) return [];
+  return extractList(input)
+    .map(normalizeVideo)
+    .filter((video): video is ProfileVideo => video !== null);
+}
+
 function normalizeSportProfile(raw: Raw): SportProfile {
   return {
     city: optionalStr(raw, ['city', 'location']),
@@ -181,6 +215,7 @@ function normalizeSportProfile(raw: Raw): SportProfile {
     pricePerRound: optionalNum(raw, ['price_per_round', 'pricePerRound']),
     currency: str(raw, ['currency'], 'EUR').toUpperCase(),
     available: bool(raw, ['available', 'is_available']),
+    videos: normalizeVideos(raw.videos),
   };
 }
 

@@ -45,6 +45,23 @@ def serialize_user_summary(document: dict[str, Any] | None) -> dict[str, Any] | 
     }
 
 
+def serialize_video(entry: dict[str, Any]) -> dict[str, Any]:
+    """Une entrée de galerie telle que l'app la reçoit."""
+    return {
+        "id": str(entry.get("id", "")),
+        "url": entry.get("url", ""),
+        "provider": entry.get("provider", ""),
+        "kind": entry.get("kind", ""),
+        "caption": entry.get("caption"),
+        "thumbnail_url": entry.get("thumbnail_url"),
+    }
+
+
+def serialize_videos(document: dict[str, Any]) -> list[dict[str, Any]]:
+    """Galerie d'un profil, dans l'ordre choisi par son propriétaire."""
+    return [serialize_video(entry) for entry in document.get("videos", []) or []]
+
+
 def _sport_profile(document: dict[str, Any]) -> dict[str, Any]:
     """Champs sportifs communs au profil privé et à la fiche publique."""
     return {
@@ -57,6 +74,7 @@ def _sport_profile(document: dict[str, Any]) -> dict[str, Any]:
         "experience_years": int(document.get("experience_years", 0)),
         "available": bool(document.get("available", False)),
         "currency": document.get("currency", "EUR"),
+        "videos": serialize_videos(document),
     }
 
 
