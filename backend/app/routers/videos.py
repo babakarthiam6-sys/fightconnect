@@ -34,6 +34,12 @@ async def _remplacer(database, user, videos: list[dict]) -> dict:
     return {"items": serialize_videos({"videos": videos})}
 
 
+async def _galerie(database, user) -> dict:
+    """Relit la galerie telle qu'elle est réellement enregistrée."""
+    document = await database.users.find_one({"_id": user["_id"]}) or {}
+    return {"items": serialize_videos(document)}
+
+
 @router.post("", response_model=VideoList, status_code=status.HTTP_201_CREATED)
 async def add_video(
     payload: VideoCreate,
@@ -56,25 +62,38 @@ async def add_video(
             "(publication ou réel)."
         )
 
-    videos = list(current_user.get("videos") or [])
-    if len(videos) >= MAX_VIDEOS:
+    url = payload.url.strip()
+    entree = {
+        "id": uuid4().hex,
+        "url": url,
+        "kind": payload.kind,
+        "caption": (payload.caption or "").strip() or None,
+        **reconnu,
+    }
+
+    # Le plafond et l'unicité sont portés par la condition de l'écriture, pas par
+    # une lecture préalable : un double appui sur « Ajouter » envoie deux requêtes
+    # qui liraient le même instantané et passeraient toutes les deux. C'est la
+    # même raison qui fait reposer l'unicité d'une demande sur un index.
+    resultat = await database.users.update_one(
+        {
+            "_id": current_user["_id"],
+            f"videos.{MAX_VIDEOS - 1}": {"$exists": False},
+            "videos.url": {"$ne": url},
+        },
+        {"$push": {"videos": entree}},
+    )
+
+    if resultat.modified_count == 0:
+        # L'écriture n'a pas eu lieu : on relit pour dire laquelle des deux
+        # règles a joué, plutôt que de renvoyer un refus muet.
+        document = await database.users.find_one({"_id": current_user["_id"]}) or {}
+        existantes = document.get("videos") or []
+        if any(entry.get("url") == url for entry in existantes):
+            raise _invalide("Cette vidéo est déjà dans ta galerie.")
         raise _invalide(f"Ta galerie est pleine ({MAX_VIDEOS} vidéos). Retires-en une d'abord.")
 
-    url = payload.url.strip()
-    if any(entry.get("url") == url for entry in videos):
-        raise _invalide("Cette vidéo est déjà dans ta galerie.")
-
-    caption = (payload.caption or "").strip() or None
-    videos.append(
-        {
-            "id": uuid4().hex,
-            "url": url,
-            "kind": payload.kind,
-            "caption": caption,
-            **reconnu,
-        }
-    )
-    return await _remplacer(database, current_user, videos)
+    return await _galerie(database, current_user)
 
 
 @router.delete("/{video_id}", response_model=VideoList)

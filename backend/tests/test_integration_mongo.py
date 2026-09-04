@@ -245,3 +245,64 @@ async def test_le_freinage_de_connexion_fonctionne_sur_le_vrai_moteur(client):
         "/api/v1/auth/login", json={"email": "jean@exemple.com", "password": "Sparring1"}
     )
     assert bloque.status_code == 429
+
+
+async def test_deux_ajouts_simultanes_ne_depassent_pas_la_galerie(client):
+    """Le plafond de la galerie est porté par la condition de l'écriture.
+
+    Une lecture préalable suivie d'un remplacement du tableau laisserait deux
+    requêtes parties ensemble lire le même instantané et passer toutes les deux.
+    Le simulateur, synchrone, ne fait jamais apparaître cette fenêtre : seul le
+    vrai moteur la montre.
+    """
+    from app.schemas import MAX_VIDEOS
+
+    luis = await make_partner(client)
+    for index in range(MAX_VIDEOS - 1):
+        rempli = await client.post(
+            "/api/v1/videos",
+            json={"url": f"https://youtu.be/dQw4w9WgXc{index}", "kind": "sparring"},
+            headers=luis["headers"],
+        )
+        assert rempli.status_code == 201, rempli.text
+
+    # Une seule place reste, cinq candidats partent ensemble.
+    reponses = await asyncio.gather(
+        *(
+            client.post(
+                "/api/v1/videos",
+                json={"url": f"https://youtu.be/dQw4w9WgXd{index}", "kind": "fight"},
+                headers=luis["headers"],
+            )
+            for index in range(5)
+        ),
+        return_exceptions=True,
+    )
+
+    for reponse in reponses:
+        assert not isinstance(reponse, Exception), reponse
+    assert sum(reponse.status_code == 201 for reponse in reponses) == 1
+
+    profil = await client.get("/api/v1/auth/me", headers=luis["headers"])
+    assert len(profil.json()["videos"]) == MAX_VIDEOS
+
+
+async def test_un_double_appui_n_ajoute_la_video_qu_une_fois(client):
+    """Deux appuis sur « Ajouter » avant que le premier ait écrit."""
+    luis = await make_partner(client)
+    payload = {"url": "https://youtu.be/dQw4w9WgXcQ", "kind": "sparring"}
+
+    reponses = await asyncio.gather(
+        *(
+            client.post("/api/v1/videos", json=payload, headers=luis["headers"])
+            for _ in range(5)
+        ),
+        return_exceptions=True,
+    )
+
+    for reponse in reponses:
+        assert not isinstance(reponse, Exception), reponse
+    assert sum(reponse.status_code == 201 for reponse in reponses) == 1
+
+    profil = await client.get("/api/v1/auth/me", headers=luis["headers"])
+    assert len(profil.json()["videos"]) == 1

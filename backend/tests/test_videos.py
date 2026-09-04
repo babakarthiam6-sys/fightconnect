@@ -55,6 +55,28 @@ def test_les_liens_non_reconnus_sont_refuses(url):
     assert identify(url) is None
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.tiktok.com/@combattant",
+        "https://www.tiktok.com/@combattant/",
+        "https://vm.tiktok.com/",
+    ],
+)
+def test_un_lien_de_profil_tiktok_est_refuse(url):
+    """Comme pour Instagram : un profil ne mène à aucune vidéo, et la tuile
+    n'ouvrirait rien de ce que l'auteur voulait montrer."""
+    assert identify(url) is None
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["https://www.tiktok.com/@combattant/video/7123456789", "https://vm.tiktok.com/ZM8abc/"],
+)
+def test_une_vraie_video_tiktok_est_acceptee(url):
+    assert identify(url) == {"provider": "tiktok", "thumbnail_url": None}
+
+
 def test_un_permalien_instagram_est_accepte_sans_vignette():
     """Instagram ne donne pas de vignette sans oEmbed : la galerie affiche une
     tuile de repli plutôt que de dépendre d'un service tiers à l'enregistrement."""
@@ -240,3 +262,4 @@ async def test_un_profil_sans_video_reste_valide(client):
 
     assert response.status_code == 200
     assert response.json()["videos"] == []
+

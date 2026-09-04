@@ -3,6 +3,7 @@ import { Linking } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { VideoGallery } from '@/components/VideoGallery';
+import { CONFIG } from '@/constants/config';
 import { normalizeVideos } from '@/utils/normalize';
 import type { ProfileVideo } from '@/types';
 
@@ -37,9 +38,16 @@ describe('normalizeVideos', () => {
       },
     ]);
 
-    expect(videos).toHaveLength(1);
-    expect(videos[0].thumbnailUrl).toContain('hqdefault');
-    expect(videos[0].kind).toBe('fight');
+    expect(videos).toEqual([
+      {
+        id: 'v1',
+        url: 'https://youtu.be/dQw4w9WgXcQ',
+        provider: 'youtube',
+        kind: 'fight',
+        caption: null,
+        thumbnailUrl: 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+      },
+    ]);
   });
 
   it('écarte une entrée sans URL exploitable', () => {
@@ -50,7 +58,7 @@ describe('normalizeVideos', () => {
   it('retombe sur une valeur connue quand la nature est inattendue', () => {
     const videos = normalizeVideos([{ url: 'https://youtu.be/a', kind: 'karaoke' }]);
 
-    expect(videos[0].kind).toBe('sparring');
+    expect(videos.map((video) => video.kind)).toEqual(['sparring']);
   });
 
   it('traite une galerie absente comme une galerie vide', () => {
@@ -97,6 +105,28 @@ describe('VideoGallery', () => {
 
     expect(onAdd).toHaveBeenCalled();
     expect(onRemove).toHaveBeenCalledWith(YOUTUBE);
+  });
+
+  it('retire la case d’ajout quand la galerie est pleine', () => {
+    // Proposer un formulaire pour le voir refusé est une promesse non tenue.
+    const pleine = Array.from({ length: CONFIG.maxVideos }, (_, index) => ({
+      ...YOUTUBE,
+      id: `v${index}`,
+    }));
+    render(<VideoGallery videos={pleine} onAdd={jest.fn()} onRemove={jest.fn()} />);
+
+    expect(screen.queryByLabelText('Ajouter une vidéo')).toBeNull();
+    expect(screen.getByText(/Galerie pleine/)).toBeTruthy();
+  });
+
+  it('garde la case d’ajout tant qu’il reste de la place', () => {
+    const presque = Array.from({ length: CONFIG.maxVideos - 1 }, (_, index) => ({
+      ...YOUTUBE,
+      id: `v${index}`,
+    }));
+    render(<VideoGallery videos={presque} onAdd={jest.fn()} />);
+
+    expect(screen.getByLabelText('Ajouter une vidéo')).toBeTruthy();
   });
 
   it('reste silencieuse sur un profil sans vidéo', () => {

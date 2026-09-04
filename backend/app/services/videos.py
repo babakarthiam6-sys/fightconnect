@@ -64,6 +64,14 @@ def identify(url: str) -> dict[str, Any] | None:
         }
 
     if host in _TIKTOK_HOSTS:
+        # Même exigence que pour Instagram : un lien de profil ne mène à aucune
+        # vidéo. Les domaines courts (vm./vt.) ne portent qu'un jeton opaque, on
+        # se contente donc d'exiger un chemin.
+        if host in {"vm.tiktok.com", "vt.tiktok.com"}:
+            if not parsed.path.strip("/"):
+                return None
+        elif "/video/" not in parsed.path and not parsed.path.startswith("/t/"):
+            return None
         return {"provider": "tiktok", "thumbnail_url": None}
 
     if host in _INSTAGRAM_HOSTS:

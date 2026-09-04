@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { CONFIG } from '@/constants/config';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import type { ProfileVideo, VideoKind, VideoProvider } from '@/types';
 
@@ -31,6 +32,9 @@ interface Props {
 
 export function VideoGallery({ videos, onAdd, onRemove, emptyLabel }: Props) {
   const editable = onAdd !== undefined;
+  // Proposer la case d'ajout sur une galerie pleine ferait remplir un formulaire
+  // pour le voir refusé : on la retire, et le compteur explique pourquoi.
+  const isFull = videos.length >= CONFIG.maxVideos;
 
   const open = useCallback((video: ProfileVideo) => {
     // La lecture se fait chez la plateforme : intégrer TikTok ou Instagram dans
@@ -92,7 +96,7 @@ export function VideoGallery({ videos, onAdd, onRemove, emptyLabel }: Props) {
         </Pressable>
       ))}
 
-      {editable ? (
+      {editable && !isFull ? (
         <Pressable
           style={[styles.tile, styles.addTile]}
           onPress={onAdd}
@@ -102,6 +106,12 @@ export function VideoGallery({ videos, onAdd, onRemove, emptyLabel }: Props) {
           <Ionicons name="add" size={26} color={COLORS.primary} />
           <Text style={styles.addLabel}>Ajouter</Text>
         </Pressable>
+      ) : null}
+
+      {editable && isFull ? (
+        <Text style={styles.full}>
+          Galerie pleine ({CONFIG.maxVideos} vidéos). Retires-en une pour en ajouter une autre.
+        </Text>
       ) : null}
     </View>
   );
@@ -134,6 +144,11 @@ const styles = StyleSheet.create({
   empty: {
     ...TYPOGRAPHY.body,
     color: COLORS.textMuted,
+  },
+  full: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+    width: '100%',
   },
   grid: {
     flexDirection: 'row',
