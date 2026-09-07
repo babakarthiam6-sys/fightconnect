@@ -37,7 +37,7 @@
     "@react-native-community/datetimepicker": "^7.7.0",
     "@react-native-community/netinfo": "11.1.0",
     "@react-navigation/native": "^6.1.9",
-    "@stripe/stripe-react-native": "^0.35.1",
+    "@stripe/stripe-react-native": "^0.76.0",
     "axios": "^1.6.0",
     "date-fns": "^2.30.0",
     "expo": "^50.0.0",
