@@ -42,6 +42,11 @@ export const ENDPOINTS = {
     status: '/payouts/status',
     onboarding: '/payouts/onboarding',
   },
+  videos: {
+    add: '/videos',
+    remove: (id: string) => `/videos/${id}`,
+    order: '/videos/order',
+  },
   moderation: {
     reviews: '/moderation/reviews',
     userRisk: (userId: string) => `/moderation/user-risk/${userId}`,

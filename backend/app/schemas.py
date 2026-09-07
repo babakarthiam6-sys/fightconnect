@@ -28,6 +28,15 @@ WEIGHT_CLASSES = (
 
 BOOKING_STATUSES = ("pending", "accepted", "declined", "cancelled", "completed")
 
+# Ce qu'une vidéo de profil montre. Trois natures suffisent : elles répondent à
+# la seule question que se pose celui qui regarde — « à quoi ressemble cette
+# personne en face de moi ? »
+VIDEO_KINDS = ("fight", "sparring", "shadow")
+
+# Une galerie se parcourt d'un coup d'œil. Au-delà, elle devient une archive que
+# personne ne déroule, et le profil met plus longtemps à s'afficher.
+MAX_VIDEOS = 6
+
 
 class SignupRequest(BaseModel):
     email: EmailStr
@@ -90,6 +99,7 @@ class UserOut(UserSummary):
     experience_years: int = 0
     available: bool = False
     currency: str = "EUR"
+    videos: list["VideoOut"] = []
     expo_push_token: str | None = None
 
 
@@ -119,6 +129,7 @@ class PartnerOut(BaseModel):
     price_per_round: float | None = None
     currency: str = "EUR"
     available: bool = False
+    videos: list["VideoOut"] = []
 
 
 class PartnerList(BaseModel):
@@ -269,3 +280,34 @@ class PayoutStatusOut(BaseModel):
 
 class OnboardingLinkOut(BaseModel):
     url: str
+
+
+class VideoCreate(BaseModel):
+    """Ajout d'une vidéo à sa propre galerie.
+
+    Seule l'URL est imposée : la plateforme et la vignette sont déduites du lien
+    côté serveur, jamais reçues du client, qui pourrait annoncer n'importe quoi.
+    """
+
+    url: str = Field(min_length=8, max_length=500)
+    kind: str
+    caption: str | None = Field(default=None, max_length=120)
+
+
+class VideoOut(BaseModel):
+    id: str
+    url: str
+    provider: str
+    kind: str
+    caption: str | None = None
+    thumbnail_url: str | None = None
+
+
+class VideoList(BaseModel):
+    items: list[VideoOut]
+
+
+class VideoOrder(BaseModel):
+    """Nouvel ordre de la galerie : la première vidéo sert de couverture."""
+
+    ids: list[str] = Field(max_length=MAX_VIDEOS)

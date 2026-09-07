@@ -94,6 +94,15 @@ export const CONFIG = {
    * des surprises.
    */
   commissionRate: 0.15,
+  /**
+   * Plafond de la galerie vidéo, repris de `MAX_VIDEOS` côté serveur.
+   *
+   * Dupliqué parce que l'écran doit savoir masquer la case « Ajouter » avant
+   * d'envoyer quoi que ce soit : proposer un formulaire pour le voir refusé est
+   * une promesse non tenue. Le serveur reste seul juge — si les deux valeurs
+   * divergent, l'ajout est refusé proprement, pas accepté à tort.
+   */
+  maxVideos: 6,
   /** Durée de validité du cache hors ligne. */
   cacheTtlMs: 1000 * 60 * 30,
   /** Nombre de tentatives supplémentaires sur erreur réseau ou 5xx. */

@@ -26,6 +26,7 @@ const PARTNER: Partner = {
   pricePerRound: 20,
   currency: 'EUR',
   available: true,
+  videos: [],
 };
 
 const BOOKING: Booking = {
@@ -84,6 +85,7 @@ const USER: User = {
   pricePerRound: 20,
   currency: 'EUR',
   available: true,
+  videos: [],
 };
 
 describe('Button', () => {

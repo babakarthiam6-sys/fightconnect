@@ -44,6 +44,7 @@ const USER = {
   pricePerRound: null,
   currency: 'EUR',
   available: false,
+  videos: [],
 };
 
 function Probe() {

@@ -23,6 +23,8 @@ import PayoutCard from '@/components/PayoutCard';
 import ProfileField from '@/components/ProfileField';
 import RatingStars from '@/components/RatingStars';
 import StatCard from '@/components/StatCard';
+import { VideoAddSheet } from '@/components/VideoAddSheet';
+import { VideoGallery } from '@/components/VideoGallery';
 import {
   COLORS,
   LEVEL_LABELS,
@@ -36,6 +38,7 @@ import {
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { payoutService } from '@/services/payout';
+import { videoService } from '@/services/video';
 import {
   formatLevel,
   formatPrice,
@@ -43,7 +46,7 @@ import {
   formatUserName,
   formatWeightClass,
 } from '@/utils/formatting';
-import type { AppError, PayoutStatus } from '@/types';
+import type { AppError, PayoutStatus, ProfileVideo, VideoKind } from '@/types';
 import type { ProfileInput } from '@/utils/validation';
 
 /**
@@ -58,6 +61,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, refreshUser, updateProfile } = useAuth();
   const { stats, isConnected, refreshStats } = useApp();
+  const [isVideoSheetOpen, setVideoSheetOpen] = useState(false);
   const toast = useToast();
 
   const [payouts, setPayouts] = useState<PayoutStatus | null>(null);
@@ -95,6 +99,40 @@ export default function ProfileScreen() {
       }
     },
     [toast, updateProfile],
+  );
+
+  /**
+   * Ajoute une vidéo puis resynchronise le profil.
+   *
+   * La galerie n'est pas tenue localement : le serveur seul décide de l'ordre,
+   * de la plateforme reconnue et de la vignette, et un état parallèle finirait
+   * par diverger du sien.
+   */
+  const addVideo = useCallback(
+    async (input: { url: string; kind: VideoKind; caption: string }) => {
+      try {
+        await videoService.add(input);
+        await refreshUser();
+        setVideoSheetOpen(false);
+      } catch (caught) {
+        // Le serveur explique quels liens il accepte : son message vaut mieux
+        // qu'un « échec » générique.
+        toast.show((caught as AppError).message, { type: 'danger' });
+      }
+    },
+    [refreshUser, toast],
+  );
+
+  const removeVideo = useCallback(
+    async (video: ProfileVideo) => {
+      try {
+        await videoService.remove(video.id);
+        await refreshUser();
+      } catch (caught) {
+        toast.show((caught as AppError).message, { type: 'danger' });
+      }
+    },
+    [refreshUser, toast],
   );
 
   const toggleAvailable = useCallback(
@@ -242,6 +280,16 @@ export default function ProfileScreen() {
           onSave={(value) => save({ experienceYears: (value as number) ?? 0 })}
         />
 
+        <Text style={styles.sectionTitle}>En action</Text>
+        <Text style={styles.sectionHint}>
+          Facultatif. Une vidéo en dit plus sur ton niveau que n’importe quelle note.
+        </Text>
+        <VideoGallery
+          videos={user.videos}
+          onAdd={() => setVideoSheetOpen(true)}
+          onRemove={(video) => void removeVideo(video)}
+        />
+
         <Text style={styles.sectionTitle}>Localisation et tarif</Text>
 
         <ProfileField
@@ -304,6 +352,12 @@ export default function ProfileScreen() {
           icon={<Ionicons name="log-out-outline" size={18} color={COLORS.textInverse} />}
         />
       </ScrollView>
+
+      <VideoAddSheet
+        visible={isVideoSheetOpen}
+        onClose={() => setVideoSheetOpen(false)}
+        onSubmit={addVideo}
+      />
     </SafeAreaView>
   );
 }
@@ -338,6 +392,12 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   availabilityLabel: { ...TYPOGRAPHY.body, color: COLORS.text, flex: 1, fontSize: 15 },
+  sectionHint: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+    marginBottom: SPACING.md,
+    marginTop: -SPACING.sm,
+  },
   sectionTitle: {
     ...TYPOGRAPHY.title,
     color: COLORS.text,
