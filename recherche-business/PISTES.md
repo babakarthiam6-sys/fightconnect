@@ -16,9 +16,18 @@ acheteur décide, il amène ses adhérents, plus de problème d'amorçage.
   pas 1 250. Licenciés : 64 000-66 000 boxe, 12 318 MMA.
 - Le marché est **déjà servi, y compris par un français spécialisé combat** :
   **Paak** (MMA, gestion des combats, catégories de poids, licences FFMMA) —
-  **gratuit jusqu'à 100 adhérents**, 29 €/mois, 99 €/mois.
+  **gratuit pour toujours jusqu'à 100 adhérents** (1,2 % de commission sur les
+  encaissements, plafonnée à 2,50 €), **29 €/mois HT** jusqu'à 500 adhérents et 0 %
+  de commission, **99 €/mois HT** en illimité. Vérifié le 2026-09-09 sur
+  <https://paak.club/logiciel-mma/>.
   Puis FeelUp 49-149 €, Sportigo 70-130 €, bsport 150 €+, et une nappe de
   généralistes associatifs quasi gratuits (Kalisport, SportEasy, AZEOO dès 9 €).
+  *(Ces derniers prix viennent de comparatifs, pas des sites éditeurs : à revérifier
+  à la source avant de s'appuyer dessus.)*
+
+**Sources.** Licenciés et clubs : <https://www.ffboxe.com/> (2023) et
+<https://www.fmmaf.fr/saisons_2020-2026/> (saison 2025-2026) — deux périmètres et
+deux années différents, d'où le « ~1 000 clubs uniques » plutôt qu'une addition.
 
 **Pourquoi c'est mort.** Pour atteindre 3 000 €/mois à 50 €, il faut **60 clubs
 payants, soit ~6 % de tout le marché affilié français**, arrachés à un concurrent
