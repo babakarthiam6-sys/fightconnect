@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ton premier sparring</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm 20mm 20mm; }
+  @page :first { margin: 0; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: Georgia, "Times New Roman", serif; font-size: 11.5pt; line-height: 1.62;
+         color: #14171a; margin: 0; hyphens: auto; }
+  h1, h2, h3, .sans { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+
+  .cover { page-break-after: always; height: 297mm; background: #0C0C0E; color: #fff;
+           display: flex; flex-direction: column; justify-content: space-between; padding: 30mm 22mm; box-sizing: border-box; }
+  .cover .kicker { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: .22em;
+                   text-transform: uppercase; font-size: 9.5pt; color: #FF6B35; }
+  .cover h1 { font-size: 46pt; line-height: 1.03; margin: 0 0 10mm 0; font-weight: 800; letter-spacing: -.02em; }
+  .cover .sub { font-size: 15pt; line-height: 1.42; color: #d8d8dc; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 300; }
+  .cover .rule { width: 28mm; height: 3px; background: #FF6B35; margin: 0 0 8mm 0; }
+  .cover .foot { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #8a8a92; }
+
+  h2 { font-size: 20pt; line-height: 1.2; margin: 0 0 2mm 0; letter-spacing: -.01em; page-break-after: avoid; }
+  h3 { font-size: 12.5pt; margin: 7mm 0 1.5mm 0; page-break-after: avoid; }
+  .chapno { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9pt; letter-spacing: .2em;
+            text-transform: uppercase; color: #FF6B35; margin: 0 0 1.5mm 0; }
+  .chapter { page-break-before: always; }
+  p { margin: 0 0 3.6mm 0; }
+  ul, ol { margin: 0 0 4mm 0; padding-left: 6mm; }
+  li { margin-bottom: 1.8mm; }
+  strong { font-weight: 700; }
+
+  .lead { font-size: 12.5pt; color: #33383d; border-left: 3px solid #FF6B35; padding-left: 5mm; margin: 5mm 0 7mm 0; }
+  .box { background: #f4f4f2; border-radius: 3mm; padding: 5mm 6mm; margin: 5mm 0; page-break-inside: avoid; }
+  .box .t { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9pt; letter-spacing: .14em;
+            text-transform: uppercase; color: #6b6b72; margin-bottom: 2mm; }
+  .warn { background: #fff4ef; border-left: 3px solid #E23D28; }
+  .warn .t { color: #E23D28; }
+  table { width: 100%; border-collapse: collapse; margin: 4mm 0 6mm 0; font-size: 10.5pt; page-break-inside: avoid; }
+  th, td { text-align: left; padding: 2.2mm 3mm; border-bottom: 1px solid #ddd; vertical-align: top; }
+  th { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9pt; text-transform: uppercase;
+       letter-spacing: .1em; color: #6b6b72; border-bottom: 1.5px solid #14171a; }
+  .toc { list-style: none; padding-left: 0; }
+  .toc li { margin-bottom: 2.6mm; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 11pt; }
+  .toc .n { color: #FF6B35; font-weight: 700; margin-right: 3mm; display: inline-block; width: 7mm; }
+  .checklist li { list-style: none; margin-left: -4mm; margin-bottom: 2.4mm; }
+  .checklist li::before { content: "☐"; margin-right: 3mm; color: #FF6B35; font-size: 13pt; }
+  .end { text-align: center; color: #8a8a92; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+         font-size: 9.5pt; margin-top: 10mm; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">Guide pratique · Boxe · MMA · Muay-thaï</div>
+  <div>
+    <div class="rule"></div>
+    <h1>Ton premier<br>sparring</h1>
+    <div class="sub">Monter sur le ring sans te faire démolir —<br>et sans démolir personne.</div>
+  </div>
+  <div class="foot">Le protocole des 90 jours, pour ceux qui s'entraînent depuis quelques mois<br>et qui n'ont encore jamais touché quelqu'un qui touche en retour.</div>
+</div>
+
+<h2>Ce qu'il y a dedans</h2>
+<ol class="toc">
+  <li><span class="n">1</span>Pourquoi ton premier sparring se passe mal</li>
+  <li><span class="n">2</span>Ce que le sparring est — et ce qu'il n'est pas</li>
+  <li><span class="n">3</span>Les quatre choses à savoir faire avant d'y aller</li>
+  <li><span class="n">4</span>L'équipement : ce qui compte, ce qui ne compte pas</li>
+  <li><span class="n">5</span>Le jour J, minute par minute</li>
+  <li><span class="n">6</span>Les sept erreurs du débutant</li>
+  <li><span class="n">7</span>Encaisser : la tête, et la seule règle non négociable</li>
+  <li><span class="n">8</span>Choisir son partenaire, et reconnaître celui qu'il faut fuir</li>
+  <li><span class="n">9</span>Après le round : le débrief qui fait progresser</li>
+  <li><span class="n">10</span>Le plan 90 jours</li>
+  <li><span class="n">—</span>Annexes : checklists à imprimer</li>
+</ol>
+
+<div class="box warn">
+  <div class="t">À lire avant tout le reste</div>
+  <p style="margin:0">Ce guide ne remplace ni un entraîneur, ni un médecin. Le sparring se pratique <strong>en salle, encadré par un coach qui te connaît</strong>. Jamais entre amis dans un garage, jamais sans supervision, jamais en cachette d'un club. Si tu es blessé, malade, ou si tu sors d'un choc à la tête, tu ne spares pas — le chapitre 7 explique pourquoi, et c'est la partie la plus importante du livre.</p>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 1</div>
+<h2>Pourquoi ton premier sparring se passe mal</h2>
+
+<p class="lead">Presque tout le monde rate son premier sparring. Ce n'est pas un problème de niveau technique. C'est un problème d'attente : personne ne t'a dit ce qui allait réellement se passer.</p>
+
+<p>Voilà ce qui arrive, et ça arrive à peu près à tout le monde. La cloche sonne. Ton partenaire avance. Tu lèves la garde, tu recules, et en trois secondes tu réalises deux choses qui ne t'étaient jamais arrivées au sac : la première, c'est que la personne en face bouge — le sac, lui, restait où tu l'avais laissé. La seconde, c'est que tu es déjà essoufflé.</p>
+
+<p>Trente secondes plus tard, tu ne vois plus les coups partir. Tu fermes les yeux au moment de l'impact. Tu balances des séries que tu n'as jamais travaillées, tu oublies ta garde, tu oublies de respirer. À la fin du round, tu as l'impression d'avoir couru dix minutes, tu as mal quelque part sans savoir où, et surtout tu te dis : <em>je suis nul, j'ai tout oublié</em>.</p>
+
+<p>Tu n'as rien oublié. Ce qui s'est produit est mécanique, et ça porte un nom : ton corps est passé en réaction de stress aiguë. Le rythme cardiaque grimpe avant même le premier coup, la vision se rétrécit — tu ne vois plus qu'un tunnel devant toi, ce qui explique pourquoi les crochets t'arrivent de nulle part —, et la motricité fine disparaît. La motricité fine, c'est exactement ce dont est faite ta technique.</p>
+
+<p>Autrement dit : <strong>le débutant ne perd pas sa technique parce qu'il la maîtrise mal, il la perd parce que son système nerveux la débranche.</strong> Et la seule chose qui rebranche ce système, c'est l'exposition répétée à la situation. Pas plus de shadow, pas plus de sac. De l'exposition, dosée.</p>
+
+<p>D'où la conséquence qui structure tout ce guide : <strong>ton premier sparring n'a pas pour objectif de bien se passer.</strong> Il a pour objectif d'avoir lieu, à intensité basse, et que tu en ressortes assez à l'aise pour revenir la semaine suivante. Un débutant qui revient huit fois progresse ; un débutant qui fait un sparring dur, prend une correction et ne revient plus n'a rien appris du tout.</p>
+
+<div class="box">
+  <div class="t">La seule mesure de réussite du premier round</div>
+  <p style="margin:0"><strong>Tu as respiré, tu as gardé les yeux ouverts, et tu as envie de recommencer.</strong> Ni combien de coups tu as touchés, ni combien tu en as pris. Note ces trois cases sur ton téléphone en sortant. C'est ton seul tableau de bord pendant le premier mois.</p>
+</div>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 2</div>
+<h2>Ce que le sparring est — et ce qu'il n'est pas</h2>
+
+<p class="lead">Le mot « sparring » recouvre cinq exercices très différents. Confondre le premier et le dernier, c'est comme confondre un footing et un marathon.</p>
+
+<p>Dans la plupart des clubs, quand quelqu'un dit « on fait du sparring », il ne précise pas de quoi il parle. C'est la première source de malentendus, et la première source de nez cassés chez les débutants. Voici l'échelle, du plus doux au plus dur.</p>
+
+<table>
+  <tr><th>Format</th><th>Intensité</th><th>Ce qu'on y travaille</th></tr>
+  <tr><td><strong>Touch sparring</strong></td><td>10–20 %</td><td>Les coups sont posés, pas frappés. On touche pour signaler, comme on tape à une porte. Placement, distance, timing.</td></tr>
+  <tr><td><strong>Sparring technique</strong></td><td>30–40 %</td><td>Un thème imposé : « seulement les directs », « l'un attaque, l'autre esquive ». Le meilleur format pour apprendre.</td></tr>
+  <tr><td><strong>Sparring souple (light)</strong></td><td>40–50 %</td><td>Tout est autorisé, rien n'est appuyé. C'est le format de référence, celui que tu feras 90 % du temps.</td></tr>
+  <tr><td><strong>Sparring dur</strong></td><td>70–80 %</td><td>Préparation à une compétition proche. Réservé aux compétiteurs, encadré, quelques semaines par an.</td></tr>
+  <tr><td><strong>Le « on va voir »</strong></td><td>Inconnue</td><td>Aucune règle, aucune intensité convenue. Ce n'est pas un format d'entraînement. C'est comme ça qu'on se blesse.</td></tr>
+</table>
+
+<p>Ton premier sparring doit être du <strong>touch sparring</strong> ou du <strong>sparring technique</strong>. Pas du light. Et si le coach te dit « vas-y tranquille », ça ne suffit pas : « tranquille » ne veut rien dire, chacun a sa définition. Le chapitre 5 te donne la phrase exacte à dire pour lever l'ambiguïté en dix secondes.</p>
+
+<h3>Ce que le sparring n'est pas</h3>
+
+<p><strong>Ce n'est pas un combat.</strong> Un combat a un vainqueur, un arbitre, un enjeu. Un sparring n'a rien de tout ça : c'est un exercice où deux personnes s'entraident à progresser en se donnant des problèmes à résoudre. Personne ne gagne un sparring. Celui qui « gagne » les sparrings du mardi soir est souvent celui qui progresse le moins, parce qu'il ne se met jamais en difficulté.</p>
+
+<p><strong>Ce n'est pas une évaluation.</strong> Ton coach ne te note pas. Il regarde si tu respires, si tu gardes ta structure, si tu es capable d'appliquer une consigne sous pression. Un débutant qui applique une seule consigne pendant deux minutes vaut mieux, à ses yeux, qu'un débutant qui balance des séries spectaculaires en apnée.</p>
+
+<p><strong>Ce n'est pas obligatoire tout de suite.</strong> Si tu n'as que six semaines de pratique, tu n'es pas en retard : tu es en avance. Le chapitre suivant liste les quatre acquis minimum. Tant qu'ils ne sont pas là, le sparring t'apprendra surtout à avoir peur.</p>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 3</div>
+<h2>Les quatre choses à savoir faire avant d'y aller</h2>
+
+<p class="lead">Quatre. Pas une combinaison de six coups, pas un enchaînement de compétition. Quatre fondamentaux, qui suffisent à rendre un premier sparring utile plutôt que traumatisant.</p>
+
+<h3>1. Tenir ta garde quand tu es fatigué</h3>
+<p>Pas quand tu es frais : quand tu es cuit. La garde tombe toujours au même moment — à la fin du round, quand les épaules brûlent. Teste-la : trois rounds de sac de 3 minutes, et au dernier, vérifie où sont tes mains. Si elles sont au niveau du ventre, tu n'es pas prêt à recevoir des coups à la tête. Travaille des rounds de shadow lestés d'haltères légers (1 kg suffit) pour habituer les épaules à durer.</p>
+
+<h3>2. Te déplacer sans croiser les pieds</h3>
+<p>Le débutant qui croise les jambes se retrouve par terre au premier déplacement latéral, ou pire, se fait toucher pendant qu'il a un seul appui. Exercice : dessine un carré au sol, déplace-toi sur ses côtés pendant deux minutes en gardant toujours la même distance entre tes pieds. Quand tu peux le faire sans y penser, c'est acquis.</p>
+
+<h3>3. Respirer en frappant</h3>
+<p>Le réflexe du débutant, c'est l'apnée. Il retient sa respiration dès que ça s'accélère, et il est mort en 45 secondes. La respiration doit être <strong>expirée sur chaque coup</strong>, courte et sonore. Si tu n'entends pas ton propre souffle sur le sac, tu ne respires pas assez.</p>
+
+<h3>4. Encaisser une touche sans partir en vrille</h3>
+<p>C'est le vrai sujet, et c'est celui qu'on travaille le moins. Demande à ton coach ou à un partenaire de confiance de te toucher légèrement au corps et à la tête, gants ouverts, pendant que tu continues à bouger et à respirer. Objectif unique : <strong>ne pas fermer les yeux, ne pas s'arrêter, ne pas reculer en ligne droite.</strong> Dix minutes de cet exercice valent trois mois de sac.</p>
+
+<div class="box">
+  <div class="t">Test d'entrée</div>
+  <p style="margin:0">Si tu coches les quatre, tu peux demander un touch sparring cette semaine. S'il t'en manque un, travaille-le deux semaines et redemande. Personne au club ne te reprochera d'attendre — beaucoup te respecteront pour ça.</p>
+</div>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 4</div>
+<h2>L'équipement : ce qui compte, ce qui ne compte pas</h2>
+
+<p class="lead">Il y a exactement trois pièces sur lesquelles il ne faut pas économiser, et beaucoup sur lesquelles tu peux.</p>
+
+<h3>Le protège-dents — la pièce la moins chère et la plus importante</h3>
+<p>Il ne protège pas seulement tes dents. En maintenant la mâchoire, il participe à amortir les chocs transmis. Le modèle à 5 € que tu mords sans le mouler ne tient pas en place et t'empêche de respirer. Prends un <strong>thermoformable</strong> (à ébouillanter et mordre chez toi, 15–30 €) ; si tu comptes t'entraîner sérieusement pendant des années, un moulé sur mesure chez un dentiste est un vrai confort, mais ce n'est pas nécessaire pour commencer. Sans protège-dents, on ne monte pas — jamais, même pour du touch.</p>
+
+<h3>Les gants — 16 oz, et c'est tout</h3>
+<p>Pour le sparring, on prend <strong>16 oz</strong> (ou 14 oz si tu fais moins de 60 kg et que ton coach le valide). Le rembourrage n'est pas là pour te protéger toi : il est là pour <strong>protéger la tête de ton partenaire</strong>. Un gars de 90 kg qui spare en 10 oz est un danger, pas un dur. Les gants de sac ne sont pas des gants de sparring : ils sont plus fins et plus denses.</p>
+
+<h3>La coquille</h3>
+<p>Non négociable, quel que soit le sport et quel que soit ton sexe — des modèles existent pour tout le monde. Un coup bas arrive toujours, et il arrive toujours par accident.</p>
+
+<h3>Le casque : plus nuancé qu'on ne le croit</h3>
+<p>Le casque réduit nettement les coupures, les arcades ouvertes, les chocs sur les oreilles. En revanche, il ne fait pas disparaître le risque de commotion : celle-ci vient de l'accélération du cerveau dans la boîte crânienne, que le casque n'annule pas. Certains coachs estiment même qu'il donne un faux sentiment de sécurité et augmente le volume de coups reçus. <strong>La règle simple : tu suis la règle de ton club</strong>, et tu ne considères jamais le casque comme une autorisation de prendre plus de coups.</p>
+
+<h3>Ce sur quoi tu peux économiser</h3>
+<p>La couleur, la marque, le short à 90 €, les bandes personnalisées. Des bandes de 4,5 m à 8 € font le travail. Personne, dans aucune salle sérieuse, ne juge un débutant sur son matériel — en revanche tout le monde remarque celui qui arrive en 10 oz sans protège-dents.</p>
+
+<table>
+  <tr><th>Pièce</th><th>Budget raisonnable</th><th>Négociable ?</th></tr>
+  <tr><td>Protège-dents thermoformable</td><td>15–30 €</td><td>Non</td></tr>
+  <tr><td>Gants 16 oz</td><td>50–90 €</td><td>Non</td></tr>
+  <tr><td>Coquille</td><td>20–35 €</td><td>Non</td></tr>
+  <tr><td>Bandes (2 paires)</td><td>15 €</td><td>Non</td></tr>
+  <tr><td>Casque</td><td>50–90 €</td><td>Selon le club</td></tr>
+  <tr><td>Protège-tibias (si pieds-poings)</td><td>35–70 €</td><td>Non</td></tr>
+</table>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 5</div>
+<h2>Le jour J, minute par minute</h2>
+
+<p class="lead">L'improvisation, c'est ce qui transforme un exercice d'apprentissage en mauvais souvenir. Voici le déroulé, du vestiaire à la douche.</p>
+
+<h3>Une heure avant : ce que tu manges, ce que tu bois</h3>
+<p>Un repas léger deux à trois heures avant, pas juste avant — prendre un coup au ventre l'estomac plein est une expérience qu'on ne refait pas. De l'eau, régulièrement, dès le matin. Pas de « je récupère l'énergie » avec une boisson sucrée dix minutes avant : tu redescendras en plein round.</p>
+
+<h3>Vingt minutes avant : l'échauffement, le vrai</h3>
+<p>Un débutant mal échauffé se blesse au premier échange rapide. Cinq minutes de corde ou de course sur place, puis mobilisation des épaules, du cou et des hanches, puis <strong>deux rounds de shadow qui montent progressivement</strong>. À la fin, tu dois avoir chaud et transpirer légèrement. Le cou compte : des rotations lentes et des flexions douces préparent les muscles qui encaisseront les à-coups.</p>
+
+<h3>Deux minutes avant : la conversation qui change tout</h3>
+<p>C'est le moment le plus important du chapitre, et il dure dix secondes. Tu vas voir ton partenaire, tu lui serres la main, et tu dis exactement ceci :</p>
+
+<div class="box">
+  <div class="t">La phrase</div>
+  <p style="margin:0">« Salut, c'est mon premier sparring. On peut rester à <strong>20-30 %</strong>, du touch, on se pose les coups sans appuyer ? Et si l'un de nous monte en intensité sans faire exprès, on lève la main et on redescend. »</p>
+</div>
+
+<p>Cette phrase fait trois choses. Elle annonce ton niveau, ce qui évite qu'on te teste. Elle fixe un chiffre — « tranquille » ne veut rien dire, « 20-30 % » veut dire quelque chose. Et elle installe un signal de sortie convenu à l'avance, ce qui te permet d'arrêter sans avoir l'air de fuir.</p>
+
+<p>Si ton partenaire répond « ouais ouais » sans te regarder, ou lève les yeux au ciel, va voir le coach et demande quelqu'un d'autre. Tu n'as rien à prouver et tu n'es pas le problème. Le chapitre 8 détaille les signaux à repérer.</p>
+
+<h3>Pendant le round : trois consignes, pas plus</h3>
+<p>Un cerveau sous adrénaline ne traite pas plus de trois consignes. Pour le premier round, voici les seules qui comptent :</p>
+<ol>
+  <li><strong>Respire, et fais du bruit en expirant.</strong> Le bruit est ton contrôle : si tu ne t'entends pas, tu es en apnée.</li>
+  <li><strong>Garde les yeux ouverts et regarde la poitrine</strong> de ton partenaire, pas ses gants. La vision périphérique capte les bras ; fixer les gants, c'est se faire toucher par l'autre main.</li>
+  <li><strong>Bouge après avoir frappé.</strong> Le débutant frappe puis reste planté à admirer. Un pas de côté après chaque série, même mal fait.</li>
+</ol>
+
+<h3>Entre les rounds</h3>
+<p>Assieds-toi si tu peux, respire par le nez, bois deux gorgées — pas la bouteille. Et surtout : <strong>ne rejoue pas mentalement ce que tu viens de rater.</strong> Choisis une seule chose à faire au round suivant, une seule, et répète-la dans ta tête.</p>
+
+<h3>À la fin</h3>
+<p>Tu remercies ton partenaire, tu tapes le gant, et tu lui demandes une chose : « qu'est-ce que tu as vu que je devrais corriger ? » Cette question transforme un adversaire en entraîneur, et elle fait de toi quelqu'un avec qui les gens ont envie de sparrer. Beaucoup de débutants ne la posent jamais.</p>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 6</div>
+<h2>Les sept erreurs du débutant</h2>
+
+<p class="lead">Elles sont toujours les mêmes, dans toutes les salles, dans tous les sports. Les connaître à l'avance permet de les repérer sur soi en temps réel.</p>
+
+<h3>1. Fermer les yeux</h3>
+<p>Universel, et handicapant : on ne peut pas esquiver ce qu'on ne voit pas, et fermer les yeux fait rater les trois coups suivants. Correction : l'exercice d'exposition du chapitre 3, gants ouverts, jusqu'à ce que le clignement disparaisse.</p>
+
+<h3>2. Retenir sa respiration</h3>
+<p>Provoque l'épuisement en une minute et rend chaque coup au corps beaucoup plus douloureux — un abdomen contracté et expiré encaisse ; un abdomen en apnée, non.</p>
+
+<h3>3. Reculer en ligne droite</h3>
+<p>C'est l'autoroute : ton partenaire n'a qu'à avancer. Il faut sortir sur un angle, d'un pas de côté. Même mal exécuté, un pas latéral vaut mieux qu'une retraite droite.</p>
+
+<h3>4. Chasser la touche spectaculaire</h3>
+<p>Le débutant veut « marquer un point » et balance un grand crochet, découvrant tout son côté. En sparring, personne ne compte les points. Un jab bien placé vaut dix crochets ratés.</p>
+
+<h3>5. S'excuser à chaque touche</h3>
+<p>Toucher son partenaire, c'est le principe de l'exercice. S'excuser en boucle casse le rythme, et surtout ça envoie le message que tu ne t'autorises pas à travailler. On s'excuse pour un coup vraiment trop appuyé ou irrégulier — pas pour un jab qui passe.</p>
+
+<h3>6. Monter en intensité sans s'en rendre compte</h3>
+<p>Elle est sournoise : on prend un coup un peu sec, on répond un peu plus fort, l'autre répond encore plus fort, et en quarante secondes le touch sparring est devenu une bagarre. On appelle ça l'escalade. <strong>C'est la première cause de blessure entre débutants.</strong> Le remède est celui du chapitre 5 : le signal convenu à l'avance, la main levée, et on redescend sans discuter.</p>
+
+<h3>7. Comparer sa semaine 2 à la semaine 300 des autres</h3>
+<p>Le gars qui te touche quand il veut fait peut-être ça depuis huit ans. Ta seule comparaison valable, c'est toi le mois dernier. D'où le chapitre suivant sur le débrief écrit : sans traces, on ne voit pas sa propre progression, et on abandonne en croyant stagner.</p>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 7</div>
+<h2>Encaisser : la tête, et la seule règle non négociable</h2>
+
+<p class="lead">C'est le chapitre le plus important, et le seul dont l'enjeu dépasse la boxe. Lis-le en entier, même si tu sautes tout le reste.</p>
+
+<p>Prendre des coups fait partie du sport. Prendre des coups <strong>à la tête</strong>, de façon répétée, n'est pas anodin, et le milieu a mis longtemps à le reconnaître. Ce n'est pas une raison pour arrêter : c'est une raison pour savoir doser, savoir reconnaître un signal d'alerte, et savoir s'arrêter.</p>
+
+<h3>La différence entre « secoué » et commotionné</h3>
+<p>Une commotion cérébrale <strong>ne nécessite pas de perte de connaissance</strong> — c'est l'idée fausse la plus dangereuse du sport de combat. La grande majorité des commotions se produisent sans que la personne s'évanouisse. Les signes peuvent apparaître immédiatement ou plusieurs heures après.</p>
+
+<div class="box warn">
+  <div class="t">Tu arrêtes immédiatement, et tu consultes un médecin</div>
+  <ul style="margin-bottom:0">
+    <li>Étourdissement, sensation d'être « dans le brouillard », ou impression que la salle bouge</li>
+    <li>Mal de tête qui s'installe ou qui augmente après la séance</li>
+    <li>Nausée, vomissement</li>
+    <li>Vision trouble, double, ou sensibilité inhabituelle à la lumière et au bruit</li>
+    <li>Trou de mémoire, même court, même « bizarre juste deux secondes »</li>
+    <li>Difficulté à trouver tes mots, lenteur à répondre, confusion</li>
+    <li>Irritabilité ou tristesse inhabituelles dans les heures qui suivent</li>
+    <li>Sommeil perturbé la nuit d'après</li>
+  </ul>
+</div>
+
+<p><strong>La règle non négociable :</strong> au moindre doute, le round est terminé. Pas « je finis celui-là ». Terminé. Tu préviens le coach — pas seulement ton partenaire — et tu ne remontes pas ce jour-là. Reprendre après un choc à la tête, alors que le cerveau est encore vulnérable, est précisément la situation où une seconde commotion cause des dégâts disproportionnés.</p>
+
+<p>Et tu ne rentres pas seul chez toi ce soir-là si tu as le moindre symptôme : quelqu'un doit savoir. Le retour à l'entraînement se fait progressivement, avec un avis médical — pas selon ce que tu ressens, parce que ce que tu ressens n'est pas fiable après un choc à la tête.</p>
+
+<h3>Ce qui protège vraiment, dans l'ordre</h3>
+<ol>
+  <li><strong>L'intensité choisie.</strong> Le facteur numéro un, très loin devant le matériel. Un sparring à 30 % avec des gants moyens est infiniment plus sûr qu'un sparring à 80 % avec le meilleur casque du marché.</li>
+  <li><strong>Le choix du partenaire.</strong> Voir le chapitre 8.</li>
+  <li><strong>Le volume.</strong> Deux à trois rounds souples par semaine suffisent largement à progresser quand on débute. Le sparring quotidien n'est pas un signe de sérieux, c'est un signe de mauvaise planification.</li>
+  <li><strong>Un cou musclé et un corps échauffé.</strong> Ils réduisent l'accélération de la tête à l'impact.</li>
+  <li><strong>Le matériel.</strong> Nécessaire, mais dernier de la liste. Il ne rattrape jamais une mauvaise décision sur les quatre points précédents.</li>
+</ol>
+
+<p>Un dernier point qui n'est pas médical mais qui compte : <strong>le courage, dans ce sport, c'est de dire stop.</strong> Continuer un round en étant sonné n'impressionne personne de sensé, et les gens sensés sont ceux avec qui tu veux t'entraîner.</p>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 8</div>
+<h2>Choisir son partenaire, et reconnaître celui qu'il faut fuir</h2>
+
+<p class="lead">Ton partenaire détermine plus de choses que ton niveau, ton matériel et ta préparation réunis. C'est la variable que tu contrôles le plus mal, et celle qui compte le plus.</p>
+
+<h3>Le bon partenaire pour un premier sparring</h3>
+<p>Contrairement à l'intuition, ce n'est pas quelqu'un de ton niveau. Deux débutants ensemble, c'est deux personnes qui ne savent pas doser, qui paniquent en même temps, et qui escaladent sans le vouloir. C'est le pire attelage possible.</p>
+<p>Le meilleur premier partenaire, c'est <strong>quelqu'un de nettement plus expérimenté que toi, et calme</strong>. Un pratiquant confirmé sait exactement où s'arrêter, peut te toucher sans te faire mal, et te donne des problèmes à ta mesure. Demande-le au coach ainsi : « tu me mets avec quelqu'un d'expérimenté qui saura rester léger ? »</p>
+
+<h3>Les signaux qui doivent te faire refuser</h3>
+<ul>
+  <li>Il ne répond pas quand tu proposes une intensité, ou il répond « on verra bien ».</li>
+  <li>Il met des gants trop petits pour du sparring.</li>
+  <li>Il monte en régime dès qu'il prend une touche — l'ego décide à sa place.</li>
+  <li>Il ne regarde jamais le coach, ou change de comportement quand le coach sort de la salle.</li>
+  <li>Il a une réputation dans la salle : « lui, il tape ». Écoute les autres, ils te préviennent souvent avant.</li>
+</ul>
+
+<p>Refuser un sparring est un droit absolu, et ça se dit sans se justifier : « pas aujourd'hui, merci ». Tu n'as aucune explication à fournir. Si un club te met la pression pour sparrer dur alors que tu débutes, ou tolère celui qui envoie les débutants à l'infirmerie, le problème n'est pas toi : c'est le club, et il en existe d'autres.</p>
+
+<h3>Devenir un bon partenaire, toi</h3>
+<p>C'est le meilleur investissement de ta vie de pratiquant. Les gens qui savent doser sont recherchés, on leur propose des rounds, ils progressent plus vite parce qu'ils sparrent plus souvent et avec de meilleurs. Concrètement : tu respectes l'intensité annoncée, tu t'arrêtes quand l'autre lève la main, tu ne profites jamais d'un moment de flottement, et tu adaptes ta puissance à la personne en face — pas à ce que tu as dans le ventre ce soir-là.</p>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 9</div>
+<h2>Après le round : le débrief qui fait progresser</h2>
+
+<p class="lead">Ce que tu fais dans les vingt minutes qui suivent détermine si ce sparring t'aura servi à quelque chose ou s'il aura juste été un mauvais moment.</p>
+
+<p>La mémoire d'un sparring s'efface vite et se déforme dans le mauvais sens : au bout de deux jours, il ne reste que les moments où tu t'es senti nul. C'est pour ça qu'on écrit, tout de suite, dans les vestiaires, sur son téléphone. Trois lignes suffisent.</p>
+
+<div class="box">
+  <div class="t">Le format en trois lignes</div>
+  <p style="margin:0 0 2mm 0"><strong>1. Une chose qui a marché.</strong> Même minuscule. « J'ai touché deux jabs en avançant. »</p>
+  <p style="margin:0 0 2mm 0"><strong>2. Une chose qui m'a posé problème.</strong> Précise, pas globale. Pas « j'ai mal boxé » mais « je me suis fait toucher par son crochet gauche dès que j'attaquais ».</p>
+  <p style="margin:0"><strong>3. La consigne unique pour la prochaine fois.</strong> Une seule. « Sortir sur la gauche après ma série. »</p>
+</div>
+
+<p>Cette troisième ligne devient ta consigne du prochain round. C'est comme ça qu'on transforme trois minutes désordonnées en apprentissage réel : un problème à la fois, corrigé sur plusieurs semaines.</p>
+
+<h3>Demander l'avis, correctement</h3>
+<p>« C'était comment ? » ne donne jamais rien d'utile — on te répondra « bien, bien ». Demande plutôt : <strong>« qu'est-ce que tu voyais venir avant que je le fasse ? »</strong> à ton partenaire, et <strong>« quelle est la seule chose que je devrais corriger en priorité ? »</strong> à ton coach. Ces deux questions rapportent des réponses exploitables.</p>
+
+<h3>Le corps, ensuite</h3>
+<p>Les courbatures du lendemain sont normales. Une douleur vive, articulaire, ou une douleur qui empire au fil des heures ne l'est pas. Le pouce et le poignet sont les premières victimes des débutants — souvent à cause de bandes mal serrées ou d'un poignet qui casse à l'impact. Si ça revient à chaque séance, fais revoir ton bandage par le coach : c'est réparable en cinq minutes.</p>
+</div>
+
+<div class="chapter">
+<div class="chapno">Chapitre 10</div>
+<h2>Le plan 90 jours</h2>
+
+<p class="lead">De « je n'ai jamais sparré » à « je spare régulièrement, et ça me fait progresser ». Trois mois, sans brûler d'étape.</p>
+
+<table>
+  <tr><th>Période</th><th>Ce que tu fais</th><th>Objectif</th></tr>
+  <tr>
+    <td><strong>Semaines 1–3</strong></td>
+    <td>Zéro sparring. Les quatre fondamentaux du chapitre 3, plus l'exercice d'exposition aux touches, deux fois par semaine.</td>
+    <td>Ne plus fermer les yeux.</td>
+  </tr>
+  <tr>
+    <td><strong>Semaines 4–6</strong></td>
+    <td>Un round de <strong>touch sparring</strong> par semaine, avec un partenaire expérimenté choisi par le coach. Un round. Pas deux.</td>
+    <td>Respirer pendant trois minutes.</td>
+  </tr>
+  <tr>
+    <td><strong>Semaines 7–9</strong></td>
+    <td>Deux à trois rounds de <strong>sparring technique</strong> par semaine, avec un thème imposé à chaque fois.</td>
+    <td>Appliquer une consigne sous pression.</td>
+  </tr>
+  <tr>
+    <td><strong>Semaines 10–12</strong></td>
+    <td>Deux à trois rounds de <strong>sparring souple</strong>, avec des partenaires variés — gabarits et styles différents.</td>
+    <td>Rester structuré face à l'inconnu.</td>
+  </tr>
+</table>
+
+<p>Après ces trois mois, deux à trois rounds souples par semaine constituent un rythme de croisière sain pour quelqu'un qui ne prépare pas de compétition. Ce n'est pas peu : c'est ce que font beaucoup de pratiquants sérieux qui tiennent dix ans.</p>
+
+<h3>Les trois signes que tu progresses vraiment</h3>
+<ol>
+  <li><strong>Tu vois les coups venir.</strong> Pas tous, mais certains. C'est le signe que la vision en tunnel se referme moins.</li>
+  <li><strong>Tu es moins essoufflé pour le même travail.</strong> Ce n'est pas ton cardio qui a changé en trois semaines, c'est ton stress qui est descendu.</li>
+  <li><strong>Tu peux penser pendant le round.</strong> Le jour où tu te dis « il baisse sa main droite quand il jabe » <em>pendant</em> le round et non après, tu as franchi la marche la plus importante du sport.</li>
+</ol>
+
+<h3>Le mot de la fin</h3>
+<p>Tu vas prendre des coups, tu vas passer pour un débutant, et tu vas avoir envie d'arrêter au moins une fois — probablement après la troisième séance, celle où quelqu'un t'aura touché plus fort que prévu. Tout le monde passe par là, y compris ceux qui te touchent quand ils veulent aujourd'hui.</p>
+<p>La différence entre ceux qui deviennent bons et les autres n'est pas le talent. C'est le nombre de fois où ils sont revenus le mardi suivant.</p>
+</div>
+
+<div class="chapter">
+<div class="chapno">Annexe A</div>
+<h2>Checklist du sac, à imprimer</h2>
+<ul class="checklist">
+  <li>Protège-dents (thermoformé, dans sa boîte, rincé)</li>
+  <li>Gants 16 oz</li>
+  <li>Bandes propres, 2 paires</li>
+  <li>Coquille</li>
+  <li>Casque, si le club le demande</li>
+  <li>Protège-tibias, si pieds-poings</li>
+  <li>Bouteille d'eau pleine</li>
+  <li>Serviette</li>
+  <li>Deuxième t-shirt sec</li>
+  <li>Ongles coupés courts (mains et pieds)</li>
+  <li>Ni bague, ni chaîne, ni montre, ni piercing</li>
+</ul>
+
+<div class="chapno" style="margin-top:12mm">Annexe B</div>
+<h2>Fiche de débrief</h2>
+<p>Photocopie-la, ou recopie les trois questions dans les notes de ton téléphone. Une fiche par séance, datée.</p>
+
+<table>
+  <tr><th>Date</th><th>Partenaire</th><th>Format / intensité</th><th>Rounds</th></tr>
+  <tr><td style="height:9mm"></td><td></td><td></td><td></td></tr>
+</table>
+<p><strong>1. Une chose qui a marché :</strong></p>
+<table><tr><td style="height:14mm"></td></tr></table>
+<p><strong>2. Une chose qui m'a posé problème :</strong></p>
+<table><tr><td style="height:14mm"></td></tr></table>
+<p><strong>3. Ma consigne unique pour la prochaine fois :</strong></p>
+<table><tr><td style="height:14mm"></td></tr></table>
+
+<div class="box warn">
+  <div class="t">Contrôle de sortie</div>
+  <p style="margin:0">Mal de tête, nausée, vision trouble, trou de mémoire, confusion ou sensation de brouillard ? <strong>Tu ne remontes pas, tu préviens le coach, et tu consultes un médecin.</strong> Même si ça semble léger. Même si c'est « passé ».</p>
+</div>
+
+<p class="end">— Fin —</p>
+</div>
+
+</body>
+</html>

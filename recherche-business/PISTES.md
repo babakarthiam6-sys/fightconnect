@@ -65,3 +65,47 @@ réelles, et si le goulot n'est pas encore une fois l'audience.
 Avant de chercher ailleurs, savoir **pourquoi** ça n'a pas vendu : pas de trafic, ou
 du trafic qui ne convertit pas ? Les deux mènent à des conclusions opposées.
 **Bloquée :** jeton Shopify expiré, à réautoriser dans les connecteurs claude.ai.
+
+---
+
+## P6 — Produit numérique : guide de sparring (ebook) · `en cours`
+
+**Écrit et rendu** : `ebook/ton-premier-sparring.html` → PDF, 19 pages A4, 10 chapitres
+et 2 annexes. Cible : débutants francophones en boxe/MMA, 3-12 mois de pratique.
+
+**La réalité chiffrée de l'ebook, avant de rêver.** Sur un échantillon de produits
+Gumroad suivis, **2,4 % seulement ont enregistré une vente** — donc ~97,6 % zéro ;
+une autre analyse, avec une définition différente du produit actif, donne 44 % à 0 $.
+Médiane de chiffre d'affaires cumulé **parmi ceux qui ont vendu au moins une fois :
+~35 $**. Taux de conversion d'une page de vente : ~3,2 % en moyenne, 1-3 % à supposer
+quand on débute. Sur Amazon KDP, ~**19 $ de royalties par mois et par titre** sur un
+suivi de 92 600 titres avec classement actif, et 70 % de royalties seulement dans la
+tranche 2,99-9,99 $.
+
+**Donc.** Un ebook déposé sur une plateforme sans audience rapporte zéro — c'est le
+cas le plus fréquent, de très loin. Ce guide n'est pas un produit à vendre en ligne
+à des inconnus : c'est **l'outil qui construit la liste** à qui la marque de
+vêtements sera vendue ensuite. Gratuit contre un email en salle et dans les clubs
+voisins, payant (9-15 €) seulement là où une audience existe déjà.
+
+**Prochaine étape.** Le faire lire par un entraîneur avant toute diffusion : le
+contenu engage la sécurité de gens qui vont sparrer.
+
+## P7 — Marque de vêtements sports de combat · `en cours`
+
+Dossier complet : `MARQUE-VETEMENTS.md`.
+En print-on-demand, il reste **~6,75 € net sur un t-shirt à 29 €** — soit **148
+ventes par mois pour 1 000 €**, et ~7 400 visites qualifiées mensuelles à 2 % de
+conversion. Intenable sans audience. La configuration qui tient : précommande, sans
+stock, vendue en main propre à une communauté existante, impression locale à
+vérifier par devis. Le marché porteur est chiffré : **MMA +484 % de licenciés en
+trois saisons en France**.
+
+## P8 — Niches 2027 · `écartée dans sa forme générale`
+
+Chercher « les niches qui marcheront en 2027 » ne ramène que des rapports de tendance
+génériques — gummies de sommeil, paiement fractionné, commerce vocal. Aucun de ces
+signaux n'est actionnable pour quelqu'un sans capital ni audience : ce sont des
+marchés où l'on entre avec un budget média. **Une niche n'a de valeur que si on peut
+l'atteindre.** La seule qui coche les deux cases ici est celle où Mbaye est déjà
+physiquement présent, et elle est en croissance chiffrée.
