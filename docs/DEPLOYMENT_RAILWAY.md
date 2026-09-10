@@ -38,19 +38,43 @@ Si ce besoin apparaît un jour :
 2. Sur Railway → New Project → Deploy from container image, renseigner
    `ghcr.io/<owner>/fightconnect:latest`.
 
-Variables d'environnement (obligatoires)
-- MONGODB_URI (ex: mongodb+srv://user:pwd@cluster.mongodb.net/fightconnect)
-- MONGODB_DB (ex: fightconnect)
-- JWT_SECRET (min 32 chars)
-- ENVIRONMENT=production
-- STRIPE_SECRET_KEY
-- STRIPE_PUBLISHABLE_KEY
-- STRIPE_WEBHOOK_SECRET
-- OPENAI_API_KEY (optionnel — si absent, la modération IA est désactivée et la heuristique locale prend le relais)
+Variables d'environnement
 
-Frontend-only variables (si nécessaire)
-- EXPO_PUBLIC_API_BASE_URL=https://<railway_app_url>/api/v1
-- EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY
+Lues par le serveur au démarrage :
+
+- `MONGODB_URI` (ex: mongodb+srv://user:pwd@cluster.mongodb.net/fightconnect)
+- `MONGODB_DB` (ex: fightconnect)
+- `JWT_SECRET` (32 caractères au moins)
+- `ENVIRONMENT=production`
+- `STRIPE_SECRET_KEY` — `sk_...`. C'est elle, et elle seule, qui décide de
+  `stripe_configured` dans `/health` : sans elle, toute opération de paiement
+  répond 503.
+- `STRIPE_PUBLISHABLE_KEY` — `pk_...`. Renvoyée au client dans la réponse de
+  `create-intent`.
+- `STRIPE_WEBHOOK_SECRET` — `whsec_...`. Sans elle, le webhook refuse les
+  notifications de Stripe faute de pouvoir en vérifier la signature.
+- `OPENAI_API_KEY` (facultative — absente, la modération retombe sur son
+  heuristique locale, ce qui est un comportement prévu)
+
+Lue à la **construction**, pas à l'exécution :
+
+- `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` — `pk_...`
+
+  Expo fige les variables `EXPO_PUBLIC_*` dans le paquet au moment de l'export.
+  La poser à l'exécution n'a aucun effet : le paquet est déjà écrit. Le
+  `Dockerfile` la reçoit donc en `ARG` et la repasse en `ENV` avant l'export.
+
+  **Poser `STRIPE_PUBLISHABLE_KEY` sans elle produit un piège désagréable** :
+  `/health` annonce `stripe_configured: true`, le serveur est prêt, et pourtant
+  l'application refuse de payer — `IS_STRIPE_CONFIGURED` reste faux côté client,
+  `StripeProvider` n'est jamais monté. Les deux variables portent la même
+  valeur ; il faut les deux.
+
+  Cette clé est publique par nature : sa place est dans le paquet envoyé au
+  navigateur. Seule la clé secrète ne doit jamais s'y trouver.
+
+- `EXPO_PUBLIC_API_BASE_URL` n'a pas à être posée : le `Dockerfile` la fixe à
+  `/api/v1`, l'application web étant servie par la même origine que l'API.
 
 Configurer Stripe webhook
 1. Dans Stripe Dashboard → Developers → Webhooks → Add endpoint
