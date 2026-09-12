@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.config import get_settings
 from app.database import get_database
 from app.security import decode_access_token
 from app.serializers import to_object_id
@@ -49,3 +50,17 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[dict[str, Any], Depends(get_current_user)]
+
+
+async def require_admin(current_user: CurrentUser) -> dict[str, Any]:
+    """N'autorise que les administrateurs, définis par e-mail dans la config.
+
+    Renvoie 404 plutôt que 403 : à un non-administrateur, autant ne pas révéler
+    que la route existe.
+    """
+    if not get_settings().is_admin_email(current_user.get("email")):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Introuvable.")
+    return current_user
+
+
+AdminUser = Annotated[dict[str, Any], Depends(require_admin)]

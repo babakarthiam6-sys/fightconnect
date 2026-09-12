@@ -53,6 +53,10 @@ Lues par le serveur au démarrage :
   `create-intent`.
 - `STRIPE_WEBHOOK_SECRET` — `whsec_...`. Sans elle, le webhook refuse les
   notifications de Stripe faute de pouvoir en vérifier la signature.
+- `ADMIN_EMAILS` (facultative) — e-mails des administrateurs, séparés par des
+  virgules. Ces comptes seuls accèdent aux routes d'administration (aujourd'hui
+  la consultation du niveau de risque d'un membre). Le droit vit ici, dans la
+  config du serveur : un compte compromis ne peut pas se l'accorder lui-même.
 - `OPENAI_API_KEY` (facultative — absente, la modération retombe sur son
   heuristique locale, ce qui est un comportement prévu)
 

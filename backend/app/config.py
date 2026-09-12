@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 30  # 30 jours
 
+    # Comptes administrateurs, par e-mail, séparés par des virgules. Le droit
+    # admin vit ici, dans la configuration du serveur, et non en base : un compte
+    # dont on prendrait le contrôle ne peut donc pas se promouvoir lui-même en
+    # écrivant dans son propre document.
+    admin_emails: str = ""
+
     # --- Stripe ---
     stripe_secret_key: str = ""
     stripe_publishable_key: str = ""
@@ -76,6 +82,14 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment.lower() in {"production", "prod"}
+
+    @property
+    def admin_email_list(self) -> list[str]:
+        return [e.strip().lower() for e in self.admin_emails.split(",") if e.strip()]
+
+    def is_admin_email(self, email: str | None) -> bool:
+        """Vrai si cet e-mail figure dans la liste des administrateurs."""
+        return bool(email) and email.strip().lower() in self.admin_email_list
 
     @property
     def is_stripe_configured(self) -> bool:
