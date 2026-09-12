@@ -4,7 +4,13 @@ from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 
+from app.config import Settings
 from tests.conftest import booking_payload, make_partner, register
+
+
+def _admin(*emails):
+    """Force la liste d'administrateurs, le droit vivant dans la config serveur."""
+    return lambda: Settings(_env_file=None, admin_emails=",".join(emails))
 
 BASE = "/api/v1/moderation"
 
@@ -141,7 +147,10 @@ async def test_un_avis_signale_ne_compte_pas_dans_la_note(client, database):
     assert profil.json()["average_rating"] is None
 
 
-async def test_profil_de_risque(client, database):
+async def test_profil_de_risque(client, database, monkeypatch):
+    import app.dependencies as deps
+
+    monkeypatch.setattr(deps, "get_settings", _admin("lecteur@exemple.com"))
     _, booking, ana = await setup_seance_passee(client, database)
     lecteur = await register(client, "lecteur@exemple.com", "Lecteur")
 
@@ -163,8 +172,11 @@ async def test_profil_de_risque(client, database):
     assert apres.json()["reasons"]
 
 
-async def test_profil_de_risque_utilisateur_inconnu(client):
-    lecteur = await register(client)
+async def test_profil_de_risque_utilisateur_inconnu(client, monkeypatch):
+    import app.dependencies as deps
+
+    monkeypatch.setattr(deps, "get_settings", _admin("jean@exemple.com"))
+    lecteur = await register(client)  # jean@exemple.com par défaut
     response = await client.get(
         f"{BASE}/user-risk/000000000000000000000000", headers=lecteur["headers"]
     )
