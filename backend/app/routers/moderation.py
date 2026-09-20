@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.dependencies import CurrentUser, Database
+from app.dependencies import AdminUser, CurrentUser, Database
 from app.repositories import refresh_user_rating
 from app.schemas import PartnerList, ReviewCreate, ReviewOut, UserRiskOut
 from app.serializers import serialize_partner, serialize_review, to_object_id
@@ -70,7 +70,7 @@ async def create_review(
 
 
 @router.get("/user-risk/{user_id}", response_model=UserRiskOut)
-async def user_risk(user_id: str, database: Database, current_user: CurrentUser) -> dict[str, Any]:
+async def user_risk(user_id: str, database: Database, current_user: AdminUser) -> dict[str, Any]:
     object_id = to_object_id(user_id)
     if object_id is None:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable.")

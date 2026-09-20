@@ -15,6 +15,25 @@ COPY frontend/ ./
 # relative évite toute configuration et supprime la question du CORS.
 ENV EXPO_PUBLIC_API_BASE_URL=/api/v1
 ENV EXPO_NO_TELEMETRY=1
+
+# Clé publique Stripe, reçue de l'hébergeur au moment de la construction.
+#
+# Expo fige les variables `EXPO_PUBLIC_*` dans le paquet au moment de l'export :
+# les poser à l'exécution du conteneur serait sans effet, le paquet étant déjà
+# écrit. Sans cette clé, `IS_STRIPE_CONFIGURED` reste faux, `StripeProvider`
+# n'est jamais monté, et l'écran de paiement reste inerte — alors même que le
+# serveur, lui, est correctement configuré. Le symptôme est trompeur : `/health`
+# annonce `stripe_configured: true` pendant que le client refuse de payer.
+#
+# Cette clé est publique par nature (`pk_...`) : elle est faite pour vivre dans
+# le paquet envoyé au navigateur. C'est la clé secrète qui ne doit jamais s'y
+# trouver, et elle n'y est pas.
+#
+# Valeur vide par défaut : sans elle, la construction réussit et l'application
+# se comporte comme aujourd'hui, en annonçant simplement que le paiement n'est
+# pas activé.
+ARG EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=""
+ENV EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=$EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY
 RUN npx expo export --platform web --clear --output-dir /build/web-dist \
     && node scripts/theme-web-shell.mjs /build/web-dist/index.html
 
