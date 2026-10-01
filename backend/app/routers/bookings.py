@@ -70,7 +70,7 @@ async def fetch_booking(database: AsyncIOMotorDatabase, booking_id: str) -> dict
     return document
 
 
-def _has_ended(document: dict[str, Any]) -> bool:
+def has_ended(document: dict[str, Any]) -> bool:
     scheduled = document.get("scheduled_at")
     if not isinstance(scheduled, datetime):
         return False
@@ -89,7 +89,7 @@ async def refund_if_paid(database: AsyncIOMotorDatabase, booking: dict[str, Any]
     payment = await database.payments.find_one(
         {"booking_id": booking["_id"], "status": "succeeded"}
     )
-    if payment is not None and not _has_ended(booking) and payment.get("payment_intent_id"):
+    if payment is not None and not has_ended(booking) and payment.get("payment_intent_id"):
         await refund_payment(payment["payment_intent_id"])
         await database.payments.update_one(
             {"_id": payment["_id"]}, {"$set": {"status": "refunded"}}
@@ -240,7 +240,7 @@ async def complete(booking_id: str, database: Database, current_user: CurrentUse
         raise HTTPException(status_code=403, detail="Cette demande ne vous concerne pas.")
     if booking.get("status") != "accepted":
         raise HTTPException(status_code=409, detail="Seule une demande acceptée peut être clôturée.")
-    if not _has_ended(booking):
+    if not has_ended(booking):
         raise HTTPException(status_code=409, detail="La séance n’a pas encore eu lieu.")
     return await _transition(database, booking, "completed")
 

@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Response, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.dependencies import CurrentUser, Database
-from app.routers.bookings import _has_ended, refund_if_paid
+from app.routers.bookings import has_ended, refund_if_paid
 from app.schemas import (
     LEVELS,
     STYLES,
@@ -189,7 +189,7 @@ async def _bookings_to_close(
     return [
         booking
         async for booking in documents
-        if not (booking.get("status") == "accepted" and _has_ended(booking))
+        if not (booking.get("status") == "accepted" and has_ended(booking))
     ]
 
 
