@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 
 from app.config import get_settings
 from app.dependencies import CurrentUser, Database
+from app.routers.bookings import has_ended
 from app.schemas import PaymentIntentOut, PaymentIntentRequest, PaymentList
 from app.serializers import serialize_payment, to_object_id
 from app.services.payments import (
@@ -218,8 +219,14 @@ async def stripe_webhook(request: Request, database: Database) -> dict[str, str]
         # entre-temps (Payment Sheet restée ouverte pendant une annulation ou
         # une suppression de compte) est rendu aussitôt. Si Stripe échoue, le
         # 502 fait rejouer l'évènement plus tard ; la clé d'idempotence du
-        # remboursement rend ce rejeu sans danger.
-        if booking is not None and booking.get("status") not in {"accepted", "completed"}:
+        # remboursement rend ce rejeu sans danger. Même règle que
+        # `refund_if_paid` : une séance commencée puis annulée garde son
+        # paiement, le partenaire a fait sa part.
+        if (
+            booking is not None
+            and booking.get("status") not in {"accepted", "completed"}
+            and not has_ended(booking)
+        ):
             await refund_payment(intent_id)
             await database.payments.update_one(
                 {"payment_intent_id": intent_id}, {"$set": {"status": "refunded"}}

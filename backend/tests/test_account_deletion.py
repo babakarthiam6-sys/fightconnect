@@ -395,3 +395,30 @@ async def test_un_paiement_abouti_sur_une_demande_acceptee_la_marque_payee(
     assert await statut_paiement(database) == "succeeded"
     demande = await database.bookings.find_one({"_id": ObjectId(booking["id"])})
     assert demande["paid"] is True
+
+
+async def test_un_succes_tardif_ne_rembourse_pas_une_seance_commencee_puis_annulee(
+    client, database, stripe_suivi, webhook
+):
+    """L'annulation après le début garde l'argent ; le webhook ne doit pas le rendre."""
+    luis, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking, statut="pending")
+    stripe_suivi["statuts"]["pi_test_123"] = "succeeded"
+    await database.bookings.update_one(
+        {"_id": ObjectId(booking["id"])},
+        {"$set": {"scheduled_at": datetime.now(timezone.utc) - timedelta(minutes=5)}},
+    )
+
+    annulation = await client.post(
+        f"/api/v1/bookings/{booking['id']}/cancel", headers=luis["headers"]
+    )
+    assert annulation.status_code == 200
+
+    response = await webhook(
+        "payment_intent.succeeded",
+        {"id": "pi_test_123", "metadata": {"booking_id": booking["id"]}},
+    )
+
+    assert response.status_code == 200
+    assert stripe_suivi["appels"]["remboursements"] == []
+    assert await statut_paiement(database) == "succeeded"
