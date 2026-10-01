@@ -51,6 +51,14 @@ class ConnectionRegistry:
         if not sockets:
             del self._sockets[user_id]
 
+    async def close_all(self, user_id: str) -> None:
+        """Ferme tous les sockets d'une personne : son compte n'existe plus."""
+        for socket in list(self._sockets.pop(user_id, ())):
+            try:
+                await socket.close()
+            except Exception:  # noqa: BLE001 — déjà fermé côté client
+                pass
+
     def is_online(self, user_id: str) -> bool:
         return bool(self._sockets.get(user_id))
 

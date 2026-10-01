@@ -1,4 +1,4 @@
-/* eslint-env jest */
+// Les globals Jest sont déclarés dans eslint.config.js.
 
 // Modules natifs remplacés par les mocks officiels : les tests tournent sous Node,
 // sans pont natif.

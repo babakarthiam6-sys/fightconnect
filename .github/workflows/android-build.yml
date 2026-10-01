@@ -1,0 +1,97 @@
+name: Build Android (Play Store)
+
+# Lancé à la main uniquement : chaque build consomme des crédits EAS, et un
+# .aab ne sert qu'au moment d'envoyer une version sur le Play Store.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Profil EAS (production = .aab pour le Play Store, preview = .apk de test)"
+        type: choice
+        options: [production, preview]
+        default: production
+      attendre:
+        description: "Attendre la fin du build et joindre le fichier au workflow"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-build-${{ inputs.profile }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: EAS Build (${{ inputs.profile }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier les prérequis
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Le secret EXPO_TOKEN manque (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          if grep -q '"projectId": "00000000-0000-0000-0000-000000000000"' app.json; then
+            echo "::error::app.json contient encore l'identifiant de projet EAS factice. Lancez « eas init » une fois en local et committez le résultat."
+            exit 1
+          fi
+
+      # Le bundle est lisible par quiconque télécharge l'application : une clé
+      # Stripe secrète ou restreinte n'a rien à faire dans le code du mobile.
+      - name: Aucune clé Stripe secrète dans le code
+        run: |
+          if git ls-files -z | xargs -0 grep -nE '(sk|rk)_(live|test)_[A-Za-z0-9]{8,}'; then
+            echo "::error::Clé Stripe secrète trouvée dans frontend/. Retirez-la et révoquez-la dans le tableau de bord Stripe."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      # Un build EAS coûte des crédits et une vingtaine de minutes : on
+      # n'envoie que du code qui passe déjà ses propres vérifications.
+      - run: npm run typecheck
+      - run: npm test -- --ci
+
+      - name: Lancer le build EAS
+        if: ${{ !inputs.attendre }}
+        run: eas build --platform android --profile "${{ inputs.profile }}" --non-interactive --no-wait
+
+      - name: Construire et attendre le résultat
+        if: ${{ inputs.attendre }}
+        id: build
+        run: |
+          eas build --platform android --profile "${{ inputs.profile }}" --non-interactive --json > build.json
+          url=$(node -e "console.log(require('./build.json')[0].artifacts.buildUrl)")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          case "$url" in *.aab) ext=aab ;; *) ext=apk ;; esac
+          curl -sSfL -o "fightconnect-${{ inputs.profile }}.$ext" "$url"
+
+      - name: Joindre le fichier au workflow
+        if: ${{ inputs.attendre }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fightconnect-android-${{ inputs.profile }}
+          path: frontend/fightconnect-${{ inputs.profile }}.*
+          if-no-files-found: error
+          retention-days: 30

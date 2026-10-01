@@ -18,11 +18,11 @@ qui n'existe plus. En cas de doute entre la carte et le code, **le code fait foi
 
 ```bash
 # Backend (depuis backend/)
-pytest                     # 105 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
+pytest                     # 173 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
-npm test                   # 145 tests
+npm test                   # 165 tests
 npm run typecheck && npm run lint
 npm run build:web           # export web + thème sombre de la coquille HTML
 ```

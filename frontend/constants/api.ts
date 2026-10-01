@@ -10,6 +10,7 @@ export const ENDPOINTS = {
     login: '/auth/login',
     me: '/auth/me',
     updateMe: '/auth/me',
+    deleteMe: '/auth/me',
   },
   partners: {
     list: '/partners',

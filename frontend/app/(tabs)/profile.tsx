@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
+  Linking,
   Platform,
   Pressable,
   RefreshControl,
@@ -35,6 +35,7 @@ import {
   TYPOGRAPHY,
   WEIGHT_LABELS,
 } from '@/constants/theme';
+import { PRIVACY_POLICY_URL } from '@/constants/config';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { payoutService } from '@/services/payout';
@@ -46,6 +47,7 @@ import {
   formatUserName,
   formatWeightClass,
 } from '@/utils/formatting';
+import { confirm } from '@/utils/confirm';
 import type { AppError, PayoutStatus, ProfileVideo, VideoKind } from '@/types';
 import type { ProfileInput } from '@/utils/validation';
 
@@ -59,7 +61,7 @@ const WEB_SWITCH_THUMB: Record<string, unknown> =
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, refreshUser, updateProfile } = useAuth();
+  const { user, logout, deleteAccount, refreshUser, updateProfile } = useAuth();
   const { stats, isConnected, refreshStats } = useApp();
   const [isVideoSheetOpen, setVideoSheetOpen] = useState(false);
   const toast = useToast();
@@ -67,6 +69,7 @@ export default function ProfileScreen() {
   const [payouts, setPayouts] = useState<PayoutStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -148,12 +151,39 @@ export default function ProfileScreen() {
     [toast, updateProfile],
   );
 
-  const confirmLogout = useCallback(() => {
-    Alert.alert('Déconnexion', 'Voulez-vous vraiment vous déconnecter ?', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Se déconnecter', style: 'destructive', onPress: () => void logout() },
-    ]);
+  const confirmLogout = useCallback(async () => {
+    const confirmed = await confirm({
+      title: 'Déconnexion',
+      message: 'Voulez-vous vraiment vous déconnecter ?',
+      confirmLabel: 'Se déconnecter',
+      destructive: true,
+    });
+    if (confirmed) await logout();
   }, [logout]);
+
+  const confirmDeleteAccount = useCallback(async () => {
+    const confirmed = await confirm({
+      title: 'Supprimer mon compte',
+      message:
+        'Votre profil, vos vidéos et vos messages seront effacés définitivement. ' +
+        'Vos séances à venir seront annulées et celles déjà payées remboursées. ' +
+        'Cette action est irréversible.',
+      confirmLabel: 'Supprimer',
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteAccount();
+      toast.show('Votre compte a été supprimé.', { type: 'success' });
+    } catch (caught) {
+      // Paiement en cours ou Stripe injoignable : le serveur dit pourquoi, et
+      // le compte est intact, on peut réessayer.
+      toast.show((caught as AppError).message, { type: 'danger' });
+      setIsDeleting(false);
+    }
+  }, [deleteAccount, toast]);
 
   if (!user) return <LoadingSpinner fullScreen label="Chargement du profil…" />;
   if (isLoading) return <LoadingSpinner fullScreen label="Chargement du profil…" />;
@@ -347,10 +377,25 @@ export default function ProfileScreen() {
         <Button
           label="Déconnexion"
           variant="danger"
-          onPress={confirmLogout}
+          onPress={() => void confirmLogout()}
           style={styles.logout}
           icon={<Ionicons name="log-out-outline" size={18} color={COLORS.textInverse} />}
         />
+
+        <Button
+          label="Supprimer mon compte"
+          variant="ghost"
+          loading={isDeleting}
+          onPress={() => void confirmDeleteAccount()}
+          style={styles.deleteAccount}
+          testID="delete-account"
+        />
+        <Pressable
+          accessibilityRole="link"
+          onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)}
+        >
+          <Text style={styles.legalLink}>Politique de confidentialité</Text>
+        </Pressable>
       </ScrollView>
 
       <VideoAddSheet
@@ -406,4 +451,12 @@ const styles = StyleSheet.create({
   },
   statsRow: { flexDirection: 'row', gap: SPACING.sm },
   logout: { marginTop: SPACING.xl },
+  deleteAccount: { marginTop: SPACING.sm },
+  legalLink: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textMuted,
+    marginTop: SPACING.md,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
 });

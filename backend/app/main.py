@@ -7,7 +7,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import connect, disconnect, ping
-from app.routers import auth, bookings, chat, moderation, partners, payments, payouts, revenue, videos
+from app.routers import (
+    auth,
+    bookings,
+    chat,
+    legal,
+    moderation,
+    partners,
+    payments,
+    payouts,
+    revenue,
+    videos,
+)
 from app.webapp import is_web_app_available, mount_web_app
 
 API_PREFIX = "/api/v1"
@@ -55,6 +66,10 @@ def create_app() -> FastAPI:
         videos.router,
     ):
         app.include_router(router, prefix=API_PREFIX)
+
+    # Pages publiques exigées par le Play Store, hors du préfixe de l'API. Comme
+    # toute route, elles doivent précéder le montage de l'application web.
+    app.include_router(legal.router)
 
     web_disponible = is_web_app_available(settings.web_dir)
 
