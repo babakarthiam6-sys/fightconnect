@@ -1,14 +1,17 @@
 """Suppression du compte : l'argent d'abord, les données ensuite."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from bson import ObjectId
 from fastapi import HTTPException
 
+from app.config import get_settings
 from app.routers import auth as auth_router
 from app.routers import bookings as bookings_router
+from app.routers import payments as payments_router
 from tests.conftest import register
+
 # `stripe_ok` est une fixture : l'importer suffit à la rendre disponible ici.
 from tests.test_payments import demande_acceptee, stripe_ok  # noqa: F401
 
@@ -32,8 +35,9 @@ def stripe_suivi(monkeypatch, stripe_ok):  # noqa: F811
         return statuts.get(payment_intent_id, "requires_payment_method")
 
     monkeypatch.setattr(bookings_router, "refund_payment", rembourser)
-    monkeypatch.setattr(auth_router, "cancel_payment_intent", annuler)
-    monkeypatch.setattr(auth_router, "retrieve_payment_status", statut)
+    monkeypatch.setattr(payments_router, "refund_payment", rembourser)
+    monkeypatch.setattr(bookings_router, "cancel_payment_intent", annuler)
+    monkeypatch.setattr(bookings_router, "retrieve_payment_status", statut)
     return {"appels": appels, "statuts": statuts}
 
 
@@ -46,6 +50,14 @@ async def payer(client, database, ana, booking, statut: str = "succeeded") -> No
     await database.payments.update_one(
         {"payment_intent_id": "pi_test_123"}, {"$set": {"status": statut}}
     )
+
+
+async def statut_demande(database, booking) -> str:
+    return (await database.bookings.find_one({"_id": ObjectId(booking["id"])}))["status"]
+
+
+async def statut_paiement(database, intent: str = "pi_test_123") -> str:
+    return (await database.payments.find_one({"payment_intent_id": intent}))["status"]
 
 
 async def test_le_compte_supprime_ne_sert_plus(client, database):
@@ -76,8 +88,21 @@ async def test_une_seance_payee_est_remboursee_avant_l_annulation(
     assert demande["status"] == "cancelled"
     assert demande["paid"] is False
     # La trace du paiement reste, pour la comptabilité.
-    paiement = await database.payments.find_one({"payment_intent_id": "pi_test_123"})
-    assert paiement["status"] == "refunded"
+    assert await statut_paiement(database) == "refunded"
+
+
+async def test_tous_les_paiements_aboutis_sont_rembourses(client, database, stripe_suivi):
+    """Une intention recréée après une panne peut avoir été payée elle aussi."""
+    _, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking)
+    doublon = await database.payments.find_one({"payment_intent_id": "pi_test_123"})
+    doublon.pop("_id")
+    await database.payments.insert_one({**doublon, "payment_intent_id": "pi_test_456"})
+
+    response = await client.delete(ME, headers=ana["headers"])
+
+    assert response.status_code == 204
+    assert sorted(stripe_suivi["appels"]["remboursements"]) == ["pi_test_123", "pi_test_456"]
 
 
 async def test_un_remboursement_impossible_conserve_le_compte(
@@ -94,21 +119,55 @@ async def test_un_remboursement_impossible_conserve_le_compte(
 
     assert response.status_code == 502
     assert await database.users.find_one({"email": "ana@exemple.com"}) is not None
-    demande = await database.bookings.find_one({"_id": ObjectId(booking["id"])})
-    assert demande["status"] == "accepted"
+    assert await statut_demande(database, booking) == "accepted"
 
 
-async def test_un_paiement_ouvert_est_annule_chez_stripe(client, database, stripe_suivi):
+@pytest.mark.parametrize("statut_base", ["pending", "processing", "failed"])
+async def test_un_paiement_ouvert_est_annule_chez_stripe(
+    client, database, stripe_suivi, statut_base
+):
+    """`failed` compris : Stripe laisse réessayer avec une autre carte."""
     _, ana, booking = await demande_acceptee(client, database)
-    await payer(client, database, ana, booking, statut="pending")
+    await payer(client, database, ana, booking, statut=statut_base)
 
     response = await client.delete(ME, headers=ana["headers"])
 
     assert response.status_code == 204
     assert stripe_suivi["appels"]["annulations"] == ["pi_test_123"]
     assert stripe_suivi["appels"]["remboursements"] == []
-    paiement = await database.payments.find_one({"payment_intent_id": "pi_test_123"})
-    assert paiement["status"] == "cancelled"
+    assert await statut_paiement(database) == "cancelled"
+
+
+async def test_une_intention_deja_annulee_chez_stripe_n_est_pas_rappelee(
+    client, database, stripe_suivi
+):
+    _, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking, statut="pending")
+    stripe_suivi["statuts"]["pi_test_123"] = "canceled"
+
+    response = await client.delete(ME, headers=ana["headers"])
+
+    assert response.status_code == 204
+    assert stripe_suivi["appels"]["annulations"] == []
+    assert await statut_paiement(database) == "cancelled"
+
+
+async def test_une_annulation_refusee_par_stripe_conserve_le_compte(
+    client, database, stripe_suivi, monkeypatch
+):
+    async def en_panne(payment_intent_id: str) -> None:
+        raise HTTPException(status_code=502, detail="Stripe a refusé l’annulation")
+
+    monkeypatch.setattr(bookings_router, "cancel_payment_intent", en_panne)
+    _, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking, statut="pending")
+
+    response = await client.delete(ME, headers=ana["headers"])
+
+    assert response.status_code == 502
+    assert await database.users.find_one({"email": "ana@exemple.com"}) is not None
+    assert await statut_demande(database, booking) == "accepted"
+    assert await statut_paiement(database) == "pending"
 
 
 async def test_un_paiement_abouti_que_le_webhook_n_a_pas_signale_est_rembourse(
@@ -123,8 +182,7 @@ async def test_un_paiement_abouti_que_le_webhook_n_a_pas_signale_est_rembourse(
     assert response.status_code == 204
     assert stripe_suivi["appels"]["remboursements"] == ["pi_test_123"]
     assert stripe_suivi["appels"]["annulations"] == []
-    paiement = await database.payments.find_one({"payment_intent_id": "pi_test_123"})
-    assert paiement["status"] == "refunded"
+    assert await statut_paiement(database) == "refunded"
 
 
 @pytest.mark.parametrize(
@@ -143,8 +201,44 @@ async def test_un_paiement_incertain_bloque_la_suppression(
     assert response.status_code == code
     assert stripe_suivi["appels"] == {"remboursements": [], "annulations": []}
     assert await database.users.find_one({"email": "ana@exemple.com"}) is not None
-    demande = await database.bookings.find_one({"_id": ObjectId(booking["id"])})
-    assert demande["status"] == "accepted"
+    assert await statut_demande(database, booking) == "accepted"
+
+
+async def test_une_seance_passee_n_est_pas_touchee(client, database, stripe_suivi):
+    """Elle a eu lieu : le partenaire doit être payé, l'autre peut la clôturer."""
+    _, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking)
+    hier = datetime.now(timezone.utc) - timedelta(days=1)
+    await database.bookings.update_one(
+        {"_id": ObjectId(booking["id"])}, {"$set": {"scheduled_at": hier}}
+    )
+
+    response = await client.delete(ME, headers=ana["headers"])
+
+    assert response.status_code == 204
+    assert stripe_suivi["appels"]["remboursements"] == []
+    assert await statut_demande(database, booking) == "accepted"
+    assert await statut_paiement(database) == "succeeded"
+
+
+async def test_une_seance_qui_commence_pendant_la_suppression_n_est_pas_annulee(
+    client, database, stripe_suivi, monkeypatch
+):
+    """Commencée entre le tri et le remboursement : payée, elle a lieu."""
+    _, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking)
+    # Le tri la voit encore à venir ; le remboursement la voit commencée.
+    monkeypatch.setattr(auth_router, "has_ended", lambda booking: False)
+    await database.bookings.update_one(
+        {"_id": ObjectId(booking["id"])},
+        {"$set": {"scheduled_at": datetime.now(timezone.utc) - timedelta(minutes=1)}},
+    )
+
+    response = await client.delete(ME, headers=ana["headers"])
+
+    assert response.status_code == 204
+    assert stripe_suivi["appels"]["remboursements"] == []
+    assert await statut_demande(database, booking) == "accepted"
 
 
 async def test_le_partenaire_supprime_disparait_des_donnees_des_autres(
@@ -173,6 +267,9 @@ async def test_le_partenaire_supprime_disparait_des_donnees_des_autres(
     assert stripe_suivi["appels"]["remboursements"] == ["pi_test_123"]
     paiement = await database.payments.find_one({"payment_intent_id": "pi_test_123"})
     assert paiement["partner_name"] == "Compte supprimé"
+    # Gardé pour retrouver le compte Connect si un remboursement tardif le
+    # rend débiteur.
+    assert paiement["partner_stripe_account_id"] == "acct_test_1"
     assert await database.messages.count_documents({}) == 0
     assert await database.reviews.count_documents({}) == 0
 
@@ -198,3 +295,103 @@ async def test_les_avis_laisses_aux_autres_restent_sans_auteur(client, database)
     avis = await database.reviews.find_one({"comment": "Bien"})
     assert avis is not None
     assert "author_id" not in avis
+
+
+# --------------------------------------------------------------------------
+# Annulation simple : même fermeture des paiements ouverts
+# --------------------------------------------------------------------------
+
+
+async def test_annuler_une_demande_ferme_son_paiement_ouvert(client, database, stripe_suivi):
+    """Sinon la Payment Sheet encore ouverte débiterait une séance annulée."""
+    luis, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking, statut="pending")
+
+    response = await client.post(
+        f"/api/v1/bookings/{booking['id']}/cancel", headers=luis["headers"]
+    )
+
+    assert response.status_code == 200
+    assert stripe_suivi["appels"]["annulations"] == ["pi_test_123"]
+    assert await statut_paiement(database) == "cancelled"
+
+
+# --------------------------------------------------------------------------
+# Webhook : filet de sécurité après une annulation
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def webhook(monkeypatch, client):
+    """Envoie un évènement Stripe déjà « vérifié »."""
+    get_settings.cache_clear()
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+
+    async def envoyer(event_type: str, intent: dict[str, object]):
+        evenement = {"type": event_type, "data": {"object": intent}}
+        monkeypatch.setattr(
+            payments_router.stripe.Webhook,
+            "construct_event",
+            lambda payload, signature, secret: evenement,
+        )
+        return await client.post("/api/v1/payments/webhook", content=b"{}")
+
+    yield envoyer
+    get_settings.cache_clear()
+
+
+async def test_un_paiement_abouti_sur_une_demande_annulee_est_rendu(
+    client, database, stripe_suivi, webhook
+):
+    _, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking, statut="pending")
+    await database.bookings.update_one(
+        {"_id": ObjectId(booking["id"])}, {"$set": {"status": "cancelled"}}
+    )
+
+    response = await webhook(
+        "payment_intent.succeeded",
+        {"id": "pi_test_123", "metadata": {"booking_id": booking["id"]}},
+    )
+
+    assert response.status_code == 200
+    assert stripe_suivi["appels"]["remboursements"] == ["pi_test_123"]
+    assert await statut_paiement(database) == "refunded"
+    demande = await database.bookings.find_one({"_id": ObjectId(booking["id"])})
+    assert demande["paid"] is False
+
+
+async def test_un_succes_en_retard_ne_ressuscite_pas_un_remboursement(
+    client, database, stripe_suivi, webhook
+):
+    _, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking, statut="refunded")
+
+    response = await webhook(
+        "payment_intent.succeeded",
+        {"id": "pi_test_123", "metadata": {"booking_id": booking["id"]}},
+    )
+
+    assert response.status_code == 200
+    assert stripe_suivi["appels"]["remboursements"] == []
+    assert await statut_paiement(database) == "refunded"
+    demande = await database.bookings.find_one({"_id": ObjectId(booking["id"])})
+    assert demande["paid"] is False
+
+
+async def test_un_paiement_abouti_sur_une_demande_acceptee_la_marque_payee(
+    client, database, stripe_suivi, webhook
+):
+    _, ana, booking = await demande_acceptee(client, database)
+    await payer(client, database, ana, booking, statut="pending")
+
+    response = await webhook(
+        "payment_intent.succeeded",
+        {"id": "pi_test_123", "metadata": {"booking_id": booking["id"]}},
+    )
+
+    assert response.status_code == 200
+    assert stripe_suivi["appels"]["remboursements"] == []
+    assert await statut_paiement(database) == "succeeded"
+    demande = await database.bookings.find_one({"_id": ObjectId(booking["id"])})
+    assert demande["paid"] is True

@@ -190,7 +190,8 @@ sa suppression. Nous la traitons dans un délai d’un mois au plus.</p>
   l’annulation.</li>
   <li>Un paiement commencé mais pas terminé est annulé chez Stripe.</li>
   <li>Si un paiement est en cours de traitement par la banque, la suppression
-  est refusée pour l’instant : réessayez quand il est terminé.</li>
+  est refusée pour l’instant : réessayez quand il est terminé. Un prélèvement
+  bancaire peut rester plusieurs jours dans cet état.</li>
 </ul>
 
 <h2>Ce qui est effacé</h2>

@@ -13,6 +13,7 @@ from app.serializers import serialize_payment, to_object_id
 from app.services.payments import (
     create_payment_intent,
     map_stripe_status,
+    refund_payment,
     retrieve_payment_intent,
     retrieve_payment_status,
 )
@@ -203,15 +204,39 @@ async def stripe_webhook(request: Request, database: Database) -> dict[str, str]
     if new_status is None:
         return {"status": "ignored"}
 
+    # Stripe ne garantit pas l'ordre des évènements : un « succeeded » en
+    # retard ne doit pas faire repasser pour encaissé un paiement remboursé.
+    payment = await database.payments.find_one({"payment_intent_id": intent_id})
+    if payment is not None and payment.get("status") == "refunded":
+        return {"status": "ok"}
+
+    if new_status == "succeeded":
+        booking_id = to_object_id(str(objet.get("metadata", {}).get("booking_id", "")))
+        booking = await database.bookings.find_one({"_id": booking_id}) if booking_id else None
+
+        # Filet de sécurité : un paiement qui aboutit sur une demande annulée
+        # entre-temps (Payment Sheet restée ouverte pendant une annulation ou
+        # une suppression de compte) est rendu aussitôt. Si Stripe échoue, le
+        # 502 fait rejouer l'évènement plus tard ; la clé d'idempotence du
+        # remboursement rend ce rejeu sans danger.
+        if booking is not None and booking.get("status") not in {"accepted", "completed"}:
+            await refund_payment(intent_id)
+            await database.payments.update_one(
+                {"payment_intent_id": intent_id}, {"$set": {"status": "refunded"}}
+            )
+            return {"status": "refunded"}
+
+        await database.payments.update_one(
+            {"payment_intent_id": intent_id}, {"$set": {"status": new_status}}
+        )
+        # Une demande n'est « payée » que lorsque Stripe l'a confirmé : l'écran
+        # de paiement ne suffit pas, l'utilisateur peut le fermer au mauvais
+        # moment.
+        if booking is not None:
+            await database.bookings.update_one({"_id": booking["_id"]}, {"$set": {"paid": True}})
+        return {"status": "ok"}
+
     await database.payments.update_one(
         {"payment_intent_id": intent_id}, {"$set": {"status": new_status}}
     )
-
-    # Une demande n'est « payée » que lorsque Stripe l'a confirmé : l'écran de
-    # paiement ne suffit pas, l'utilisateur peut le fermer au mauvais moment.
-    if new_status == "succeeded":
-        booking_id = to_object_id(str(objet.get("metadata", {}).get("booking_id", "")))
-        if booking_id is not None:
-            await database.bookings.update_one({"_id": booking_id}, {"$set": {"paid": True}})
-
     return {"status": "ok"}

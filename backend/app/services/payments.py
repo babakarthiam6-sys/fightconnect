@@ -224,6 +224,10 @@ async def refund_payment(payment_intent_id: str) -> dict[str, Any]:
     `reverse_transfer` reprend la part déjà transférée à l'organisateur et
     `refund_application_fee` rend la commission : sans ces deux options, la
     plateforme rembourserait le client de sa propre poche.
+
+    La clé d'idempotence fait d'un second appel concurrent (double appui,
+    requête rejouée après un délai dépassé) une simple relecture du premier
+    remboursement, au lieu d'une erreur.
     """
     _require_stripe()
 
@@ -233,6 +237,7 @@ async def refund_payment(payment_intent_id: str) -> dict[str, Any]:
                 payment_intent=payment_intent_id,
                 reverse_transfer=True,
                 refund_application_fee=True,
+                idempotency_key=f"refund-{payment_intent_id}",
             )
         )
     except stripe.StripeError as error:
@@ -253,7 +258,11 @@ async def cancel_payment_intent(payment_intent_id: str) -> None:
     _require_stripe()
 
     try:
-        await run_in_threadpool(stripe.PaymentIntent.cancel, payment_intent_id)
+        await run_in_threadpool(
+            lambda: stripe.PaymentIntent.cancel(
+                payment_intent_id, idempotency_key=f"cancel-{payment_intent_id}"
+            )
+        )
     except stripe.StripeError as error:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

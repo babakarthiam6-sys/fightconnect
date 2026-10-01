@@ -18,7 +18,7 @@ qui n'existe plus. En cas de doute entre la carte et le code, **le code fait foi
 
 ```bash
 # Backend (depuis backend/)
-pytest                     # 161 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
+pytest                     # 172 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
