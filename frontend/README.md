@@ -7,8 +7,8 @@ publication et réservation de séances, paiement Stripe, avis modérés par IA.
 
 | Rôle | Choix |
 | --- | --- |
-| Runtime | Expo SDK 50, React Native 0.73, React 18.2 |
-| Navigation | `expo-router` v3 (routing par fichiers, typed routes) |
+| Runtime | Expo SDK 54, React Native 0.81, React 19.1 (Android 16 / API 36) |
+| Navigation | `expo-router` v6 (routing par fichiers, typed routes) |
 | Réseau | `axios` + intercepteurs (JWT, retry, normalisation d'erreurs) |
 | Validation | `zod` |
 | État | React Context (auth, réseau, stats) + `zustand` (filtres) |
@@ -17,7 +17,7 @@ publication et réservation de séances, paiement Stripe, avis modérés par IA.
 | Notifications | `react-native-toast-notifications` |
 | Dates | `date-fns` (locale `fr`) |
 | Tests | `jest-expo` + `@testing-library/react-native` |
-| Qualité | ESLint (`eslint-config-expo`) + Prettier |
+| Qualité | ESLint 9 (`eslint-config-expo`, configuration plate) + Prettier |
 
 ## Démarrage
 
@@ -197,3 +197,35 @@ eas build --profile preview --platform ios       # build simulateur
 
 Les profils `development`, `preview` et `production` sont déjà définis dans `eas.json`.
 Le `projectId` d'`app.json` est un espace réservé, remplacé par `eas build:configure`.
+
+### Publier sur le Play Store
+
+Le profil `production` produit un `.aab`, le format qu'exige le Play Store. Le
+numéro de version Android (`versionCode`) est tenu par EAS
+(`appVersionSource: remote`) et incrémenté à chaque build : un build lancé
+depuis la CI n'a pas à committer `app.json` pour avancer.
+
+À faire une seule fois, sur votre machine :
+
+```bash
+eas login
+eas init                     # remplace le projectId factice d'app.json — committez-le
+# La clé PUBLIQUE Stripe (pk_live_… en production). Jamais la clé sk_ :
+eas env:set --name EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY --value pk_live_… \
+  --environment production --visibility plaintext
+eas build --platform android --profile production   # 1er build : crée la clé de signature
+```
+
+Chaque profil d'`eas.json` lit les variables de l'environnement EAS du même
+nom (champ `environment`) : la clé n'est écrite ni dans le code ni dans
+`eas.json`. `app.config.js` arrête le build si la variable contient autre chose
+qu'une clé `pk_`.
+
+Ensuite, le workflow **Build Android (Play Store)** (onglet Actions, « Run
+workflow ») construit le `.aab` sur EAS et le joint au run. Il demande un secret
+GitHub `EXPO_TOKEN`, créé sur expo.dev (Account settings > Access tokens).
+
+Le Play Store demande aussi deux adresses publiques, servies par l'API :
+`/confidentialite` (politique de confidentialité) et `/suppression-compte`
+(marche à suivre pour supprimer son compte). Renseignez `CONTACT_EMAIL` côté
+serveur pour qu'elles affichent une adresse de contact.
