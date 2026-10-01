@@ -242,3 +242,20 @@ async def refund_payment(payment_intent_id: str) -> dict[str, Any]:
         ) from error
 
     return {"id": str(refund.id), "status": str(refund.status)}
+
+
+async def cancel_payment_intent(payment_intent_id: str) -> None:
+    """Annule une intention de paiement encore ouverte.
+
+    Une intention laissée ouverte reste payable : sans cette annulation, un
+    client pourrait être débité pour une séance qui n'existe plus.
+    """
+    _require_stripe()
+
+    try:
+        await run_in_threadpool(stripe.PaymentIntent.cancel, payment_intent_id)
+    except stripe.StripeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Stripe a refusé l’annulation du paiement : {error.user_message or error}",
+        ) from error

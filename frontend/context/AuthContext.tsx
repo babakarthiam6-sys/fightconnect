@@ -27,6 +27,7 @@ interface AuthContextValue extends AuthState {
   login: (input: LoginInput) => Promise<boolean>;
   signup: (input: SignupInput) => Promise<boolean>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateProfile: (changes: ProfileInput) => Promise<void>;
   clearError: () => void;
@@ -90,6 +91,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void logout();
     });
     return () => setUnauthorizedHandler(null);
+  }, [logout]);
+
+  const deleteAccount = useCallback(async () => {
+    await authService.deleteAccount();
+    await logout();
   }, [logout]);
 
   const runAuth = useCallback(
@@ -164,11 +170,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       signup,
       logout,
+      deleteAccount,
       refreshUser,
       updateProfile,
       clearError,
     }),
-    [state, login, signup, logout, refreshUser, updateProfile, clearError],
+    [state, login, signup, logout, deleteAccount, refreshUser, updateProfile, clearError],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

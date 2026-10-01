@@ -79,6 +79,24 @@ def _has_ended(document: dict[str, Any]) -> bool:
     return scheduled <= datetime.now(timezone.utc)
 
 
+async def refund_if_paid(database: AsyncIOMotorDatabase, booking: dict[str, Any]) -> None:
+    """Rembourse le paiement abouti d'une séance à venir.
+
+    À appeler **avant** de passer la demande en annulée : si Stripe échoue,
+    l'exception remonte et la demande reste debout, avec l'argent encaissé.
+    Partagé par l'annulation et par la suppression de compte.
+    """
+    payment = await database.payments.find_one(
+        {"booking_id": booking["_id"], "status": "succeeded"}
+    )
+    if payment is not None and not _has_ended(booking) and payment.get("payment_intent_id"):
+        await refund_payment(payment["payment_intent_id"])
+        await database.payments.update_one(
+            {"_id": payment["_id"]}, {"$set": {"status": "refunded"}}
+        )
+        await database.bookings.update_one({"_id": booking["_id"]}, {"$set": {"paid": False}})
+
+
 @router.post("", response_model=BookingOut, status_code=status.HTTP_201_CREATED)
 async def create_booking(
     payload: BookingCreate,
@@ -211,16 +229,7 @@ async def cancel(booking_id: str, database: Database, current_user: CurrentUser)
     # Le remboursement est demandé **avant** de changer le statut : si Stripe
     # échoue, la demande reste debout plutôt que d'être annulée sans que
     # l'argent soit rendu.
-    payment = await database.payments.find_one(
-        {"booking_id": booking["_id"], "status": "succeeded"}
-    )
-    if payment is not None and not _has_ended(booking) and payment.get("payment_intent_id"):
-        await refund_payment(payment["payment_intent_id"])
-        await database.payments.update_one(
-            {"_id": payment["_id"]}, {"$set": {"status": "refunded"}}
-        )
-        await database.bookings.update_one({"_id": booking["_id"]}, {"$set": {"paid": False}})
-
+    await refund_if_paid(database, booking)
     return await _transition(database, booking, "cancelled")
 
 
