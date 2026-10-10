@@ -13,7 +13,11 @@ from app.dependencies import CurrentUser, Database
 from app.repositories import expand_booking, expand_bookings
 from app.schemas import BookingCreate, BookingList, BookingOut, ReviewList
 from app.serializers import serialize_review, to_object_id
-from app.services.payments import refund_payment
+from app.services.payments import (
+    cancel_payment_intent,
+    refund_payment,
+    retrieve_payment_status,
+)
 
 router = APIRouter(prefix="/bookings", tags=["réservations"])
 
@@ -70,13 +74,123 @@ async def fetch_booking(database: AsyncIOMotorDatabase, booking_id: str) -> dict
     return document
 
 
-def _has_ended(document: dict[str, Any]) -> bool:
+def has_ended(document: dict[str, Any]) -> bool:
     scheduled = document.get("scheduled_at")
     if not isinstance(scheduled, datetime):
         return False
     if scheduled.tzinfo is None:
         scheduled = scheduled.replace(tzinfo=timezone.utc)
     return scheduled <= datetime.now(timezone.utc)
+
+
+# Un paiement refusé (`failed`) reste payable : Stripe ramène l'intention à
+# `requires_payment_method` et la Payment Sheet peut réessayer avec une autre
+# carte. Il compte donc parmi les paiements à fermer.
+OPEN_PAYMENT_STATUSES = ["pending", "processing", "failed"]
+
+PAYMENT_IN_FLIGHT = HTTPException(
+    status_code=status.HTTP_409_CONFLICT,
+    detail=(
+        "Un paiement est en cours de traitement par la banque. Réessayez une fois "
+        "qu’il sera terminé."
+    ),
+)
+STRIPE_UNREACHABLE = HTTPException(
+    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+    detail="Un paiement est encore ouvert et Stripe ne répond pas. Réessayez dans quelques minutes.",
+)
+
+
+async def _open_payments(
+    database: AsyncIOMotorDatabase, booking: dict[str, Any]
+) -> list[dict[str, Any]]:
+    return [
+        payment
+        async for payment in database.payments.find(
+            {"booking_id": booking["_id"], "status": {"$in": OPEN_PAYMENT_STATUSES}}
+        )
+        if payment.get("payment_intent_id")
+    ]
+
+
+async def _live_status(payment_intent_id: str) -> str:
+    """Statut Stripe réel d'une intention, ou une erreur si on ne peut pas trancher."""
+    stripe_status = await retrieve_payment_status(payment_intent_id)
+    if stripe_status is None:
+        raise STRIPE_UNREACHABLE
+    if stripe_status in {"processing", "requires_capture"}:
+        raise PAYMENT_IN_FLIGHT
+    return stripe_status
+
+
+async def check_open_payments(database: AsyncIOMotorDatabase, booking: dict[str, Any]) -> None:
+    """Vérifie, sans rien modifier, que les paiements ouverts peuvent être fermés.
+
+    Permet à un traitement portant sur plusieurs demandes de s'arrêter avant le
+    premier remboursement plutôt qu'au milieu.
+    """
+    for payment in await _open_payments(database, booking):
+        await _live_status(payment["payment_intent_id"])
+
+
+async def refund_if_paid(database: AsyncIOMotorDatabase, booking: dict[str, Any]) -> bool:
+    """Rembourse tous les paiements aboutis d'une séance à venir.
+
+    À appeler **avant** de passer la demande en annulée : si Stripe échoue,
+    l'exception remonte et la demande reste debout, avec l'argent encaissé.
+
+    Renvoie `False` quand de l'argent encaissé est conservé parce que la séance
+    a commencé : c'est à l'appelant de décider s'il annule quand même.
+    """
+    payments = [
+        payment
+        async for payment in database.payments.find(
+            {"booking_id": booking["_id"], "status": "succeeded"}
+        )
+        if payment.get("payment_intent_id")
+    ]
+    if not payments:
+        return True
+    if has_ended(booking):
+        return False
+
+    # Tous, pas seulement le premier : une intention recréée après une panne
+    # passagère peut avoir été payée elle aussi.
+    for payment in payments:
+        await refund_payment(payment["payment_intent_id"])
+        await database.payments.update_one(
+            {"_id": payment["_id"]}, {"$set": {"status": "refunded"}}
+        )
+    await database.bookings.update_one({"_id": booking["_id"]}, {"$set": {"paid": False}})
+    return True
+
+
+async def release_payments(database: AsyncIOMotorDatabase, booking: dict[str, Any]) -> bool:
+    """Rend l'argent d'une demande qu'on s'apprête à annuler.
+
+    Chaque intention encore ouverte est fermée chez Stripe — sinon la personne
+    qui a réservé pourrait encore payer une séance qui n'existe plus — puis les
+    paiements aboutis sont remboursés. Partagé par l'annulation et par la
+    suppression de compte. Même valeur de retour que `refund_if_paid`.
+    """
+    for payment in await _open_payments(database, booking):
+        intent_id = payment["payment_intent_id"]
+        stripe_status = await _live_status(intent_id)
+        if stripe_status == "succeeded":
+            # Le webhook n'est pas encore passé : la base s'aligne sur Stripe,
+            # et le remboursement ci-dessous s'en charge.
+            await database.payments.update_one(
+                {"_id": payment["_id"]}, {"$set": {"status": "succeeded"}}
+            )
+            await database.bookings.update_one({"_id": booking["_id"]}, {"$set": {"paid": True}})
+            continue
+        if stripe_status != "canceled":
+            await cancel_payment_intent(intent_id)
+        await database.payments.update_one(
+            {"_id": payment["_id"]}, {"$set": {"status": "cancelled"}}
+        )
+
+    return await refund_if_paid(database, booking)
 
 
 @router.post("", response_model=BookingOut, status_code=status.HTTP_201_CREATED)
@@ -210,17 +324,9 @@ async def cancel(booking_id: str, database: Database, current_user: CurrentUser)
 
     # Le remboursement est demandé **avant** de changer le statut : si Stripe
     # échoue, la demande reste debout plutôt que d'être annulée sans que
-    # l'argent soit rendu.
-    payment = await database.payments.find_one(
-        {"booking_id": booking["_id"], "status": "succeeded"}
-    )
-    if payment is not None and not _has_ended(booking) and payment.get("payment_intent_id"):
-        await refund_payment(payment["payment_intent_id"])
-        await database.payments.update_one(
-            {"_id": payment["_id"]}, {"$set": {"status": "refunded"}}
-        )
-        await database.bookings.update_one({"_id": booking["_id"]}, {"$set": {"paid": False}})
-
+    # l'argent soit rendu. Une séance déjà commencée s'annule sans
+    # remboursement, comme auparavant.
+    await release_payments(database, booking)
     return await _transition(database, booking, "cancelled")
 
 
@@ -231,7 +337,7 @@ async def complete(booking_id: str, database: Database, current_user: CurrentUse
         raise HTTPException(status_code=403, detail="Cette demande ne vous concerne pas.")
     if booking.get("status") != "accepted":
         raise HTTPException(status_code=409, detail="Seule une demande acceptée peut être clôturée.")
-    if not _has_ended(booking):
+    if not has_ended(booking):
         raise HTTPException(status_code=409, detail="La séance n’a pas encore eu lieu.")
     return await _transition(database, booking, "completed")
 

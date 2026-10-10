@@ -1,4 +1,4 @@
-import { resolveApiBaseUrl } from '@/constants/config';
+import { publicPageUrl, resolveApiBaseUrl } from '@/constants/config';
 
 /**
  * Ces cas décrivent le bug qui a rendu l'application inutilisable en ligne :
@@ -49,5 +49,17 @@ describe('resolveApiBaseUrl', () => {
     expect(
       resolveApiBaseUrl({ envValue: 'https://exemple.test/api/v1///', platformOS: 'ios' }),
     ).toBe('https://exemple.test/api/v1');
+  });
+});
+
+describe('publicPageUrl', () => {
+  it('vise la racine de l’hôte de l’API, pas son préfixe', () => {
+    expect(publicPageUrl('https://api.exemple.com/api/v1', '/confidentialite')).toBe(
+      'https://api.exemple.com/confidentialite',
+    );
+  });
+
+  it('reste relative quand l’API l’est', () => {
+    expect(publicPageUrl('/api/v1', '/confidentialite')).toBe('/confidentialite');
   });
 });

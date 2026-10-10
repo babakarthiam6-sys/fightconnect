@@ -142,6 +142,18 @@ export const authService = {
     return user;
   },
 
+  /**
+   * Supprime le compte côté serveur.
+   *
+   * Un DELETE n'est jamais rejoué par le client HTTP : en cas d'échec, l'erreur
+   * remonte telle quelle (paiement en cours, Stripe indisponible…) et la
+   * session reste ouverte pour que la personne puisse réessayer. La
+   * déconnexion locale revient à l'appelant, une fois la suppression confirmée.
+   */
+  async deleteAccount(): Promise<void> {
+    await http.delete<void>(ENDPOINTS.auth.deleteMe);
+  },
+
   async logout(): Promise<void> {
     setAuthToken(null);
     await storage.removeMany([

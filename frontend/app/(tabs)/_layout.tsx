@@ -7,10 +7,11 @@ import { COLORS } from '@/constants/theme';
 export default function TabsLayout() {
   return (
     <Tabs
-      // `sceneContainerStyle` est une prop du navigateur, pas une screenOption.
-      sceneContainerStyle={{ backgroundColor: COLORS.background }}
       screenOptions={{
         headerShown: false,
+        // React Navigation 7 a remplacé la prop `sceneContainerStyle` du
+        // navigateur par cette option d'écran.
+        sceneStyle: { backgroundColor: COLORS.background },
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: {

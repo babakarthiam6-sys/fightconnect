@@ -5,7 +5,7 @@ import { http, restoreAuthToken, setAuthToken } from '@/services/api';
 import { authService } from '@/services/auth';
 
 jest.mock('@/services/api', () => ({
-  http: { get: jest.fn(), post: jest.fn() },
+  http: { get: jest.fn(), post: jest.fn(), delete: jest.fn() },
   setAuthToken: jest.fn(),
   restoreAuthToken: jest.fn(),
 }));
@@ -112,6 +112,22 @@ describe('service d’authentification', () => {
 
     await expect(authService.restore()).resolves.toBeNull();
     expect(await AsyncStorage.getItem(STORAGE_KEYS.token)).toBeNull();
+  });
+
+  it('supprime le compte par un DELETE sur /auth/me', async () => {
+    mockedHttp.delete.mockResolvedValueOnce(undefined);
+
+    await authService.deleteAccount();
+
+    expect(mockedHttp.delete).toHaveBeenCalledWith('/auth/me');
+  });
+
+  it('laisse remonter le refus du serveur sans toucher à la session', async () => {
+    await AsyncStorage.setItem(STORAGE_KEYS.token, 'jwt');
+    mockedHttp.delete.mockRejectedValueOnce({ status: 409, message: 'Paiement en cours' });
+
+    await expect(authService.deleteAccount()).rejects.toMatchObject({ status: 409 });
+    expect(await AsyncStorage.getItem(STORAGE_KEYS.token)).toBe('jwt');
   });
 
   it('efface le cache métier à la déconnexion', async () => {

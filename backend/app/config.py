@@ -54,6 +54,12 @@ class Settings(BaseSettings):
     # est déduite de la requête, ce qui suffit dans la plupart des cas.
     public_base_url: str = ""
 
+    # --- Contact ---
+    # Adresse affichée sur les pages publiques (confidentialité, suppression du
+    # compte). Le Play Store exige un moyen de contact ; vide, les pages
+    # renvoient vers la messagerie de l'application.
+    contact_email: str = ""
+
     # --- Application web ---
     # Dossier contenant l'export web du mobile. Servi par cette même API quand il
     # est présent : un seul déploiement suffit alors pour l'API et l'application.

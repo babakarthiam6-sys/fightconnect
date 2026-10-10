@@ -64,6 +64,17 @@ export const API_BASE_URL = resolveApiBaseUrl({
   extraValue: readExtra('apiBaseUrl'),
 });
 
+/**
+ * Page publique servie par l'API, à la racine de son hôte et non sous
+ * `/api/v1`. Une base relative (export web servi par l'API) donne un chemin
+ * relatif, qui vise donc le même hôte.
+ */
+export function publicPageUrl(apiBaseUrl: string, path: string): string {
+  return `${apiBaseUrl.replace(/\/api\/v1$/, '')}${path}`;
+}
+
+export const PRIVACY_POLICY_URL = publicPageUrl(API_BASE_URL, '/confidentialite');
+
 export const STRIPE_PUBLISHABLE_KEY = resolve(
   process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   'stripePublishableKey',

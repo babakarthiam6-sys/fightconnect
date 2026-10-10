@@ -12,6 +12,7 @@ jest.mock('@/services/auth', () => ({
     login: jest.fn(),
     signup: jest.fn(),
     logout: jest.fn(),
+    deleteAccount: jest.fn(),
     me: jest.fn(),
   },
 }));
@@ -48,7 +49,8 @@ const USER = {
 };
 
 function Probe() {
-  const { user, isAuthenticated, isBootstrapping, error, login, logout } = useAuth();
+  const { user, isAuthenticated, isBootstrapping, error, login, logout, deleteAccount } =
+    useAuth();
 
   if (isBootstrapping) return <Text>bootstrap</Text>;
 
@@ -64,6 +66,9 @@ function Probe() {
       </Pressable>
       <Pressable testID="logout" onPress={() => void logout()}>
         <Text>logout</Text>
+      </Pressable>
+      <Pressable testID="delete" onPress={() => void deleteAccount().catch(() => undefined)}>
+        <Text>delete</Text>
       </Pressable>
     </>
   );
@@ -140,6 +145,34 @@ describe('AuthContext', () => {
 
     await waitFor(() => expect(screen.getByText('anonyme')).toBeTruthy());
     expect(mockedAuth.logout).toHaveBeenCalled();
+  });
+
+  it('déconnecte une fois le compte supprimé', async () => {
+    mockedAuth.restore.mockResolvedValue({ token: 'jwt', user: USER });
+    mockedAuth.deleteAccount.mockResolvedValue(undefined);
+
+    renderProbe();
+    await waitFor(() => expect(screen.getByText('connecté:Jean')).toBeTruthy());
+
+    fireEvent.press(screen.getByTestId('delete'));
+
+    await waitFor(() => expect(screen.getByText('anonyme')).toBeTruthy());
+    expect(mockedAuth.deleteAccount).toHaveBeenCalled();
+    expect(mockedAuth.logout).toHaveBeenCalled();
+  });
+
+  it('garde la session si la suppression est refusée', async () => {
+    mockedAuth.restore.mockResolvedValue({ token: 'jwt', user: USER });
+    mockedAuth.deleteAccount.mockRejectedValue({ status: 409, message: 'Paiement en cours' });
+
+    renderProbe();
+    await waitFor(() => expect(screen.getByText('connecté:Jean')).toBeTruthy());
+
+    fireEvent.press(screen.getByTestId('delete'));
+
+    await waitFor(() => expect(mockedAuth.deleteAccount).toHaveBeenCalled());
+    expect(screen.getByText('connecté:Jean')).toBeTruthy();
+    expect(mockedAuth.logout).not.toHaveBeenCalled();
   });
 
   it('déconnecte quand l’intercepteur signale un 401', async () => {

@@ -1,5 +1,6 @@
 """L'application web servie par l'API ne doit masquer aucune route de l'API."""
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
@@ -61,3 +62,14 @@ async def test_l_api_reste_prioritaire_sur_le_montage(client_avec_web):
 
 async def test_la_documentation_reste_accessible(client_avec_web):
     assert (await client_avec_web.get("/docs")).status_code == 200
+
+
+@pytest.mark.parametrize("chemin", ["/confidentialite", "/suppression-compte"])
+async def test_les_pages_publiques_passent_avant_l_application(client_avec_web, chemin):
+    """Le Play Store lit ces pages sans compte : le montage ne doit pas les masquer."""
+    response = await client_avec_web.get(chemin)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert response.text != "<html>application</html>"
+    assert "FightConnect" in response.text
