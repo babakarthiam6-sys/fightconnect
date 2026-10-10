@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { DarkTheme, ThemeProvider, type Theme } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StripeProvider } from '@stripe/stripe-react-native';
@@ -14,6 +15,26 @@ import { AppProvider } from '@/context/AppContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { COLORS } from '@/constants/theme';
 import { IS_STRIPE_CONFIGURED, STRIPE_MERCHANT_ID, STRIPE_PUBLISHABLE_KEY } from '@/constants/config';
+
+/**
+ * Thème de la navigation, aligné sur la charte.
+ *
+ * Sans lui, React Navigation applique son thème clair à tout ce que les écrans
+ * ne recolorent pas eux-mêmes : liseré blanc sous les en-têtes, fond blanc
+ * entrevu pendant les transitions entre écrans.
+ */
+const NAVIGATION_THEME: Theme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: COLORS.primary,
+    background: COLORS.background,
+    card: COLORS.surface,
+    text: COLORS.text,
+    border: COLORS.border,
+    notification: COLORS.primary,
+  },
+};
 
 // Le splash reste visible tant que la session n'est pas restaurée.
 void SplashScreen.preventAutoHideAsync();
@@ -127,8 +148,10 @@ export default function RootLayout() {
           warningColor={COLORS.warning}
         >
           <Providers>
-            <StatusBar style="light" />
-            <RootNavigator />
+            <ThemeProvider value={NAVIGATION_THEME}>
+              <StatusBar style="light" />
+              <RootNavigator />
+            </ThemeProvider>
           </Providers>
         </ToastProvider>
       </SafeAreaProvider>

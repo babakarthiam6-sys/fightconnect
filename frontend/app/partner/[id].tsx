@@ -199,12 +199,19 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     flex: 1,
     gap: 2,
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
     paddingVertical: SPACING.lg,
   },
-  // « Professionnel » ne tient pas sur une ligne dans un tiers d'écran :
-  // la police est réduite ici plutôt que le libellé abrégé, qui perdrait en clarté.
-  tileValue: { ...TYPOGRAPHY.body, color: COLORS.text, fontWeight: '700', textAlign: 'center' },
+  // « Professionnel » ne tient pas sur une ligne dans un tiers d'écran de 360 dp
+  // en taille normale : il se cassait en « Professionn / el ». La police est
+  // réduite ici plutôt que le libellé abrégé, qui perdrait en clarté.
+  tileValue: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   tileLabel: { ...TYPOGRAPHY.caption, color: COLORS.textMuted, textAlign: 'center' },
   statValue: { ...TYPOGRAPHY.display, color: COLORS.primary },
   sectionTitle: { ...TYPOGRAPHY.title, color: COLORS.text, marginTop: SPACING.xl },
