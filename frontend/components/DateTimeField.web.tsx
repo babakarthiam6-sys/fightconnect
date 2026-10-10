@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import type { DateTimeFieldProps } from '@/components/DateTimeField';
+import { formatDateTime } from '@/utils/formatting';
 
 /**
  * Choix de la date, version navigateur.
@@ -10,6 +11,11 @@ import type { DateTimeFieldProps } from '@/components/DateTimeField';
  * `@react-native-community/datetimepicker` n'a aucune implémentation web : monté
  * dans un navigateur, il casse l'écran. On s'appuie donc sur le champ natif du
  * navigateur, qui ouvre de surcroît le sélecteur du système sur iOS et Android.
+ *
+ * Ce champ s'affiche dans la langue du navigateur, pas celle de l'application :
+ * un navigateur réglé en anglais montre « 05/12/2030, 06:30 PM ». La date est
+ * donc répétée en clair dessous, en français, pour lever toute ambiguïté entre
+ * le 5 décembre et le 12 mai.
  */
 
 /** Format attendu par `datetime-local` : AAAA-MM-JJTHH:MM, en heure locale. */
@@ -52,7 +58,7 @@ export function DateTimeField({
           minHeight: 50,
           boxSizing: 'border-box',
           padding: `0 ${SPACING.md}px`,
-          marginBottom: SPACING.lg,
+          marginBottom: SPACING.xs,
           border: `1.5px solid ${COLORS.border}`,
           borderRadius: RADIUS.md,
           backgroundColor: COLORS.surface,
@@ -61,6 +67,10 @@ export function DateTimeField({
           fontSize: TYPOGRAPHY.body.fontSize,
         },
       })}
+
+      <Text style={styles.hint} accessibilityLiveRegion="polite">
+        {formatDateTime(value.toISOString())}
+      </Text>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
@@ -75,6 +85,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     textTransform: 'uppercase',
   },
+  hint: { ...TYPOGRAPHY.caption, color: COLORS.textMuted, marginBottom: SPACING.lg },
   error: { ...TYPOGRAPHY.caption, color: COLORS.error, marginBottom: SPACING.md, marginTop: -SPACING.md },
 });
 

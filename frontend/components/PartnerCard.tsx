@@ -6,8 +6,10 @@ import Avatar from '@/components/Avatar';
 import Badge from '@/components/Badge';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import {
+  formatCount,
   formatLevel,
   formatPrice,
+  formatRating,
   formatStyle,
   formatUserName,
   formatWeightClass,
@@ -68,16 +70,16 @@ export function PartnerCard({ partner, onPress, compact = false }: Props) {
             color={isNew ? COLORS.textMuted : COLORS.warning}
           />
           <Text style={styles.meta}>
-            {isNew ? 'Nouveau' : `${partner.averageRating?.toFixed(1)} (${partner.ratingsCount})`}
+            {isNew ? 'Nouveau' : `${formatRating(partner.averageRating)} (${partner.ratingsCount})`}
           </Text>
         </View>
         <View style={styles.stat}>
           <Ionicons name="trophy-outline" size={13} color={COLORS.textMuted} />
-          <Text style={styles.meta}>{partner.fightsCount} combats</Text>
+          <Text style={styles.meta}>{formatCount(partner.fightsCount, 'combat')}</Text>
         </View>
         <View style={styles.stat}>
           <Ionicons name="time-outline" size={13} color={COLORS.textMuted} />
-          <Text style={styles.meta}>{partner.experienceYears} ans</Text>
+          <Text style={styles.meta}>{formatCount(partner.experienceYears, 'an')}</Text>
         </View>
       </View>
     </Pressable>

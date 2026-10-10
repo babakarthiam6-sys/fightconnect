@@ -102,6 +102,16 @@ export function getInitials(
   return initials || '?';
 }
 
+/**
+ * « 1 an », « 3 ans », « 0 combat ».
+ *
+ * En français, zéro et un prennent le singulier : « 0 combat », pas « 0 combats ».
+ */
+export function formatCount(count: number, singular: string, plural = `${singular}s`): string {
+  const safe = Number.isFinite(count) ? count : 0;
+  return `${safe} ${Math.abs(safe) < 2 ? singular : plural}`;
+}
+
 /** Note moyenne : « 4,7 » ou « — » si aucune note. */
 export function formatRating(rating: number | null | undefined): string {
   if (typeof rating !== 'number' || !Number.isFinite(rating) || rating <= 0) return '—';

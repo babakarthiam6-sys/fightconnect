@@ -1,4 +1,5 @@
 import {
+  formatCount,
   formatDuration,
   formatLevel,
   formatPrice,
@@ -10,6 +11,15 @@ import {
 } from '@/utils/formatting';
 
 describe('formatage', () => {
+  it('accorde au pluriel à partir de deux, comme en français', () => {
+    expect(formatCount(0, 'combat')).toBe('0 combat');
+    expect(formatCount(1, 'an')).toBe('1 an');
+    expect(formatCount(2, 'an')).toBe('2 ans');
+    expect(formatCount(12, 'combat')).toBe('12 combats');
+    expect(formatCount(3, 'œil', 'yeux')).toBe('3 yeux');
+    expect(formatCount(Number.NaN, 'an')).toBe('0 an');
+  });
+
   it('affiche un prix en euros', () => {
     // L'espace insécable utilisé par Intl varie selon l'ICU : on teste le contenu.
     expect(formatPrice(25)).toMatch(/25/);

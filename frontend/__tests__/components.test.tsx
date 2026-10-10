@@ -138,7 +138,22 @@ describe('PartnerCard', () => {
         onPress={jest.fn()}
       />,
     );
-    expect(screen.getByText('4.5 (12)')).toBeTruthy();
+    // Virgule décimale, comme partout ailleurs en français.
+    expect(screen.getByText('4,5 (12)')).toBeTruthy();
+  });
+
+  it('accorde l’expérience et les combats au singulier comme au pluriel', () => {
+    const { rerender } = render(
+      <PartnerCard partner={{ ...PARTNER, experienceYears: 1, fightsCount: 1 }} onPress={jest.fn()} />,
+    );
+    expect(screen.getByText('1 an')).toBeTruthy();
+    expect(screen.getByText('1 combat')).toBeTruthy();
+
+    rerender(
+      <PartnerCard partner={{ ...PARTNER, experienceYears: 6, fightsCount: 14 }} onPress={jest.fn()} />,
+    );
+    expect(screen.getByText('6 ans')).toBeTruthy();
+    expect(screen.getByText('14 combats')).toBeTruthy();
   });
 
   it('abrège le nom du partenaire', () => {

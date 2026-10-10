@@ -43,6 +43,7 @@ import { videoService } from '@/services/video';
 import {
   formatLevel,
   formatPrice,
+  formatRating,
   formatStyle,
   formatUserName,
   formatWeightClass,
@@ -225,7 +226,7 @@ export default function ProfileScreen() {
           <View style={styles.ratingRow}>
             <RatingStars value={user.averageRating ?? 0} size={15} />
             <Text style={styles.ratingLabel}>
-              {isNew ? 'Nouveau' : user.averageRating?.toFixed(1)}
+              {isNew ? 'Nouveau' : formatRating(user.averageRating)}
             </Text>
             <Text style={styles.meta}>({user.ratingsCount} avis)</Text>
           </View>

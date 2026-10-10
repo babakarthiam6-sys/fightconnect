@@ -14,6 +14,7 @@ import { partnerService } from '@/services/partner';
 import {
   formatLevel,
   formatPrice,
+  formatRating,
   formatStyle,
   formatUserName,
   formatWeightClass,
@@ -65,7 +66,7 @@ export default function PartnerScreen() {
           <View style={styles.ratingRow}>
             <RatingStars value={partner.averageRating ?? 0} size={16} />
             <Text style={styles.ratingLabel}>
-              {isNew ? 'Nouveau' : partner.averageRating?.toFixed(1)}
+              {isNew ? 'Nouveau' : formatRating(partner.averageRating)}
             </Text>
             <Text style={styles.meta}>
               ({partner.ratingsCount} avis)
