@@ -63,7 +63,11 @@ export function DateTimeField({
           borderRadius: RADIUS.md,
           backgroundColor: COLORS.surface,
           color: COLORS.text,
-          fontFamily: 'inherit',
+          // `inherit` ne marche pas ici : les conteneurs de react-native-web ne
+          // portent pas de police, seuls les <Text> en ont une. Le champ tombait
+          // donc sur la police par défaut du navigateur, à empattements.
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
           fontSize: TYPOGRAPHY.body.fontSize,
         },
       })}
