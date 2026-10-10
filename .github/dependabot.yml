@@ -5,8 +5,60 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    # Ces paquets suivent la version du SDK Expo, pas leur propre rythme : Expo
+    # fixe pour chaque SDK la seule version de chacun qui fonctionne avec son code
+    # natif. Les monter un par un donne une app qui passe les tests mais plante au
+    # lancement. On les fait évoluer ensemble, avec `npx expo install --fix` lors
+    # d'un changement de SDK.
+    ignore:
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "jest-expo"
+      - dependency-name: "babel-preset-expo"
+      - dependency-name: "eslint-config-expo"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-test-renderer"
+      - dependency-name: "@types/react"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-gesture-handler"
+      - dependency-name: "react-native-reanimated"
+      - dependency-name: "react-native-worklets"
+      - dependency-name: "react-native-safe-area-context"
+      - dependency-name: "react-native-screens"
+      - dependency-name: "react-native-svg"
+      - dependency-name: "react-native-web"
+      - dependency-name: "@react-native-async-storage/async-storage"
+      - dependency-name: "@react-native-community/*"
+      - dependency-name: "@react-navigation/*"
+      - dependency-name: "@stripe/stripe-react-native"
+      - dependency-name: "typescript"
+      # Pour le reste, une version majeure change l'API : elle se fait à la main.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      mineures:
+        update-types: ["minor", "patch"]
+
   - package-ecosystem: "pip"
     directory: "/backend"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      mineures:
+        update-types: ["minor", "patch"]
+
+  # Les actions (checkout, setup-node…) vieillissent aussi : GitHub a déjà
+  # signalé celles qui tournent encore sur Node 20.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      actions:
+        patterns: ["*"]

@@ -42,7 +42,9 @@ jobs:
             exit 1
           fi
           if grep -q '"projectId": "00000000-0000-0000-0000-000000000000"' app.json; then
-            echo "::error::app.json contient encore l'identifiant de projet EAS factice. Lancez « eas init » une fois en local et committez le résultat."
+            # Pas besoin d'ordinateur : le projet se crée sur expo.dev depuis un
+            # téléphone, et son « Project ID » s'inscrit ensuite dans app.json.
+            echo "::error::app.json contient encore l'identifiant de projet EAS factice. Créez le projet « fightconnect » sur expo.dev, puis inscrivez son Project ID dans app.json (extra.eas.projectId)."
             exit 1
           fi
 
