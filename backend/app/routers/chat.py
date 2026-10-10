@@ -30,7 +30,10 @@ async def conversations(database: Database, current_user: CurrentUser) -> dict[s
 
     pipeline = [
         {"$match": {"$or": [{"sender_id": user_id}, {"recipient_id": user_id}]}},
-        {"$sort": {"created_at": -1}},
+        # Mongo n'enregistre l'heure qu'à la milliseconde : deux messages de la
+        # même milliseconde seraient rangés au hasard. L'identifiant, croissant,
+        # les départage.
+        {"$sort": {"created_at": -1, "_id": -1}},
         {
             "$group": {
                 "_id": "$conversation_id",
@@ -51,7 +54,7 @@ async def conversations(database: Database, current_user: CurrentUser) -> dict[s
                 },
             }
         },
-        {"$sort": {"last.created_at": -1}},
+        {"$sort": {"last.created_at": -1, "last._id": -1}},
         {"$limit": 100},
     ]
 
@@ -100,7 +103,7 @@ async def history(
     documents = [
         document
         async for document in database.messages.find({"conversation_id": identifiant})
-        .sort("created_at", -1)
+        .sort([("created_at", -1), ("_id", -1)])
         .limit(limit)
     ]
     documents.reverse()

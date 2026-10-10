@@ -230,6 +230,48 @@ async def test_la_liste_des_conversations_sur_le_vrai_moteur(client, database):
     assert maria["user"]["id"]
 
 
+async def test_deux_messages_de_la_meme_milliseconde_restent_dans_l_ordre(client, database):
+    """Mongo tronque l'heure à la milliseconde : l'égalité arrive pour de vrai.
+
+    Ce test a d'abord échoué en CI, au hasard, sur des messages envoyés coup sur
+    coup. On fabrique ici l'égalité exprès, en insérant le plus ancien en premier
+    pour que l'ordre d'insertion ne masque pas un tri qui ne départagerait pas.
+    """
+    from app.services.chat import conversation_key
+
+    luis = await make_partner(client)
+    ana = await register(client, "ana@exemple.com", "Ana")
+    maria = await register(client, "maria@exemple.com", "Maria")
+    luis_id, ana_id, maria_id = (
+        ObjectId(compte["user"]["id"]) for compte in (luis, ana, maria)
+    )
+
+    meme_instant = datetime.now(timezone.utc).replace(microsecond=0)
+    # Générés dans cet ordre, ces identifiants sont croissants.
+    ids = [ObjectId() for _ in range(3)]
+    for identifiant, expediteur, contenu in zip(
+        ids, (ana_id, ana_id, maria_id), ("Premier", "Dernier", "Salut")
+    ):
+        await database.messages.insert_one(
+            {
+                "_id": identifiant,
+                "conversation_id": conversation_key(expediteur, luis_id),
+                "sender_id": expediteur,
+                "recipient_id": luis_id,
+                "content": contenu,
+                "read": False,
+                "created_at": meme_instant,
+            }
+        )
+
+    fils = (await client.get("/api/v1/chat/conversations", headers=luis["headers"])).json()["items"]
+    assert [fil["other"]["first_name"] for fil in fils] == ["Maria", "Ana"]
+    assert fils[1]["last_message"] == "Dernier"
+
+    historique = await client.get(f"/api/v1/chat/history/{ana_id}", headers=luis["headers"])
+    assert [message["content"] for message in historique.json()["items"]] == ["Premier", "Dernier"]
+
+
 async def test_le_freinage_de_connexion_fonctionne_sur_le_vrai_moteur(client):
     from app.services import throttle
 
