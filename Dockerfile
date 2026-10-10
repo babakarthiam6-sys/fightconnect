@@ -2,7 +2,7 @@
 # L'export web du mobile est bâti ici puis servi par l'API : un seul
 # déploiement suffit alors pour les deux, ce qui évite d'avoir à héberger et à
 # configurer un second service.
-FROM node:20-slim AS webapp
+FROM node:22-slim AS webapp
 
 WORKDIR /build
 
@@ -35,6 +35,7 @@ ENV EXPO_NO_TELEMETRY=1
 ARG EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=""
 ENV EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=$EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY
 RUN npx expo export --platform web --clear --output-dir /build/web-dist \
+    && node scripts/check-web-bundle.mjs /build/web-dist \
     && node scripts/theme-web-shell.mjs /build/web-dist/index.html
 
 

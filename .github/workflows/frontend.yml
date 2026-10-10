@@ -53,3 +53,8 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: '1'
           EXPO_PUBLIC_API_BASE_URL: /api/v1
+
+      - name: Bundle web exécutable
+        # Le build peut réussir et produire un écran noir : un `import.meta` dans
+        # un bundle chargé comme script classique bloque tout au démarrage.
+        run: node scripts/check-web-bundle.mjs /tmp/expo-web
