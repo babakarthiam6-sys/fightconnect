@@ -34,15 +34,17 @@ npx expo start                # scannez le QR code avec Expo Go
 ```
 
 Chaque dossier a son propre README avec le détail : configuration, tests,
-déploiement.
+déploiement. La fiche Play Store (textes, images, questionnaires, étapes de
+publication) est prête dans [`docs/play-store/`](docs/play-store/FICHE.md).
 
 ## Qualité
 
-338 tests automatisés, rejoués par GitHub Actions à chaque push :
+341 tests automatisés, rejoués par GitHub Actions à chaque push :
 
-- **frontend** — 165 tests (Jest + Testing Library), ESLint, vérification des
-  types et bundle Metro.
-- **backend** — 173 tests (pytest) : 164 sur base simulée, 9 d'intégration sur un vrai
+- **frontend** — 167 tests (Jest + Testing Library), ESLint, vérification des
+  types, bundles Metro Android et web, et contrôle que le bundle web démarre
+  réellement dans un navigateur.
+- **backend** — 174 tests (pytest) : 164 sur base simulée, 10 d'intégration sur un vrai
   MongoDB fourni par la CI. Stripe est doublé partout.
 
 Parmi eux, 16 tests de contrat font tourner les normaliseurs du mobile sur des
