@@ -12,6 +12,15 @@ export const ENDPOINTS = {
     updateMe: '/auth/me',
     deleteMe: '/auth/me',
   },
+  announcements: {
+    list: '/announcements',
+    mine: '/announcements/mine',
+    create: '/announcements',
+    detail: (id: string) => `/announcements/${id}`,
+    replies: (id: string) => `/announcements/${id}/replies`,
+    close: (id: string) => `/announcements/${id}/close`,
+    remove: (id: string) => `/announcements/${id}`,
+  },
   partners: {
     list: '/partners',
     detail: (id: string) => `/partners/${id}`,

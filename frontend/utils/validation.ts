@@ -119,11 +119,48 @@ export const reviewSchema = z.object({
     .max(CONFIG.maxReviewLength, `Au plus ${CONFIG.maxReviewLength} caractères.`),
 });
 
+/**
+ * Publication d'une annonce. Mêmes bornes que le serveur : une erreur se voit
+ * sous le champ, avant l'envoi, plutôt qu'en message d'erreur après.
+ */
+export const announcementSchema = z.object({
+  city: z.string().trim().min(2, 'Indiquez une ville.').max(80, 'Au plus 80 caractères.'),
+  message: z
+    .string()
+    .trim()
+    .min(10, 'Décrivez ce que vous cherchez (10 caractères au moins).')
+    .max(600, 'Au plus 600 caractères.'),
+  scheduledFor: z
+    .string()
+    .nullable()
+    .refine((value) => {
+      if (value === null) return true;
+      const time = Date.parse(value);
+      return Number.isFinite(time) && time > Date.now();
+    }, 'La date doit être dans le futur.'),
+  fighterName: z.string().trim().max(60, 'Au plus 60 caractères.').nullable(),
+  fighterRecord: z.string().trim().max(40, 'Au plus 40 caractères.').nullable(),
+  weightKg: z
+    .number({ invalid_type_error: 'Poids invalide.' })
+    .min(40, 'Entre 40 et 160 kg.')
+    .max(160, 'Entre 40 et 160 kg.')
+    .nullable(),
+});
+
+export const announcementReplySchema = z.object({
+  message: z
+    .string()
+    .trim()
+    .min(2, 'Écrivez quelques mots.')
+    .max(300, 'Au plus 300 caractères.'),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type BookingInput = z.infer<typeof bookingSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type ReviewInput = z.infer<typeof reviewSchema>;
+export type AnnouncementInput = z.infer<typeof announcementSchema>;
 
 /** Erreurs de formulaire indexées par nom de champ. */
 export type FieldErrors<T> = Partial<Record<keyof T, string>>;

@@ -10,6 +10,7 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import { ToastProvider } from 'react-native-toast-notifications';
 
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useNotificationRouting } from '@/hooks/useNotificationRouting';
 import { usePushToken } from '@/hooks/usePushToken';
 import { AppProvider } from '@/context/AppContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -64,9 +65,10 @@ function useAuthRedirect() {
 }
 
 function RootNavigator() {
-  const { isAuthenticated, isBootstrapping } = useAuth();
+  const { isAuthenticated, isBootstrapping, user } = useAuth();
   useAuthRedirect();
   usePushToken(isAuthenticated);
+  useNotificationRouting(user?.id, isAuthenticated && !isBootstrapping);
 
   useEffect(() => {
     if (!isBootstrapping) {
@@ -104,6 +106,8 @@ function RootNavigator() {
         options={{ title: 'Paiement', presentation: 'card' }}
       />
       <Stack.Screen name="payments" options={{ title: 'Mes paiements' }} />
+      <Stack.Screen name="announcement/new" options={{ title: 'Nouvelle annonce' }} />
+      <Stack.Screen name="announcement/[id]" options={{ title: 'Annonce' }} />
       <Stack.Screen name="chat/index" options={{ title: 'Messages' }} />
       <Stack.Screen name="chat/[id]" options={{ title: 'Conversation' }} />
     </Stack>

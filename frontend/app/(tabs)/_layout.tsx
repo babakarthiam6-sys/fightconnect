@@ -32,7 +32,9 @@ export default function TabsLayout() {
           paddingBottom: 4 + insets.bottom,
           paddingTop: 4,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        // Quatre onglets sur un écran de 360 dp : à 11, « Réservations » était
+        // tronqué en « Réservatio… ».
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
       }}
     >
       <Tabs.Screen
@@ -40,6 +42,13 @@ export default function TabsLayout() {
         options={{
           title: 'Recherche',
           tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="announcements"
+        options={{
+          title: 'Annonces',
+          tabBarIcon: ({ color, size }) => <Ionicons name="megaphone" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

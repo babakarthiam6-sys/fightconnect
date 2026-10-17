@@ -120,6 +120,11 @@ export const STYLE_LABELS: Record<string, string> = {
   judo: 'Judo',
 };
 
+export const ANNOUNCEMENT_KIND_LABELS: Record<string, string> = {
+  sparring: 'Sparring',
+  fight: 'Combat',
+};
+
 export const STATUS_LABELS: Record<string, string> = {
   pending: 'En attente',
   accepted: 'Acceptée',

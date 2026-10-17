@@ -425,6 +425,152 @@
     "payouts_enabled": false,
     "stripe_configured": false
   },
+  "announcement_create": {
+    "id": "6ad3e8fcf81a3c77f72fdc79",
+    "kind": "fight",
+    "style": "muay_thai",
+    "city": "Valence",
+    "level": "amateur",
+    "weight_class": "lightweight",
+    "scheduled_for": "2026-11-06T21:30:36.069504+00:00",
+    "message": "Adversaire cherché pour un gala amateur, 3 x 2 min.",
+    "fighter_name": "Yanis K.",
+    "fighter_record": "8-2-0",
+    "weight_kg": 63.5,
+    "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "video_provider": "youtube",
+    "status": "open",
+    "created_at": "2026-10-17T21:30:36.072475+00:00",
+    "expires_at": "2026-11-06T21:30:36.069504+00:00",
+    "author": {
+      "id": "6ad3e8fbf81a3c77f72fdc72",
+      "first_name": "Luis",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": 5.0,
+      "city": "Valence",
+      "price_per_round": 20.0
+    },
+    "replies_count": 0,
+    "is_mine": true,
+    "has_replied": false,
+    "replies": []
+  },
+  "announcement_reply": {
+    "id": "6ad3e8fcf81a3c77f72fdc79",
+    "kind": "fight",
+    "style": "muay_thai",
+    "city": "Valence",
+    "level": "amateur",
+    "weight_class": "lightweight",
+    "scheduled_for": "2026-11-06T21:30:36.069000+00:00",
+    "message": "Adversaire cherché pour un gala amateur, 3 x 2 min.",
+    "fighter_name": "Yanis K.",
+    "fighter_record": "8-2-0",
+    "weight_kg": 63.5,
+    "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "video_provider": "youtube",
+    "status": "open",
+    "created_at": "2026-10-17T21:30:36.072000+00:00",
+    "expires_at": "2026-11-06T21:30:36.069000+00:00",
+    "author": {
+      "id": "6ad3e8fbf81a3c77f72fdc72",
+      "first_name": "Luis",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": 5.0,
+      "city": "Valence",
+      "price_per_round": 20.0
+    },
+    "replies_count": 1,
+    "is_mine": false,
+    "has_replied": true,
+    "replies": null
+  },
+  "announcements_list": {
+    "items": [
+      {
+        "id": "6ad3e8fcf81a3c77f72fdc79",
+        "kind": "fight",
+        "style": "muay_thai",
+        "city": "Valence",
+        "level": "amateur",
+        "weight_class": "lightweight",
+        "scheduled_for": "2026-11-06T21:30:36.069000+00:00",
+        "message": "Adversaire cherché pour un gala amateur, 3 x 2 min.",
+        "fighter_name": "Yanis K.",
+        "fighter_record": "8-2-0",
+        "weight_kg": 63.5,
+        "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "video_provider": "youtube",
+        "status": "open",
+        "created_at": "2026-10-17T21:30:36.072000+00:00",
+        "expires_at": "2026-11-06T21:30:36.069000+00:00",
+        "author": {
+          "id": "6ad3e8fbf81a3c77f72fdc72",
+          "first_name": "Luis",
+          "last_name": "Dupont",
+          "avatar_url": null,
+          "average_rating": 5.0,
+          "city": "Valence",
+          "price_per_round": 20.0
+        },
+        "replies_count": 1,
+        "is_mine": false,
+        "has_replied": true,
+        "replies": null
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20
+  },
+  "announcement_detail_owner": {
+    "id": "6ad3e8fcf81a3c77f72fdc79",
+    "kind": "fight",
+    "style": "muay_thai",
+    "city": "Valence",
+    "level": "amateur",
+    "weight_class": "lightweight",
+    "scheduled_for": "2026-11-06T21:30:36.069000+00:00",
+    "message": "Adversaire cherché pour un gala amateur, 3 x 2 min.",
+    "fighter_name": "Yanis K.",
+    "fighter_record": "8-2-0",
+    "weight_kg": 63.5,
+    "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "video_provider": "youtube",
+    "status": "open",
+    "created_at": "2026-10-17T21:30:36.072000+00:00",
+    "expires_at": "2026-11-06T21:30:36.069000+00:00",
+    "author": {
+      "id": "6ad3e8fbf81a3c77f72fdc72",
+      "first_name": "Luis",
+      "last_name": "Dupont",
+      "avatar_url": null,
+      "average_rating": 5.0,
+      "city": "Valence",
+      "price_per_round": 20.0
+    },
+    "replies_count": 1,
+    "is_mine": true,
+    "has_replied": false,
+    "replies": [
+      {
+        "id": "6ad3e8fcf81a3c77f72fdc7a",
+        "message": "Mon élève fait 63 kg, 6 combats, dispo à cette date.",
+        "created_at": "2026-10-17T21:30:36.074000+00:00",
+        "author": {
+          "id": "6ad3e8fbf81a3c77f72fdc73",
+          "first_name": "Ana",
+          "last_name": "Dupont",
+          "avatar_url": null,
+          "average_rating": null,
+          "city": null,
+          "price_per_round": null
+        }
+      }
+    ]
+  },
   "payments_history": {
     "items": [
       {

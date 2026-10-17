@@ -249,3 +249,68 @@ export interface PayoutStatus {
   /** `false` si la plateforme elle-même n'a pas de clé Stripe. */
   stripeConfigured: boolean;
 }
+
+/** Ce qu'une annonce cherche : un partenaire d'entraînement, ou un adversaire. */
+export type AnnouncementKind = 'sparring' | 'fight';
+
+export type AnnouncementStatus = 'open' | 'closed';
+
+/** Réponse à une annonce, visible de son seul auteur. */
+export interface AnnouncementReply {
+  id: string;
+  message: string;
+  createdAt: string | null;
+  author: UserSummary | null;
+}
+
+/**
+ * Une annonce : « je cherche un sparring », « je cherche un adversaire ».
+ *
+ * Les champs `fighter*` et `weightKg` ne concernent que les combats : un coach
+ * peut y décrire l'élève pour qui il cherche un adversaire.
+ */
+export interface Announcement {
+  id: string;
+  kind: AnnouncementKind;
+  style: SparringStyle;
+  city: string;
+  level: SparringLevel | null;
+  weightClass: WeightClass | null;
+  scheduledFor: string | null;
+  message: string;
+  fighterName: string | null;
+  fighterRecord: string | null;
+  weightKg: number | null;
+  videoUrl: string | null;
+  videoProvider: VideoProvider | null;
+  status: AnnouncementStatus;
+  createdAt: string | null;
+  expiresAt: string | null;
+  author: UserSummary | null;
+  repliesCount: number;
+  isMine: boolean;
+  hasReplied: boolean;
+  /** Présent seulement pour l'auteur, sur le détail d'une annonce. */
+  replies: AnnouncementReply[] | null;
+}
+
+export interface AnnouncementFilters {
+  kind: AnnouncementKind | null;
+  style: SparringStyle | null;
+  city: string;
+}
+
+/** Ce que l'écran de publication envoie. */
+export interface AnnouncementDraft {
+  kind: AnnouncementKind;
+  style: SparringStyle;
+  city: string;
+  level: SparringLevel | null;
+  weightClass: WeightClass | null;
+  scheduledFor: string | null;
+  message: string;
+  fighterName: string | null;
+  fighterRecord: string | null;
+  weightKg: number | null;
+  videoUrl: string | null;
+}

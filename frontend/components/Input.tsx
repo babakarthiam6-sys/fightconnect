@@ -116,6 +116,9 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body,
     color: COLORS.text,
     flex: 1,
+    // Sur le web, le navigateur ajoute son propre cadre au champ actif, par-dessus
+    // la bordure orange qui le signale déjà.
+    outlineWidth: 0,
     paddingVertical: SPACING.md,
   },
   inputMultiline: { paddingVertical: 0, textAlignVertical: 'top' },

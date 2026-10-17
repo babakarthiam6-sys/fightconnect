@@ -1,4 +1,8 @@
 import type {
+  Announcement,
+  AnnouncementKind,
+  AnnouncementReply,
+  AnnouncementStatus,
   Booking,
   BookingStatus,
   Conversation,
@@ -95,6 +99,9 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback
 }
 
 const LEVELS = ['beginner', 'amateur', 'pro'] as const;
+
+const ANNOUNCEMENT_KINDS = ['sparring', 'fight'] as const;
+const ANNOUNCEMENT_STATUSES = ['open', 'closed'] as const;
 
 const VIDEO_KINDS = ['fight', 'sparring', 'shadow'] as const;
 const VIDEO_PROVIDERS = ['youtube', 'tiktok', 'instagram'] as const;
@@ -398,6 +405,61 @@ export function normalizePaymentIntent(input: unknown): PaymentIntent {
  * Accepte `[...]`, `{ items: [...] }`, `{ results: [...] }` ou `{ data: [...] }`
  * — les trois conventions FastAPI les plus courantes.
  */
+export function normalizeAnnouncementReply(input: unknown): AnnouncementReply {
+  const raw = asRecord(input);
+  return {
+    id: normalizeId(raw),
+    message: str(raw, ['message', 'content']),
+    createdAt: optionalStr(raw, ['created_at', 'createdAt']),
+    author: normalizeUserSummary(raw.author),
+  };
+}
+
+/**
+ * Une annonce telle que l'app la manipule.
+ *
+ * `replies` reste `null` quand le serveur ne l'envoie pas (liste, ou lecteur
+ * qui n'est pas l'auteur) : une liste vide voudrait dire « personne n'a
+ * répondu », ce qui serait faux.
+ */
+export function normalizeAnnouncement(input: unknown): Announcement {
+  const raw = asRecord(input);
+  const provider = optionalStr(raw, ['video_provider', 'videoProvider']);
+  return {
+    id: normalizeId(raw),
+    kind: oneOf<AnnouncementKind>(raw.kind, ANNOUNCEMENT_KINDS, 'sparring'),
+    style: oneOf<SparringStyle>(raw.style, STYLES, 'boxing'),
+    city: str(raw, ['city']),
+    level: raw.level == null ? null : oneOf<SparringLevel>(raw.level, LEVELS, 'beginner'),
+    weightClass:
+      raw.weight_class == null && raw.weightClass == null
+        ? null
+        : oneOf<WeightClass>(
+            pick(raw, ['weight_class', 'weightClass']),
+            WEIGHT_CLASSES,
+            'middleweight',
+          ),
+    scheduledFor: optionalStr(raw, ['scheduled_for', 'scheduledFor']),
+    message: str(raw, ['message']),
+    fighterName: optionalStr(raw, ['fighter_name', 'fighterName']),
+    fighterRecord: optionalStr(raw, ['fighter_record', 'fighterRecord']),
+    weightKg: optionalNum(raw, ['weight_kg', 'weightKg']),
+    videoUrl: optionalStr(raw, ['video_url', 'videoUrl']),
+    videoProvider:
+      provider && (VIDEO_PROVIDERS as readonly string[]).includes(provider)
+        ? (provider as VideoProvider)
+        : null,
+    status: oneOf<AnnouncementStatus>(raw.status, ANNOUNCEMENT_STATUSES, 'open'),
+    createdAt: optionalStr(raw, ['created_at', 'createdAt']),
+    expiresAt: optionalStr(raw, ['expires_at', 'expiresAt']),
+    author: normalizeUserSummary(raw.author),
+    repliesCount: num(raw, ['replies_count', 'repliesCount'], 0),
+    isMine: bool(raw, ['is_mine', 'isMine']),
+    hasReplied: bool(raw, ['has_replied', 'hasReplied']),
+    replies: Array.isArray(raw.replies) ? raw.replies.map(normalizeAnnouncementReply) : null,
+  };
+}
+
 export function extractList(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;
   const raw = asRecord(payload);

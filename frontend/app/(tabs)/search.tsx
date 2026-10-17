@@ -14,6 +14,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import Button from '@/components/Button';
+import ChipGroup from '@/components/ChipGroup';
 import EmptyState from '@/components/EmptyState';
 import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -232,42 +233,6 @@ export default function SearchScreen() {
   );
 }
 
-interface ChipGroupProps {
-  label: string;
-  options: string[];
-  labels: Record<string, string>;
-  selected: string | null;
-  onSelect: (value: string | null) => void;
-}
-
-function ChipGroup({ label, options, labels, selected, onSelect }: ChipGroupProps) {
-  return (
-    <View style={styles.group}>
-      <Text style={styles.groupLabel}>{label}</Text>
-      <View style={styles.chips}>
-        {options.map((option) => {
-          const isActive = selected === option;
-          return (
-            <Pressable
-              key={option}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isActive }}
-              // Réappuyer sur un filtre actif le retire : c'est le geste attendu,
-              // et cela évite d'avoir à revenir sur « Effacer » pour un seul critère.
-              onPress={() => onSelect(isActive ? null : option)}
-              style={[styles.chip, isActive && styles.chipActive]}
-            >
-              <Text style={[styles.chipLabel, isActive && styles.chipLabelActive]}>
-                {labels[option]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { backgroundColor: COLORS.background, flex: 1 },
   header: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
@@ -331,18 +296,4 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     padding: SPACING.lg,
   },
-  group: { gap: SPACING.sm },
-  groupLabel: { ...TYPOGRAPHY.title, color: COLORS.text },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
-  chip: {
-    backgroundColor: COLORS.surface,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-  },
-  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  chipLabel: { ...TYPOGRAPHY.body, color: COLORS.textMuted },
-  chipLabelActive: { color: COLORS.textInverse, fontWeight: '600' },
 });
