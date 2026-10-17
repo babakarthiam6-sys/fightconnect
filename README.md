@@ -39,14 +39,14 @@ publication) est prête dans [`docs/play-store/`](docs/play-store/FICHE.md).
 
 ## Qualité
 
-341 tests automatisés, rejoués par GitHub Actions à chaque push :
+380 tests automatisés, rejoués par GitHub Actions à chaque push :
 
-- **frontend** — 167 tests (Jest + Testing Library), ESLint, vérification des
+- **frontend** — 179 tests (Jest + Testing Library), ESLint, vérification des
   types, bundles Metro Android et web, et contrôle que le bundle web démarre
   réellement dans un navigateur.
-- **backend** — 174 tests (pytest) : 164 sur base simulée, 10 d'intégration sur un vrai
+- **backend** — 201 tests (pytest) : 189 sur base simulée, 12 d'intégration sur un vrai
   MongoDB fourni par la CI. Stripe est doublé partout.
 
-Parmi eux, 16 tests de contrat font tourner les normaliseurs du mobile sur des
+Parmi eux, 19 tests de contrat font tourner les normaliseurs du mobile sur des
 réponses réellement capturées sur l'API : un champ renommé côté serveur casse un
 test au lieu de casser l'application.

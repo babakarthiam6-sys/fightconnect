@@ -18,11 +18,11 @@ qui n'existe plus. En cas de doute entre la carte et le code, **le code fait foi
 
 ```bash
 # Backend (depuis backend/)
-pytest                     # 174 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
+pytest                     # 201 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
-npm test                   # 167 tests
+npm test                   # 179 tests
 npm run typecheck && npm run lint
 npm run build:web           # export web + thème sombre de la coquille HTML
 ```
@@ -39,6 +39,12 @@ round) et devient visible dans la recherche. On consulte une fiche, on envoie un
 refuse. La commission de la plateforme est prélevée sur sa part, jamais ajoutée
 au total payé. Une discussion permet de caler les détails ; elle est modérée.
 
+On peut aussi publier une **annonce** (« je cherche un sparring », « je cherche
+un adversaire » pour un combat) à laquelle les autres répondent d'un mot.
+L'auteur choisit parmi les réponses ; la suite passe par la discussion et, pour
+un sparring payant, par une demande classique depuis le profil. Aucun argent
+ne circule par une annonce.
+
 ## Invariants à ne pas casser
 
 - L'application web est montée **après** toutes les routes de l'API. Montée avant,
@@ -52,8 +58,8 @@ au total payé. Une discussion permet de caler les détails ; elle est modérée
   un double débit.
 - La modération ne bloque jamais la publication d'un **avis** : sans clé OpenAI,
   une heuristique locale prend le relais. Elle bloque en revanche un **message**
-  signalé : un avis perdu se réécrit, une transaction sortie de la plateforme ne
-  revient pas.
+  signalé, et de même une **annonce** ou une réponse à une annonce : un avis
+  perdu se réécrit, une transaction sortie de la plateforme ne revient pas.
 - Le point d'entrée WebSocket reçoit la base **par la dépendance**, jamais par un
   appel direct à `get_database()`. Sans cela il n'est pas testable, et il ne
   l'était pas.

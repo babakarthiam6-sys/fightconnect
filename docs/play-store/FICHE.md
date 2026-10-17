@@ -36,6 +36,11 @@ Boxe anglaise, muay-thaï, kickboxing, MMA, JJB, lutte, karaté, judo : trouve q
 • Notes et avis laissés après chaque séance : tu sais avec qui tu montes
 • Galerie vidéo : regarde ses combats, ses sparrings et son shadow boxing
 
+📣 PUBLIE UNE ANNONCE
+• « Je cherche un sparring » ou « je cherche un adversaire » pour un gala ou un interclub
+• Coach ? Décris ton combattant : poids, palmarès, vidéo
+• Reçois des réponses, consulte les profils et choisis ton partenaire
+
 📅 RÉSERVE SIMPLEMENT
 • Choisis une date et un nombre de rounds
 • Le prix est affiché avant l'envoi de la demande, sans frais cachés
@@ -64,7 +69,7 @@ FightConnect s'adresse aux sportifs majeurs. Le sparring est un sport de contact
 |---|---|
 | Icône de l'application (512 × 512) | `icone-512.png` |
 | Image de présentation (1024 × 500) | `banniere-1024x500.png` |
-| Captures d'écran du téléphone (2 à 8) | `captures/1.png` à `captures/6.png`, dans l'ordre |
+| Captures d'écran du téléphone (2 à 8) | `captures/1.png` à `captures/7.png`, dans l'ordre |
 
 Les captures viennent de la vraie application, avec des profils de démonstration.
 
@@ -162,7 +167,7 @@ l'utilisateur rend lui-même visible ne l'est pas non plus.
 | Informations financières › Historique des achats | séances payées, montants | Facultatif | Fonctionnalité de l'appli |
 | Messages › Autres messages dans l'appli | discussions entre utilisateurs | Facultatif | Fonctionnalité de l'appli, Prévention des fraudes et sécurité |
 | Photos et vidéos | — | **Non collecté** (les vidéos sont de simples liens) | — |
-| Contenu de l'appli › Autres contenus générés par l'utilisateur | présentation, avis, liens vidéo | Facultatif | Fonctionnalité de l'appli |
+| Contenu de l'appli › Autres contenus générés par l'utilisateur | présentation, avis, liens vidéo, annonces et réponses aux annonces | Facultatif | Fonctionnalité de l'appli, Prévention des fraudes et sécurité |
 | Identifiants de l'appareil ou autres | jeton de notification | Facultatif | Fonctionnalité de l'appli |
 | Position | — | **Non collecté** | — |
 
