@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   FlatList,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useToast } from 'react-native-toast-notifications';
@@ -90,16 +90,22 @@ export default function ConversationScreen() {
   }, [draft, id, send, toast]);
 
   const mine = useMemo(() => user?.id ?? '', [user]);
+  const headerHeight = useHeaderHeight();
 
   if (isLoading) return <LoadingSpinner fullScreen label="Chargement de la conversation…" />;
   if (error) return <ErrorView error={error} onRetry={load} />;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
+      {/* Android aussi : depuis le SDK 54, l'app est bord à bord et Android ne
+          redimensionne plus la fenêtre quand le clavier s'ouvre. Sans cette
+          marge, le champ de saisie resterait caché sous le clavier. Le décalage
+          est la hauteur réelle de l'en-tête, barre d'état comprise : une valeur
+          fixe ne tombait juste que sur certains iPhone. */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={90}
+        behavior="padding"
+        keyboardVerticalOffset={headerHeight}
       >
         {!isConnected ? (
           <View style={styles.bandeau}>
@@ -200,7 +206,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     opacity: 0.8,
   },
-  heureAutre: { ...TYPOGRAPHY.caption, alignSelf: 'flex-end', color: COLORS.textMuted, fontSize: 10 },
+  heureAutre: {
+    ...TYPOGRAPHY.caption,
+    alignSelf: 'flex-end',
+    color: COLORS.textMuted,
+    fontSize: 10,
+  },
   composeur: {
     alignItems: 'flex-end',
     borderTopColor: COLORS.border,

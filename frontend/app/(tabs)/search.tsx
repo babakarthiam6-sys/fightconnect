@@ -4,12 +4,12 @@ import {
   Modal,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -92,7 +92,7 @@ export default function SearchScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <OfflineBanner visible={fromCache} />
 
       <View style={styles.header}>

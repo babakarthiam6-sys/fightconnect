@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useToast } from 'react-native-toast-notifications';
@@ -78,141 +78,154 @@ export default function SignupScreen() {
   }, [dischargeAccepted, email, firstName, lastName, password, signup, toast]);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.title}>Créer un compte</Text>
-        <Text style={styles.subtitle}>Quelques informations et vous pouvez sparrer.</Text>
+    <SafeAreaView style={styles.container}>
+      {/* `padding` sur Android aussi : l'app étant bord à bord depuis le SDK 54,
+          Android ne redimensionne plus la fenêtre à l'ouverture du clavier. */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.title}>Créer un compte</Text>
+          <Text style={styles.subtitle}>Quelques informations et vous pouvez sparrer.</Text>
 
-        <View style={styles.row}>
-          <View style={styles.rowItem}>
-            <Input
-              label="Prénom"
-              value={firstName}
-              onChangeText={setFirstName}
-              error={errors.firstName}
-              placeholder="Jean"
-              autoComplete="given-name"
-              testID="signup-firstname"
-            />
-          </View>
-          <View style={styles.rowItem}>
-            <Input
-              label="Nom"
-              value={lastName}
-              onChangeText={setLastName}
-              error={errors.lastName}
-              placeholder="Dupont"
-              autoComplete="family-name"
-              testID="signup-lastname"
-            />
-          </View>
-        </View>
-
-        <Input
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          error={errors.email}
-          placeholder="vous@exemple.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          testID="signup-email"
-        />
-
-        <Input
-          label="Mot de passe"
-          value={password}
-          onChangeText={setPassword}
-          error={errors.password}
-          hint="8 caractères minimum, une majuscule et un chiffre."
-          placeholder="••••••••"
-          secure
-          autoCapitalize="none"
-          autoComplete="password-new"
-          testID="signup-password"
-        />
-
-        {password.length > 0 ? (
-          <View style={styles.strengthRow}>
-            <View style={styles.strengthTrack}>
-              <View
-                style={[
-                  styles.strengthFill,
-                  {
-                    width: `${((strength.score + 1) / 4) * 100}%`,
-                    backgroundColor: STRENGTH_COLORS[strength.score],
-                  },
-                ]}
+          <View style={styles.row}>
+            <View style={styles.rowItem}>
+              <Input
+                label="Prénom"
+                value={firstName}
+                onChangeText={setFirstName}
+                error={errors.firstName}
+                placeholder="Jean"
+                autoComplete="given-name"
+                testID="signup-firstname"
               />
             </View>
-            <Text style={[styles.strengthLabel, { color: STRENGTH_COLORS[strength.score] }]}>
-              {strength.label}
+            <View style={styles.rowItem}>
+              <Input
+                label="Nom"
+                value={lastName}
+                onChangeText={setLastName}
+                error={errors.lastName}
+                placeholder="Dupont"
+                autoComplete="family-name"
+                testID="signup-lastname"
+              />
+            </View>
+          </View>
+
+          <Input
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            error={errors.email}
+            placeholder="vous@exemple.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            testID="signup-email"
+          />
+
+          <Input
+            label="Mot de passe"
+            value={password}
+            onChangeText={setPassword}
+            error={errors.password}
+            hint="8 caractères minimum, une majuscule et un chiffre."
+            placeholder="••••••••"
+            secure
+            autoCapitalize="none"
+            autoComplete="password-new"
+            testID="signup-password"
+          />
+
+          {password.length > 0 ? (
+            <View style={styles.strengthRow}>
+              <View style={styles.strengthTrack}>
+                <View
+                  style={[
+                    styles.strengthFill,
+                    {
+                      width: `${((strength.score + 1) / 4) * 100}%`,
+                      backgroundColor: STRENGTH_COLORS[strength.score],
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={[styles.strengthLabel, { color: STRENGTH_COLORS[strength.score] }]}>
+                {strength.label}
+              </Text>
+            </View>
+          ) : null}
+
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: dischargeAccepted }}
+            onPress={() => setDischargeAccepted(!dischargeAccepted)}
+            style={styles.checkboxRow}
+          >
+            <View style={[styles.checkbox, dischargeAccepted && styles.checkboxChecked]}>
+              {dischargeAccepted ? (
+                <Ionicons name="checkmark" size={16} color={COLORS.textInverse} />
+              ) : null}
+            </View>
+            <Text style={styles.checkboxLabel}>
+              J’accepte la{' '}
+              <Text
+                style={styles.link}
+                onPress={() => router.push('/(auth)/discharge')}
+                suppressHighlighting
+              >
+                décharge de responsabilité
+              </Text>{' '}
+              liée à la pratique des sports de combat.
             </Text>
+          </Pressable>
+          {errors.dischargeAccepted ? (
+            <Text style={styles.error}>{errors.dischargeAccepted}</Text>
+          ) : null}
+
+          <Button
+            label="Créer mon compte"
+            onPress={handleSubmit}
+            loading={isSubmitting}
+            style={styles.submit}
+            testID="signup-submit"
+          />
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Déjà inscrit ?</Text>
+            <Link href="/(auth)/login" style={styles.link}>
+              Se connecter
+            </Link>
           </View>
-        ) : null}
-
-        <Pressable
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: dischargeAccepted }}
-          onPress={() => setDischargeAccepted(!dischargeAccepted)}
-          style={styles.checkboxRow}
-        >
-          <View style={[styles.checkbox, dischargeAccepted && styles.checkboxChecked]}>
-            {dischargeAccepted ? (
-              <Ionicons name="checkmark" size={16} color={COLORS.textInverse} />
-            ) : null}
-          </View>
-          <Text style={styles.checkboxLabel}>
-            J’accepte la{' '}
-            <Text
-              style={styles.link}
-              onPress={() => router.push('/(auth)/discharge')}
-              suppressHighlighting
-            >
-              décharge de responsabilité
-            </Text>{' '}
-            liée à la pratique des sports de combat.
-          </Text>
-        </Pressable>
-        {errors.dischargeAccepted ? (
-          <Text style={styles.error}>{errors.dischargeAccepted}</Text>
-        ) : null}
-
-        <Button
-          label="Créer mon compte"
-          onPress={handleSubmit}
-          loading={isSubmitting}
-          style={styles.submit}
-          testID="signup-submit"
-        />
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Déjà inscrit ?</Text>
-          <Link href="/(auth)/login" style={styles.link}>
-            Se connecter
-          </Link>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { backgroundColor: COLORS.background, flex: 1 },
+  flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: SPACING.xl },
   title: { ...TYPOGRAPHY.display, color: COLORS.text },
-  subtitle: { ...TYPOGRAPHY.body, color: COLORS.textMuted, marginBottom: SPACING.xl, marginTop: SPACING.xs },
+  subtitle: {
+    ...TYPOGRAPHY.body,
+    color: COLORS.textMuted,
+    marginBottom: SPACING.xl,
+    marginTop: SPACING.xs,
+  },
   row: { flexDirection: 'row', gap: SPACING.md },
   rowItem: { flex: 1 },
-  strengthRow: { alignItems: 'center', flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg, marginTop: -SPACING.sm },
+  strengthRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+    marginTop: -SPACING.sm,
+  },
   strengthTrack: {
     backgroundColor: COLORS.border,
     borderRadius: RADIUS.pill,

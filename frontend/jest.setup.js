@@ -6,6 +6,12 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// Zone sûre (encoches, barres système) : le mock officiel renvoie des marges
+// nulles, sans fournisseur à monter dans chaque test.
+jest.mock('react-native-safe-area-context', () =>
+  require('react-native-safe-area-context/jest/mock').default,
+);
+
 jest.mock('@react-native-community/netinfo', () =>
   require('@react-native-community/netinfo/jest/netinfo-mock'),
 );

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useToast } from 'react-native-toast-notifications';
 
@@ -70,7 +71,7 @@ export default function PayBookingScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <View style={styles.headerRow}>

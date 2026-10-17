@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import Button from '@/components/Button';
@@ -60,7 +61,7 @@ export default function DischargeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.intro}>
           Lisez attentivement ces conditions. Elles doivent être acceptées pour créer un compte et
@@ -86,7 +87,7 @@ export default function DischargeScreen() {
         <Button label="J’accepte" onPress={accept} testID="discharge-accept" />
         <Button label="Refuser" onPress={decline} variant="ghost" />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

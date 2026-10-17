@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -27,45 +28,47 @@ export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.header}>
-        <View style={styles.emblem}>
-          <Ionicons name="pulse" size={40} color={COLORS.primary} />
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <View style={styles.emblem}>
+            <Ionicons name="pulse" size={40} color={COLORS.primary} />
+          </View>
+
+          <Text style={styles.logo}>
+            Fight<Text style={styles.logoAccent}>Connect</Text>
+          </Text>
+          <Text style={styles.tagline}>Trouve ton partenaire de sparring</Text>
         </View>
 
-        <Text style={styles.logo}>
-          Fight<Text style={styles.logoAccent}>Connect</Text>
-        </Text>
-        <Text style={styles.tagline}>Trouve ton partenaire de sparring</Text>
-      </View>
+        <View style={styles.features}>
+          {FEATURES.map((feature) => (
+            <View key={feature.icon} style={styles.feature}>
+              <Ionicons name={feature.icon} size={22} color={COLORS.primary} />
+              <Text style={styles.featureText}>{feature.text}</Text>
+            </View>
+          ))}
+        </View>
 
-      <View style={styles.features}>
-        {FEATURES.map((feature) => (
-          <View key={feature.icon} style={styles.feature}>
-            <Ionicons name={feature.icon} size={22} color={COLORS.primary} />
-            <Text style={styles.featureText}>{feature.text}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.actions}>
-        <Button
-          label="Créer un compte"
-          onPress={() => router.push('/(auth)/signup')}
-          testID="welcome-signup"
-        />
-        <Button
-          label="Se connecter"
-          variant="outline"
-          onPress={() => router.push('/(auth)/login')}
-          testID="welcome-login"
-        />
-      </View>
-    </ScrollView>
+        <View style={styles.actions}>
+          <Button
+            label="Créer un compte"
+            onPress={() => router.push('/(auth)/signup')}
+            testID="welcome-signup"
+          />
+          <Button
+            label="Se connecter"
+            variant="outline"
+            onPress={() => router.push('/(auth)/login')}
+            testID="welcome-login"
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import Avatar from '@/components/Avatar';
@@ -45,7 +46,7 @@ export default function ConversationsScreen() {
   if (isLoading) return <LoadingSpinner fullScreen label="Chargement des messages…" />;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       {error ? (
         <ErrorView error={error} onRetry={load} />
       ) : (

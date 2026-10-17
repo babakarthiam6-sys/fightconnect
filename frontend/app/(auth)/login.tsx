@@ -1,12 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { useToast } from 'react-native-toast-notifications';
 
@@ -46,68 +40,70 @@ export default function LoginScreen() {
   }, [email, login, password, toast]);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={styles.logo}>
-            Fight<Text style={styles.logoAccent}>Connect</Text>
-          </Text>
-          <Text style={styles.tagline}>Trouvez votre prochain partenaire de sparring.</Text>
-        </View>
+    <SafeAreaView style={styles.container}>
+      {/* `padding` sur Android aussi : l'app étant bord à bord depuis le SDK 54,
+          Android ne redimensionne plus la fenêtre à l'ouverture du clavier. */}
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <Text style={styles.logo}>
+              Fight<Text style={styles.logoAccent}>Connect</Text>
+            </Text>
+            <Text style={styles.tagline}>Trouvez votre prochain partenaire de sparring.</Text>
+          </View>
 
-        <Input
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          error={errors.email}
-          placeholder="vous@exemple.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          textContentType="emailAddress"
-          testID="login-email"
-        />
+          <Input
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            error={errors.email}
+            placeholder="vous@exemple.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            textContentType="emailAddress"
+            testID="login-email"
+          />
 
-        <Input
-          label="Mot de passe"
-          value={password}
-          onChangeText={setPassword}
-          error={errors.password}
-          placeholder="Votre mot de passe"
-          secure
-          autoCapitalize="none"
-          autoComplete="password"
-          textContentType="password"
-          testID="login-password"
-        />
+          <Input
+            label="Mot de passe"
+            value={password}
+            onChangeText={setPassword}
+            error={errors.password}
+            placeholder="Votre mot de passe"
+            secure
+            autoCapitalize="none"
+            autoComplete="password"
+            textContentType="password"
+            testID="login-password"
+          />
 
-        <Button
-          label="Se connecter"
-          onPress={handleSubmit}
-          loading={isSubmitting}
-          testID="login-submit"
-        />
+          <Button
+            label="Se connecter"
+            onPress={handleSubmit}
+            loading={isSubmitting}
+            testID="login-submit"
+          />
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Pas encore de compte ?</Text>
-          <Link href="/(auth)/signup" style={styles.link}>
-            Créer un compte
-          </Link>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Pas encore de compte ?</Text>
+            <Link href="/(auth)/signup" style={styles.link}>
+              Créer un compte
+            </Link>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { backgroundColor: COLORS.background, flex: 1 },
+  flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: SPACING.xl },
   header: { marginBottom: SPACING.xxl },
   logo: { ...TYPOGRAPHY.display, color: COLORS.text, fontSize: 34 },

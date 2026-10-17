@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useToast } from 'react-native-toast-notifications';
 
@@ -81,7 +82,7 @@ export default function BookingsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Mes réservations</Text>
       </View>
