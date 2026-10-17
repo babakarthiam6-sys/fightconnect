@@ -197,6 +197,42 @@ async def capture(mongodb_uri: str | None, mongodb_db: str) -> dict[str, Any]:
             await client.get("/payouts/status", headers=entete_luis)
         ).json()
 
+        # Annonces : un coach publie pour son élève, Ana répond, chacun voit la
+        # forme qui lui revient (les réponses ne sont montrées qu'à l'auteur).
+        captured["announcement_create"] = (
+            await client.post(
+                "/announcements",
+                json={
+                    "kind": "fight",
+                    "style": "muay_thai",
+                    "city": "Valence",
+                    "level": "amateur",
+                    "weight_class": "lightweight",
+                    "scheduled_for": (datetime.now(timezone.utc) + timedelta(days=20)).isoformat(),
+                    "message": "Adversaire cherché pour un gala amateur, 3 x 2 min.",
+                    "fighter_name": "Yanis K.",
+                    "fighter_record": "8-2-0",
+                    "weight_kg": 63.5,
+                    "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                },
+                headers=entete_luis,
+            )
+        ).json()
+        annonce_id = captured["announcement_create"]["id"]
+        captured["announcement_reply"] = (
+            await client.post(
+                f"/announcements/{annonce_id}/replies",
+                json={"message": "Mon élève fait 63 kg, 6 combats, dispo à cette date."},
+                headers=entete_ana,
+            )
+        ).json()
+        captured["announcements_list"] = (
+            await client.get("/announcements", headers=entete_ana)
+        ).json()
+        captured["announcement_detail_owner"] = (
+            await client.get(f"/announcements/{annonce_id}", headers=entete_luis)
+        ).json()
+
         # Stripe n'est pas sollicité ici : le paiement abouti est inséré
         # directement, uniquement pour capturer la forme de l'historique.
         await database.payments.insert_one(

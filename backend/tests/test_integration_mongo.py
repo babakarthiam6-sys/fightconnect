@@ -348,3 +348,91 @@ async def test_un_double_appui_n_ajoute_la_video_qu_une_fois(client):
 
     profil = await client.get("/api/v1/auth/me", headers=luis["headers"])
     assert len(profil.json()["videos"]) == 1
+
+
+async def test_dix_reponses_simultanees_a_une_annonce_n_en_font_qu_une(client, database, monkeypatch):
+    """Même course que pour les demandes, même arbitre : l'index unique.
+
+    La lecture préalable laisse passer les dix ; seul l'index n'en garde qu'une,
+    et le compteur ne doit être incrémenté que pour celle-là.
+    """
+
+    async def sans_notification(*_args, **_kwargs):
+        return False
+
+    monkeypatch.setattr("app.routers.announcements.send_push", sans_notification)
+    karim = await register(client, "karim@exemple.com", "Karim")
+    luis = await make_partner(client)
+    publiee = await client.post(
+        "/api/v1/announcements",
+        json={
+            "kind": "sparring",
+            "style": "boxing",
+            "city": "Valence",
+            "message": "Je cherche un partenaire pour 4 rounds le jeudi soir.",
+        },
+        headers=karim["headers"],
+    )
+    url = f"/api/v1/announcements/{publiee.json()['id']}/replies"
+
+    reponses = await asyncio.gather(
+        *(client.post(url, json={"message": "Partant !"}, headers=luis["headers"]) for _ in range(10)),
+        return_exceptions=True,
+    )
+
+    for reponse in reponses:
+        assert not isinstance(reponse, Exception), reponse
+        assert reponse.status_code == 200, reponse.text
+    assert await database.announcement_replies.count_documents({}) == 1
+    vue = await client.get(f"/api/v1/announcements/{publiee.json()['id']}", headers=karim["headers"])
+    assert vue.json()["replies_count"] == 1
+
+
+async def test_les_annonces_et_leurs_dates_sur_le_vrai_moteur(client, database):
+    """Le vrai MongoDB rend des dates sans fuseau, mongomock celles qu'on lui donne.
+
+    Comparer une date naïve à une date avec fuseau lève une exception en Python :
+    seul le vrai moteur dit si l'expiration et la réponse fonctionnent.
+    """
+    karim = await register(client, "karim@exemple.com", "Karim")
+    luis = await make_partner(client)
+    dans_dix_jours = (datetime.now(timezone.utc) + timedelta(days=10)).isoformat()
+
+    datee = await client.post(
+        "/api/v1/announcements",
+        json={
+            "kind": "fight",
+            "style": "muay_thai",
+            "city": "Valence",
+            "scheduled_for": dans_dix_jours,
+            "message": "Adversaire cherché pour un gala amateur, 70 kg.",
+        },
+        headers=karim["headers"],
+    )
+    assert datee.status_code == 201, datee.text
+    expiree = await client.post(
+        "/api/v1/announcements",
+        json={"kind": "sparring", "style": "boxing", "city": "Valence", "message": "Sparring technique le samedi matin."},
+        headers=karim["headers"],
+    )
+    await database.announcements.update_one(
+        {"_id": ObjectId(expiree.json()["id"])},
+        {"$set": {"expires_at": datetime.now(timezone.utc) - timedelta(minutes=1)}},
+    )
+
+    liste = (await client.get("/api/v1/announcements", headers=luis["headers"])).json()
+    assert [item["id"] for item in liste["items"]] == [datee.json()["id"]]
+    assert liste["items"][0]["scheduled_for"].endswith("+00:00")
+
+    reponse = await client.post(
+        f"/api/v1/announcements/{datee.json()['id']}/replies",
+        json={"message": "Mon élève fait 70 kg, 5 combats."},
+        headers=luis["headers"],
+    )
+    assert reponse.status_code == 200, reponse.text
+    refus = await client.post(
+        f"/api/v1/announcements/{expiree.json()['id']}/replies",
+        json={"message": "Partant !"},
+        headers=luis["headers"],
+    )
+    assert refus.status_code == 409

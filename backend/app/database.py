@@ -71,6 +71,20 @@ async def create_indexes(database: AsyncIOMotorDatabase) -> None:
     # Le webhook Stripe retrouve un paiement par son identifiant d'intention.
     await database.payments.create_index("payment_intent_id")
     await database.login_attempts.create_index("email", unique=True)
+    # La liste ne montre que les annonces ouvertes et non expirées, des plus
+    # récentes aux plus anciennes.
+    await database.announcements.create_index(
+        [("status", 1), ("expires_at", 1), ("created_at", -1)]
+    )
+    await database.announcements.create_index([("author_id", 1), ("created_at", -1)])
+    # Une réponse par personne et par annonce. Comme pour les demandes, c'est
+    # l'index qui tranche entre deux envois simultanés, pas une lecture préalable.
+    await database.announcement_replies.create_index(
+        [("announcement_id", 1), ("author_id", 1)],
+        unique=True,
+        name="une_reponse_par_annonce",
+    )
+    await database.announcement_replies.create_index("author_id")
 
 
 async def ping() -> bool:

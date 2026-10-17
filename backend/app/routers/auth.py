@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Response, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.dependencies import CurrentUser, Database
+from app.routers.announcements import delete_user_announcements
 from app.routers.bookings import check_open_payments, has_ended, release_payments
 from app.schemas import (
     LEVELS,
@@ -253,6 +254,7 @@ async def delete_me(database: Database, current_user: CurrentUser) -> Response:
         {"$or": [{"sender_id": user_id}, {"recipient_id": user_id}]}
     )
     await database.login_attempts.delete_many({"email": current_user.get("email")})
+    await delete_user_announcements(database, user_id)
 
     # Le profil emporte avec lui les liens vidéo et le jeton de notification.
     # L'identifiant du compte Connect ne survit que sur les paiements.

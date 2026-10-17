@@ -37,6 +37,18 @@ VIDEO_KINDS = ("fight", "sparring", "shadow")
 # personne ne déroule, et le profil met plus longtemps à s'afficher.
 MAX_VIDEOS = 6
 
+# Une annonce dit ce qu'on cherche : un partenaire d'entraînement, ou un
+# adversaire pour un vrai combat (gala, interclub). Les deux se trouvent par
+# les mêmes critères, mais ne s'abordent pas de la même façon.
+ANNOUNCEMENT_KINDS = ("sparring", "fight")
+
+# Au-delà, une seule personne remplirait la liste à elle seule.
+MAX_OPEN_ANNOUNCEMENTS = 5
+
+# Sans date précise, une annonce disparaît d'elle-même au bout d'un mois : une
+# recherche vieille de trois mois n'est presque jamais encore d'actualité.
+ANNOUNCEMENT_LIFETIME_DAYS = 30
+
 
 class SignupRequest(BaseModel):
     email: EmailStr
@@ -311,3 +323,67 @@ class VideoOrder(BaseModel):
     """Nouvel ordre de la galerie : la première vidéo sert de couverture."""
 
     ids: list[str] = Field(max_length=MAX_VIDEOS)
+
+
+class AnnouncementCreate(BaseModel):
+    """Publication d'une annonce.
+
+    Les champs « combattant » servent au coach qui cherche un adversaire pour
+    l'un de ses élèves : l'annonce décrit alors quelqu'un d'autre que son auteur.
+    """
+
+    kind: str
+    style: str
+    city: str = Field(min_length=2, max_length=80)
+    level: str | None = None
+    weight_class: str | None = None
+    scheduled_for: str | None = None
+    message: str = Field(min_length=10, max_length=600)
+    fighter_name: str | None = Field(default=None, max_length=60)
+    fighter_record: str | None = Field(default=None, max_length=40)
+    weight_kg: float | None = Field(default=None, ge=40, le=160)
+    video_url: str | None = Field(default=None, max_length=500)
+
+
+class AnnouncementReplyCreate(BaseModel):
+    message: str = Field(min_length=2, max_length=300)
+
+
+class AnnouncementReplyOut(BaseModel):
+    id: str
+    message: str
+    created_at: str | None = None
+    author: UserSummary | None = None
+
+
+class AnnouncementOut(BaseModel):
+    id: str
+    kind: str
+    style: str
+    city: str
+    level: str | None = None
+    weight_class: str | None = None
+    scheduled_for: str | None = None
+    message: str
+    fighter_name: str | None = None
+    fighter_record: str | None = None
+    weight_kg: float | None = None
+    video_url: str | None = None
+    video_provider: str | None = None
+    status: str = "open"
+    created_at: str | None = None
+    expires_at: str | None = None
+    author: UserSummary | None = None
+    replies_count: int = 0
+    is_mine: bool = False
+    has_replied: bool = False
+    # Les réponses ne sont montrées qu'à l'auteur de l'annonce : celui qui
+    # répond s'adresse à lui, pas à tous ceux qui passent.
+    replies: list[AnnouncementReplyOut] | None = None
+
+
+class AnnouncementList(BaseModel):
+    items: list[AnnouncementOut]
+    total: int
+    page: int
+    limit: int

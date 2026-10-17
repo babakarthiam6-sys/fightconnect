@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.database import connect, disconnect, ping
 from app.routers import (
+    announcements,
     auth,
     bookings,
     chat,
@@ -55,6 +56,7 @@ def create_app() -> FastAPI:
     )
 
     for router in (
+        announcements.router,
         auth.router,
         partners.router,
         bookings.router,

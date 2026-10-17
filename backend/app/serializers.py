@@ -190,3 +190,46 @@ def serialize_conversation(
         "last_message_at": iso(last_message.get("created_at")),
         "unread": unread,
     }
+
+
+def serialize_announcement(
+    document: dict[str, Any],
+    author: dict[str, Any] | None,
+    *,
+    viewer_id: Any,
+    has_replied: bool,
+) -> dict[str, Any]:
+    weight = document.get("weight_kg")
+    return {
+        "id": str(document["_id"]),
+        "kind": document.get("kind", "sparring"),
+        "style": document.get("style", ""),
+        "city": document.get("city", ""),
+        "level": document.get("level"),
+        "weight_class": document.get("weight_class"),
+        "scheduled_for": iso(document.get("scheduled_for")),
+        "message": document.get("message", ""),
+        "fighter_name": document.get("fighter_name"),
+        "fighter_record": document.get("fighter_record"),
+        "weight_kg": float(weight) if weight is not None else None,
+        "video_url": document.get("video_url"),
+        "video_provider": document.get("video_provider"),
+        "status": document.get("status", "open"),
+        "created_at": iso(document.get("created_at")),
+        "expires_at": iso(document.get("expires_at")),
+        "author": author,
+        "replies_count": max(int(document.get("replies_count", 0)), 0),
+        "is_mine": document.get("author_id") == viewer_id,
+        "has_replied": has_replied,
+    }
+
+
+def serialize_announcement_reply(
+    document: dict[str, Any], author: dict[str, Any] | None
+) -> dict[str, Any]:
+    return {
+        "id": str(document["_id"]),
+        "message": document.get("message", ""),
+        "created_at": iso(document.get("created_at")),
+        "author": author,
+    }

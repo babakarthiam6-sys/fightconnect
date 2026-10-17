@@ -63,7 +63,7 @@ async def privacy_policy() -> HTMLResponse:
         "Politique de confidentialité",
         f"""
 <h1>Politique de confidentialité</h1>
-<p class="maj">Dernière mise à jour : 1<sup>er</sup> octobre 2026</p>
+<p class="maj">Dernière mise à jour : 17 octobre 2026</p>
 
 <p>FightConnect met en relation des personnes qui cherchent un partenaire de
 sparring. Cette page explique quelles données l’application collecte, pourquoi,
@@ -85,6 +85,12 @@ avec qui elles sont partagées et comment exercer vos droits.</p>
   rendez disponible.</li>
   <li><strong>Demandes de sparring</strong> : date, nombre de rounds, montants,
   statut de la demande, et les avis laissés après une séance.</li>
+  <li><strong>Annonces</strong> : les annonces que vous publiez (discipline, ville,
+  date, niveau, poids, texte, et pour un combat les informations du combattant
+  et un lien vidéo) et les réponses que vous y faites. Une annonce est visible
+  de tous les utilisateurs tant qu’elle est en ligne ; une réponse n’est
+  visible que de l’auteur de l’annonce. Elles sont analysées automatiquement,
+  comme les messages.</li>
   <li><strong>Messages</strong> : le contenu et l’heure des messages échangés
   avec les autres utilisateurs. Ils sont analysés automatiquement pour bloquer
   les tentatives de fraude et les contenus abusifs.</li>
@@ -122,10 +128,11 @@ aucune donnée.</p>
   <li><strong>Expo</strong>, qui achemine les notifications vers votre
   téléphone.</li>
   <li><strong>OpenAI</strong>, lorsque la modération automatique est activée :
-  le texte des messages et des avis lui est transmis pour analyse, sans votre
-  nom ni votre email.</li>
+  le texte des messages, des annonces et des avis lui est transmis pour
+  analyse, sans votre nom ni votre email.</li>
   <li>Les <strong>autres utilisateurs</strong> voient votre profil sportif, vos
-  avis et les messages que vous leur envoyez.</li>
+  avis, vos annonces en ligne, et les messages et réponses que vous leur
+  adressez.</li>
 </ul>
 <p>Certains de ces prestataires peuvent traiter des données hors de l’Union
 européenne, notamment aux États-Unis. Ces transferts sont encadrés par les
@@ -134,8 +141,9 @@ européenne ou cadre de protection des données UE–États-Unis).</p>
 
 <h2>Durée de conservation</h2>
 <ul>
-  <li>Votre compte, votre profil et vos messages : jusqu’à la suppression de
-  votre compte.</li>
+  <li>Votre compte, votre profil, vos annonces et vos messages : jusqu’à la
+  suppression de votre compte. Une annonce sans date quitte la liste au bout
+  d’un mois ; une annonce datée, à sa date.</li>
   <li>Les enregistrements de paiement : dix ans, durée imposée pour les pièces
   comptables. Le nom d’un partenaire supprimé en est retiré.</li>
   <li>Les avis que vous avez laissés à d’autres : conservés sans votre nom après
@@ -199,6 +207,8 @@ sa suppression. Nous la traitons dans un délai d’un mois au plus.</p>
   <li>Votre compte : email, nom, mot de passe.</li>
   <li>Votre profil sportif et vos liens vidéo.</li>
   <li>Tous les messages que vous avez envoyés ou reçus.</li>
+  <li>Vos annonces, avec les réponses qu’elles ont reçues, et vos réponses aux
+  annonces des autres.</li>
   <li>Les avis reçus en tant que partenaire.</li>
   <li>Votre jeton de notification et l’historique de vos tentatives de
   connexion.</li>
