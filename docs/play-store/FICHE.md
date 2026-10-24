@@ -83,6 +83,7 @@ Les captures viennent de la vraie application, avec des profils de démonstratio
 | Adresse e-mail | la même que `CONTACT_EMAIL` sur Railway |
 | Règles de confidentialité | `https://fightconnect-production.up.railway.app/confidentialite` |
 | Suppression du compte (lien web) | `https://fightconnect-production.up.railway.app/suppression-compte` |
+| Conditions d'utilisation (si demandées) | `https://fightconnect-production.up.railway.app/conditions` |
 
 Si l'adresse du site change un jour (autre hébergeur, nom de domaine), il faudra
 mettre à jour ces deux liens **et** `frontend/eas.json`.
@@ -101,12 +102,21 @@ l'application en ligne, remplis son profil sportif et rends-le disponible.
 Créer un compte n'est pas nécessaire : utilisez le compte de test ci-dessous.
 Email : [l'email du compte de test]
 Mot de passe : [son mot de passe]
-Toutes les fonctionnalités (recherche, fiche partenaire, réservation, discussion) sont accessibles avec ce compte.
+Toutes les fonctionnalités (recherche, fiche partenaire, réservation, discussion, annonces) sont accessibles avec ce compte.
+Contenu généré par les utilisateurs : les conditions d'utilisation (https://fightconnect-production.up.railway.app/conditions) sont acceptées à l'inscription. Le menu ⋯ de chaque fiche, conversation et annonce permet de signaler un profil ou un contenu et de bloquer un utilisateur ; un appui long sur un message reçu le signale. Les signalements sont traités par l'équipe, qui peut retirer le contenu ou suspendre le compte.
 ```
 
-### Annonces
+Ce dernier paragraphe répond d'avance à la règle de Google sur le
+[contenu généré par les utilisateurs](https://support.google.com/googleplay/android-developer/answer/9876937) :
+une application où l'on s'écrit et où l'on publie doit permettre de signaler,
+de bloquer, et faire accepter des conditions d'utilisation.
 
-**Non**, l'application ne contient pas d'annonces.
+### Annonces (publicité)
+
+**Non**, l'application ne contient pas de publicité. Attention au mot : dans la
+Play Console, « annonces » veut dire **publicité**. Les « annonces » de
+FightConnect (« je cherche un sparring ») sont des publications d'utilisateurs,
+pas de la publicité.
 
 ### Public cible
 
@@ -167,7 +177,7 @@ l'utilisateur rend lui-même visible ne l'est pas non plus.
 | Informations financières › Historique des achats | séances payées, montants | Facultatif | Fonctionnalité de l'appli |
 | Messages › Autres messages dans l'appli | discussions entre utilisateurs | Facultatif | Fonctionnalité de l'appli, Prévention des fraudes et sécurité |
 | Photos et vidéos | — | **Non collecté** (les vidéos sont de simples liens) | — |
-| Contenu de l'appli › Autres contenus générés par l'utilisateur | présentation, avis, liens vidéo, annonces et réponses aux annonces | Facultatif | Fonctionnalité de l'appli, Prévention des fraudes et sécurité |
+| Contenu de l'appli › Autres contenus générés par l'utilisateur | présentation, avis, liens vidéo, annonces et réponses aux annonces, signalements | Facultatif | Fonctionnalité de l'appli, Prévention des fraudes et sécurité |
 | Identifiants de l'appareil ou autres | jeton de notification | Facultatif | Fonctionnalité de l'appli |
 | Position | — | **Non collecté** | — |
 
@@ -176,7 +186,8 @@ l'utilisateur rend lui-même visible ne l'est pas non plus.
 ## 5. Publication : l'ordre des étapes
 
 1. **Railway** : payer, puis définir `CONTACT_EMAIL`, `ENVIRONMENT=production`,
-   `JWT_SECRET` et les clés Stripe.
+   `JWT_SECRET`, les clés Stripe, et `ADMIN_EMAILS` avec **ton** adresse e-mail :
+   c'est ce qui fait apparaître l'écran « Signalements » dans ton profil.
 2. **Google Play Console** : créer un compte développeur **personnel** (25 $,
    une seule fois), puis faire vérifier ton identité.
 3. **Téléphone Android** : Google demande aux nouveaux comptes personnels de

@@ -54,9 +54,12 @@ Lues par le serveur au démarrage :
 - `STRIPE_WEBHOOK_SECRET` — `whsec_...`. Sans elle, le webhook refuse les
   notifications de Stripe faute de pouvoir en vérifier la signature.
 - `ADMIN_EMAILS` (facultative) — e-mails des administrateurs, séparés par des
-  virgules. Ces comptes seuls accèdent aux routes d'administration (aujourd'hui
-  la consultation du niveau de risque d'un membre). Le droit vit ici, dans la
-  config du serveur : un compte compromis ne peut pas se l'accorder lui-même.
+  virgules. Ces comptes seuls voient l'écran « Signalements » du profil et
+  accèdent aux routes d'administration (traiter les signalements, suspendre un
+  compte, niveau de risque d'un membre), et reçoivent une notification à chaque
+  signalement. Sans elle, personne ne peut traiter les signalements. Le droit
+  vit ici, dans la config du serveur : un compte compromis ne peut pas se
+  l'accorder lui-même.
 - `OPENAI_API_KEY` (facultative — absente, la modération retombe sur son
   heuristique locale, ce qui est un comportement prévu)
 

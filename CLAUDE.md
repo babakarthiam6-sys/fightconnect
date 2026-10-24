@@ -18,11 +18,11 @@ qui n'existe plus. En cas de doute entre la carte et le code, **le code fait foi
 
 ```bash
 # Backend (depuis backend/)
-pytest                     # 201 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
+pytest                     # 222 tests ; MONGODB_TEST_URI=... REQUIRE_MONGO=1 pour les tests d'intégration
 uvicorn app.main:app --reload
 
 # Frontend (depuis frontend/)
-npm test                   # 179 tests
+npm test                   # 188 tests
 npm run typecheck && npm run lint
 npm run build:web           # export web + thème sombre de la coquille HTML
 ```
@@ -45,6 +45,10 @@ L'auteur choisit parmi les réponses ; la suite passe par la discussion et, pour
 un sparring payant, par une demande classique depuis le profil. Aucun argent
 ne circule par une annonce.
 
+Chacun peut **bloquer** quelqu'un et **signaler** un profil, un message ou une
+annonce (exigence de Google Play). Les administrateurs (`ADMIN_EMAILS`) traitent
+les signalements : classer, retirer le contenu, suspendre le compte.
+
 ## Invariants à ne pas casser
 
 - L'application web est montée **après** toutes les routes de l'API. Montée avant,
@@ -60,6 +64,10 @@ ne circule par une annonce.
   une heuristique locale prend le relais. Elle bloque en revanche un **message**
   signalé, et de même une **annonce** ou une réponse à une annonce : un avis
   perdu se réécrit, une transaction sortie de la plateforme ne revient pas.
+- Un blocage vaut **dans les deux sens** (recherche, annonces, discussion,
+  réservation) et n'est **jamais révélé** à celui qui est bloqué : ses refus
+  ressemblent à ceux d'un partenaire indisponible. Le lui dire inviterait à
+  recréer un compte pour insister.
 - Le point d'entrée WebSocket reçoit la base **par la dépendance**, jamais par un
   appel direct à `get_database()`. Sans cela il n'est pas testable, et il ne
   l'était pas.
