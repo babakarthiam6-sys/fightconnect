@@ -10,6 +10,7 @@ from app.repositories import refresh_user_rating
 from app.schemas import PartnerList, ReviewCreate, ReviewOut, UserRiskOut
 from app.serializers import serialize_partner, serialize_review, to_object_id
 from app.services.moderation import moderate_comment, risk_level_from
+from app.services.safety import NOT_SUSPENDED, hidden_from
 
 router = APIRouter(prefix="/moderation", tags=["moderation"])
 
@@ -95,11 +96,13 @@ async def recommendations(database: Database, current_user: CurrentUser) -> dict
     """
     user_id = current_user["_id"]
 
+    hidden = await hidden_from(database, user_id)
     presentable: dict[str, Any] = {
-        "_id": {"$ne": user_id},
+        "_id": {"$nin": [user_id, *hidden]},
         "available": True,
         "style": {"$ne": None},
         "price_per_round": {"$ne": None},
+        **NOT_SUSPENDED,
     }
 
     style = current_user.get("style")

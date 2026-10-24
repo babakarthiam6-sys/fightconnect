@@ -5,6 +5,8 @@ from typing import Any
 
 from bson import ObjectId
 
+from app.config import get_settings
+
 
 def to_object_id(value: str) -> ObjectId | None:
     """Convertit un identifiant textuel, ou None s'il est malformé."""
@@ -89,6 +91,7 @@ def serialize_user(document: dict[str, Any]) -> dict[str, Any]:
         "created_at": iso(document.get("created_at")),
         "payouts_enabled": bool(document.get("stripe_payouts_enabled", False)),
         "expo_push_token": document.get("expo_push_token"),
+        "is_admin": get_settings().is_admin_email(document.get("email")),
     }
 
 

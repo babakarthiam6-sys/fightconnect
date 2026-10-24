@@ -7,9 +7,10 @@ async def test_la_politique_decrit_les_donnees_collectees(client):
     response = await client.get("/confidentialite")
 
     assert response.status_code == 200
-    for donnee in ("email", "Profil sportif", "Annonces", "Messages", "Stripe"):
+    for donnee in ("email", "Profil sportif", "Annonces", "Messages", "Signalements", "Stripe"):
         assert donnee in response.text
     assert 'href="/suppression-compte"' in response.text
+    assert 'href="/conditions"' in response.text
 
 
 async def test_la_page_de_suppression_explique_la_marche_a_suivre(client):

@@ -18,6 +18,7 @@ from app.routers import (
     payments,
     payouts,
     revenue,
+    safety,
     videos,
 )
 from app.webapp import is_web_app_available, mount_web_app
@@ -65,6 +66,7 @@ def create_app() -> FastAPI:
         payouts.router,
         revenue.router,
         moderation.router,
+        safety.router,
         videos.router,
     ):
         app.include_router(router, prefix=API_PREFIX)

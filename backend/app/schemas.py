@@ -49,6 +49,15 @@ MAX_OPEN_ANNOUNCEMENTS = 5
 # recherche vieille de trois mois n'est presque jamais encore d'actualité.
 ANNOUNCEMENT_LIFETIME_DAYS = 30
 
+# Ce qu'on peut signaler : une personne (son profil), un message reçu, une
+# annonce, ou une réponse reçue à l'une de ses annonces.
+REPORT_TARGETS = ("user", "message", "announcement", "announcement_reply")
+
+REPORT_REASONS = ("harassment", "fraud", "inappropriate", "fake_profile", "dangerous", "other")
+
+# Décisions de l'administrateur sur un signalement.
+REPORT_ACTIONS = ("dismiss", "remove_content", "suspend")
+
 
 class SignupRequest(BaseModel):
     email: EmailStr
@@ -113,6 +122,9 @@ class UserOut(UserSummary):
     currency: str = "EUR"
     videos: list["VideoOut"] = []
     expo_push_token: str | None = None
+    # L'écran des signalements n'est montré qu'aux administrateurs. Le serveur
+    # vérifie de toute façon à chaque appel : ce drapeau ne fait qu'afficher.
+    is_admin: bool = False
 
 
 class AuthResponse(BaseModel):
@@ -142,6 +154,9 @@ class PartnerOut(BaseModel):
     currency: str = "EUR"
     available: bool = False
     videos: list["VideoOut"] = []
+    # Vrai si le lecteur a bloqué cette personne : la fiche propose alors de la
+    # débloquer plutôt que de lui écrire.
+    is_blocked: bool = False
 
 
 class PartnerList(BaseModel):
@@ -387,3 +402,54 @@ class AnnouncementList(BaseModel):
     total: int
     page: int
     limit: int
+
+
+class BlockCreate(BaseModel):
+    user_id: str
+
+
+class BlockedList(BaseModel):
+    items: list[UserSummary]
+
+
+class ReportCreate(BaseModel):
+    """Signalement. `target_id` désigne le message, l'annonce ou la réponse ;
+    il est absent quand c'est la personne, son profil, qui est signalée."""
+
+    user_id: str
+    target_type: str = "user"
+    target_id: str | None = None
+    reason: str
+    details: str | None = Field(default=None, max_length=500)
+
+
+class ReportAck(BaseModel):
+    id: str
+    status: str
+
+
+class ReportOut(BaseModel):
+    id: str
+    target_type: str
+    target_id: str | None = None
+    reason: str
+    details: str | None = None
+    # Copie du contenu au moment du signalement : il reste lisible même si son
+    # auteur l'efface entre-temps.
+    excerpt: str | None = None
+    status: str
+    resolution: str | None = None
+    created_at: str | None = None
+    reporter: UserSummary | None = None
+    reported: UserSummary | None = None
+    reported_open_reports: int = 0
+    reported_suspended: bool = False
+
+
+class ReportList(BaseModel):
+    items: list[ReportOut]
+    total: int
+
+
+class ReportResolve(BaseModel):
+    action: str

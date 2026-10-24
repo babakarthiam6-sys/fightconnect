@@ -15,6 +15,7 @@ from app.serializers import (
     to_object_id,
 )
 from app.services.chat import conversation_key, handle_message, registry
+from app.services.safety import blocked_by
 
 router = APIRouter(prefix="/chat", tags=["discussion"])
 
@@ -59,6 +60,17 @@ async def conversations(database: Database, current_user: CurrentUser) -> dict[s
     ]
 
     groupes = [groupe async for groupe in database.messages.aggregate(pipeline)]
+
+    # Bloquer quelqu'un retire aussi son fil de la liste ; il reste dans la base,
+    # et revient si l'on débloque.
+    bloques = await blocked_by(database, user_id)
+    if bloques:
+        groupes = [
+            groupe
+            for groupe in groupes
+            if groupe["last"]["sender_id"] not in bloques
+            and groupe["last"]["recipient_id"] not in bloques
+        ]
 
     autres_ids = {
         groupe["last"]["sender_id"]
@@ -165,7 +177,7 @@ async def websocket_endpoint(
         return
 
     current_user = await database.users.find_one({"_id": object_id})
-    if current_user is None:
+    if current_user is None or current_user.get("suspended"):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 

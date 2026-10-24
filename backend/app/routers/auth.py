@@ -8,6 +8,8 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.dependencies import CurrentUser, Database
 from app.routers.announcements import delete_user_announcements
+from app.routers.legal import TERMS_VERSION
+from app.routers.safety import delete_user_safety_data
 from app.routers.bookings import check_open_payments, has_ended, release_payments
 from app.schemas import (
     LEVELS,
@@ -32,7 +34,7 @@ async def signup(payload: SignupRequest, database: Database) -> dict:
     if not payload.discharge_accepted:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="La décharge de responsabilité doit être acceptée.",
+            detail="Les conditions d’utilisation et la décharge doivent être acceptées.",
         )
 
     email = payload.email.lower()
@@ -49,6 +51,10 @@ async def signup(payload: SignupRequest, database: Database) -> dict:
         "last_name": payload.last_name.strip(),
         "avatar_url": None,
         "discharge_accepted": True,
+        # Une seule case à l'inscription couvre la décharge et les conditions
+        # d'utilisation ; la version acceptée est gardée pour le jour où elles
+        # changeront.
+        "terms_version": TERMS_VERSION,
         "average_rating": None,
         "ratings_count": 0,
         # Le profil sportif se remplit ensuite, depuis l'onglet Profil. Tant
@@ -103,6 +109,15 @@ async def login(payload: LoginRequest, database: Database) -> dict:
         )
 
     await throttle.clear(database, email)
+
+    if user.get("suspended"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Ce compte a été suspendu après des signalements. "
+                "Écrivez-nous si vous pensez qu’il s’agit d’une erreur."
+            ),
+        )
 
     return {
         "access_token": create_access_token(str(user["_id"])),
@@ -255,6 +270,7 @@ async def delete_me(database: Database, current_user: CurrentUser) -> Response:
     )
     await database.login_attempts.delete_many({"email": current_user.get("email")})
     await delete_user_announcements(database, user_id)
+    await delete_user_safety_data(database, user_id)
 
     # Le profil emporte avec lui les liens vidéo et le jeton de notification.
     # L'identifiant du compte Connect ne survit que sur les paiements.

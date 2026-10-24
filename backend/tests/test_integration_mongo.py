@@ -436,3 +436,52 @@ async def test_les_annonces_et_leurs_dates_sur_le_vrai_moteur(client, database):
         headers=luis["headers"],
     )
     assert refus.status_code == 409
+
+
+async def test_dix_signalements_simultanes_n_en_font_qu_un(client, database, monkeypatch):
+    """L'index unique partiel des signalements, sur le vrai moteur — y compris
+    pour un profil, où `target_id` vaut null."""
+
+    async def sans_notification(*_args, **_kwargs):
+        return False
+
+    monkeypatch.setattr("app.routers.safety.send_push", sans_notification)
+    luis = await make_partner(client)
+    ana = await register(client, "ana@exemple.com", "Ana")
+    corps = {"user_id": luis["user"]["id"], "reason": "harassment"}
+
+    reponses = await asyncio.gather(
+        *(client.post("/api/v1/reports", json=corps, headers=ana["headers"]) for _ in range(10)),
+        return_exceptions=True,
+    )
+
+    for reponse in reponses:
+        assert not isinstance(reponse, Exception), reponse
+        assert reponse.status_code == 201, reponse.text
+    assert await database.reports.count_documents({}) == 1
+    assert len({reponse.json()["id"] for reponse in reponses}) == 1
+
+    # Une fois traité, le même signalement peut être refait : l'unicité ne vaut
+    # que pour ce qui attend une décision.
+    await database.reports.update_many({}, {"$set": {"status": "resolved"}})
+    nouveau = await client.post("/api/v1/reports", json=corps, headers=ana["headers"])
+    assert nouveau.status_code == 201
+    assert await database.reports.count_documents({}) == 2
+
+
+async def test_dix_blocages_simultanes_n_en_font_qu_un(client, database):
+    luis = await make_partner(client)
+    ana = await register(client, "ana@exemple.com", "Ana")
+
+    reponses = await asyncio.gather(
+        *(
+            client.post("/api/v1/blocks", json={"user_id": luis["user"]["id"]}, headers=ana["headers"])
+            for _ in range(10)
+        ),
+        return_exceptions=True,
+    )
+
+    for reponse in reponses:
+        assert not isinstance(reponse, Exception), reponse
+        assert reponse.status_code == 201, reponse.text
+    assert await database.blocks.count_documents({}) == 1

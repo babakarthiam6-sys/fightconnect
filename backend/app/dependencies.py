@@ -21,6 +21,12 @@ CREDENTIALS_ERROR = HTTPException(
     headers={"WWW-Authenticate": "Bearer"},
 )
 
+SUSPENDED_ERROR = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Ce compte a été suspendu après des signalements.",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
 
 async def get_current_user(
     database: Database,
@@ -45,6 +51,10 @@ async def get_current_user(
     user = await database.users.find_one({"_id": object_id})
     if user is None:
         raise CREDENTIALS_ERROR
+    # 401 et non 403 : l'application purge alors la session et revient à la
+    # connexion, où le motif est expliqué.
+    if user.get("suspended"):
+        raise SUSPENDED_ERROR
 
     return user
 

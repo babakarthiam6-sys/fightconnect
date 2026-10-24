@@ -85,6 +85,19 @@ async def create_indexes(database: AsyncIOMotorDatabase) -> None:
         name="une_reponse_par_annonce",
     )
     await database.announcement_replies.create_index("author_id")
+    # Un blocage par paire, dans un sens donné ; la recherche inverse (« qui m'a
+    # bloqué ») passe par le second index.
+    await database.blocks.create_index([("blocker_id", 1), ("blocked_id", 1)], unique=True)
+    await database.blocks.create_index("blocked_id")
+    # Un seul signalement en attente pour un même contenu et une même personne :
+    # deux appuis simultanés sur « Envoyer » n'en créent pas deux.
+    await database.reports.create_index(
+        [("reporter_id", 1), ("reported_user_id", 1), ("target_type", 1), ("target_id", 1)],
+        unique=True,
+        partialFilterExpression={"status": "open"},
+        name="signalement_en_attente_unique",
+    )
+    await database.reports.create_index([("status", 1), ("created_at", 1)])
 
 
 async def ping() -> bool:

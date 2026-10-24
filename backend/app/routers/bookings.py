@@ -18,6 +18,7 @@ from app.services.payments import (
     refund_payment,
     retrieve_payment_status,
 )
+from app.services.safety import has_blocked
 
 router = APIRouter(prefix="/bookings", tags=["réservations"])
 
@@ -201,7 +202,7 @@ async def create_booking(
 ) -> dict[str, Any]:
     partner_id = to_object_id(payload.partner_id)
     partner = await database.users.find_one({"_id": partner_id}) if partner_id else None
-    if partner is None:
+    if partner is None or partner.get("suspended"):
         raise HTTPException(status_code=404, detail="Partenaire introuvable.")
 
     if partner["_id"] == current_user["_id"]:
@@ -209,7 +210,16 @@ async def create_booking(
             status_code=status.HTTP_409_CONFLICT,
             detail="On ne peut pas se réserver soi-même.",
         )
-    if not partner.get("available"):
+    if await has_blocked(database, current_user["_id"], partner["_id"]):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Vous avez bloqué cette personne : débloquez-la pour la réserver.",
+        )
+    # Bloqué par le partenaire : même refus que s'il était en pause, pour ne
+    # pas révéler le blocage.
+    if not partner.get("available") or await has_blocked(
+        database, partner["_id"], current_user["_id"]
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Ce partenaire n’est pas disponible en ce moment.",

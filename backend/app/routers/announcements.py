@@ -41,6 +41,7 @@ from app.serializers import (
 )
 from app.services.moderation import moderate_message
 from app.services.notifications import send_push
+from app.services.safety import blocked_by, has_blocked, hidden_from
 from app.services.videos import identify
 
 router = APIRouter(prefix="/announcements", tags=["annonces"])
@@ -178,12 +179,15 @@ async def _detail(
 ) -> dict[str, Any]:
     [result] = await _expand(database, [document], viewer)
     if document["author_id"] == viewer["_id"]:
+        bloques = await blocked_by(database, viewer["_id"])
         replies = [
             reply
             async for reply in database.announcement_replies.find(
                 {"announcement_id": document["_id"]}
             ).sort([("created_at", 1), ("_id", 1)])
+            if reply["author_id"] not in bloques
         ]
+        result["replies_count"] = len(replies)
         authors = await _authors(database, {reply["author_id"] for reply in replies})
         result["replies"] = [
             serialize_announcement_reply(reply, authors.get(reply["author_id"]))
@@ -205,6 +209,9 @@ async def list_announcements(
 ) -> dict[str, Any]:
     """Annonces en ligne, les plus récentes d'abord. Les siennes y figurent aussi."""
     query: dict[str, Any] = {"status": "open", "expires_at": {"$gt": _now()}}
+    hidden = await hidden_from(database, current_user["_id"])
+    if hidden:
+        query["author_id"] = {"$nin": list(hidden)}
 
     if value := _validated(kind, ANNOUNCEMENT_KINDS, "Type d’annonce"):
         query["kind"] = value
@@ -323,6 +330,8 @@ async def get_announcement(
 ) -> dict[str, Any]:
     """Une annonce, même pourvue : on y arrive aussi depuis une notification."""
     document = await _fetch(database, announcement_id)
+    if await has_blocked(database, document["author_id"], current_user["_id"]):
+        raise INTROUVABLE
     return await _detail(database, document, current_user)
 
 
@@ -340,7 +349,15 @@ async def reply(
             status_code=status.HTTP_409_CONFLICT,
             detail="On ne répond pas à sa propre annonce.",
         )
-    if not _is_open(document):
+    if await has_blocked(database, current_user["_id"], document["author_id"]):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Vous avez bloqué l’auteur de cette annonce.",
+        )
+    # Bloqué par l'auteur : le même refus qu'une annonce close, sans rien révéler.
+    if not _is_open(document) or await has_blocked(
+        database, document["author_id"], current_user["_id"]
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Cette annonce n’accepte plus de réponses.",

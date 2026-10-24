@@ -16,6 +16,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.serializers import serialize_message, serialize_user_summary
 from app.services.moderation import moderate_message
 from app.services.notifications import send_push
+from app.services.safety import has_blocked
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,21 @@ async def handle_message(
     if not content:
         return {"type": "error", "reason": "Message vide."}
 
+    # Avant la modération : inutile d'analyser un message qui ne partira pas.
+    if await has_blocked(database, sender["_id"], recipient_id):
+        return {
+            "type": "blocked",
+            "reason": "user_blocked",
+            "message": "Vous avez bloqué cette personne. Débloquez-la depuis votre profil pour lui écrire.",
+        }
+    if await has_blocked(database, recipient_id, sender["_id"]):
+        # Celui qui est bloqué n'en est pas averti : le refus reste neutre.
+        return {
+            "type": "blocked",
+            "reason": "unavailable",
+            "message": "Ce message n’a pas pu être envoyé : cette personne n’est plus joignable.",
+        }
+
     verdict = await moderate_message(content)
     if verdict.flagged:
         return {
@@ -111,7 +127,7 @@ async def handle_message(
         }
 
     recipient = await database.users.find_one({"_id": recipient_id})
-    if recipient is None:
+    if recipient is None or recipient.get("suspended"):
         return {"type": "error", "reason": "Destinataire introuvable."}
 
     document = {
