@@ -108,6 +108,8 @@ function RootNavigator() {
       <Stack.Screen name="payments" options={{ title: 'Mes paiements' }} />
       <Stack.Screen name="announcement/new" options={{ title: 'Nouvelle annonce' }} />
       <Stack.Screen name="announcement/[id]" options={{ title: 'Annonce' }} />
+      <Stack.Screen name="blocked" options={{ title: 'Personnes bloquées' }} />
+      <Stack.Screen name="admin/reports" options={{ title: 'Signalements' }} />
       <Stack.Screen name="chat/index" options={{ title: 'Messages' }} />
       <Stack.Screen name="chat/[id]" options={{ title: 'Conversation' }} />
     </Stack>

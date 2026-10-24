@@ -35,7 +35,7 @@ import {
   TYPOGRAPHY,
   WEIGHT_LABELS,
 } from '@/constants/theme';
-import { PRIVACY_POLICY_URL } from '@/constants/config';
+import { PRIVACY_POLICY_URL, TERMS_URL } from '@/constants/config';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { payoutService } from '@/services/payout';
@@ -375,6 +375,23 @@ export default function ProfileScreen() {
 
         {payouts ? <PayoutCard status={payouts} onChanged={load} /> : null}
 
+        <Text style={styles.sectionTitle}>Sécurité</Text>
+        <SettingsRow
+          icon="ban-outline"
+          label="Personnes bloquées"
+          onPress={() => router.push('/blocked')}
+          testID="profile-blocked"
+        />
+        {user.isAdmin ? (
+          <SettingsRow
+            icon="shield-half-outline"
+            label="Signalements"
+            hint="Administration"
+            onPress={() => router.push('/admin/reports')}
+            testID="profile-reports"
+          />
+        ) : null}
+
         <Button
           label="Déconnexion"
           variant="danger"
@@ -397,6 +414,9 @@ export default function ProfileScreen() {
         >
           <Text style={styles.legalLink}>Politique de confidentialité</Text>
         </Pressable>
+        <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(TERMS_URL)}>
+          <Text style={styles.legalLink}>Conditions d’utilisation</Text>
+        </Pressable>
       </ScrollView>
 
       <VideoAddSheet
@@ -405,6 +425,34 @@ export default function ProfileScreen() {
         onSubmit={addVideo}
       />
     </SafeAreaView>
+  );
+}
+
+function SettingsRow({
+  icon,
+  label,
+  hint,
+  onPress,
+  testID,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  hint?: string;
+  onPress: () => void;
+  testID?: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.settingsRow, pressed && styles.settingsRowPressed]}
+      testID={testID}
+    >
+      <Ionicons name={icon} size={20} color={COLORS.primary} />
+      <Text style={styles.settingsLabel}>{label}</Text>
+      {hint ? <Text style={styles.settingsHint}>{hint}</Text> : null}
+      <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+    </Pressable>
   );
 }
 
@@ -451,6 +499,19 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
   },
   statsRow: { flexDirection: 'row', gap: SPACING.sm },
+  settingsRow: {
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginBottom: SPACING.sm,
+    minHeight: 52,
+    paddingHorizontal: SPACING.lg,
+  },
+  settingsRowPressed: { opacity: 0.85 },
+  settingsLabel: { ...TYPOGRAPHY.body, color: COLORS.text, flex: 1, fontWeight: '600' },
+  settingsHint: { ...TYPOGRAPHY.caption, color: COLORS.textMuted },
   logout: { marginTop: SPACING.xl },
   deleteAccount: { marginTop: SPACING.sm },
   legalLink: {

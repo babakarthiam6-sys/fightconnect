@@ -1,5 +1,9 @@
 import type {
   Announcement,
+  Report,
+  ReportAction,
+  ReportReason,
+  ReportTargetType,
   AnnouncementKind,
   AnnouncementReply,
   AnnouncementStatus,
@@ -102,6 +106,16 @@ const LEVELS = ['beginner', 'amateur', 'pro'] as const;
 
 const ANNOUNCEMENT_KINDS = ['sparring', 'fight'] as const;
 const ANNOUNCEMENT_STATUSES = ['open', 'closed'] as const;
+const REPORT_TARGETS = ['user', 'message', 'announcement', 'announcement_reply'] as const;
+const REPORT_REASONS = [
+  'harassment',
+  'fraud',
+  'inappropriate',
+  'fake_profile',
+  'dangerous',
+  'other',
+] as const;
+const REPORT_ACTIONS = ['dismiss', 'remove_content', 'suspend'] as const;
 
 const VIDEO_KINDS = ['fight', 'sparring', 'shadow'] as const;
 const VIDEO_PROVIDERS = ['youtube', 'tiktok', 'instagram'] as const;
@@ -235,6 +249,7 @@ export function normalizePartner(input: unknown): Partner {
     avatarUrl: optionalStr(raw, ['avatar_url', 'avatarUrl', 'avatar']),
     averageRating: optionalNum(raw, ['average_rating', 'averageRating', 'rating']),
     ratingsCount: num(raw, ['ratings_count', 'ratingsCount', 'reviews_count'], 0),
+    isBlocked: bool(raw, ['is_blocked', 'isBlocked']),
     ...normalizeSportProfile(raw),
   };
 }
@@ -253,6 +268,7 @@ export function normalizeUser(input: unknown): User {
     createdAt: optionalStr(raw, ['created_at', 'createdAt']),
     payoutsEnabled: bool(raw, ['payouts_enabled', 'payoutsEnabled']),
     expoPushToken: optionalStr(raw, ['expo_push_token', 'expoPushToken']),
+    isAdmin: bool(raw, ['is_admin', 'isAdmin']),
     ...normalizeSportProfile(raw),
   };
 }
@@ -457,6 +473,27 @@ export function normalizeAnnouncement(input: unknown): Announcement {
     isMine: bool(raw, ['is_mine', 'isMine']),
     hasReplied: bool(raw, ['has_replied', 'hasReplied']),
     replies: Array.isArray(raw.replies) ? raw.replies.map(normalizeAnnouncementReply) : null,
+  };
+}
+
+export function normalizeReport(input: unknown): Report {
+  const raw = asRecord(input);
+  const resolution = raw.resolution == null ? null : raw.resolution;
+  return {
+    id: normalizeId(raw),
+    targetType: oneOf<ReportTargetType>(raw.target_type ?? raw.targetType, REPORT_TARGETS, 'user'),
+    targetId: optionalStr(raw, ['target_id', 'targetId']),
+    reason: oneOf<ReportReason>(raw.reason, REPORT_REASONS, 'other'),
+    details: optionalStr(raw, ['details']),
+    excerpt: optionalStr(raw, ['excerpt']),
+    status: raw.status === 'resolved' ? 'resolved' : 'open',
+    resolution:
+      resolution === null ? null : oneOf<ReportAction>(resolution, REPORT_ACTIONS, 'dismiss'),
+    createdAt: optionalStr(raw, ['created_at', 'createdAt']),
+    reporter: normalizeUserSummary(raw.reporter),
+    reported: normalizeUserSummary(raw.reported),
+    reportedOpenReports: num(raw, ['reported_open_reports', 'reportedOpenReports'], 0),
+    reportedSuspended: bool(raw, ['reported_suspended', 'reportedSuspended']),
   };
 }
 

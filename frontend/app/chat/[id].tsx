@@ -10,24 +10,26 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useToast } from 'react-native-toast-notifications';
 
 import EmptyState from '@/components/EmptyState';
 import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SafetySheet, { SafetyMenuButton } from '@/components/SafetySheet';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useChatSocket } from '@/hooks/useChatSocket';
 import { chatService } from '@/services/chat';
 import { partnerService } from '@/services/partner';
 import { formatTime, formatUserName } from '@/utils/formatting';
-import type { AppError, Message } from '@/types';
+import type { AppError, Message, Partner, ReportSubject } from '@/types';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
+  const router = useRouter();
   const toast = useToast();
   const { user } = useAuth();
 
@@ -37,6 +39,11 @@ export default function ConversationScreen() {
   const [draft, setDraft] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<AppError | null>(null);
+  const [partner, setPartner] = useState<Partner | null>(null);
+  // Ce que la fenêtre de signalement vise : la personne, ou l'un de ses messages.
+  const [safety, setSafety] = useState<{ subject: ReportSubject; step: 'menu' | 'report' } | null>(
+    null,
+  );
 
   const receive = useCallback((message: Message) => {
     // Le serveur renvoie aussi à l'expéditeur ce qu'il vient d'envoyer : on
@@ -62,6 +69,7 @@ export default function ConversationScreen() {
         partnerService.detail(id).catch(() => null),
       ]);
       setMessages(history);
+      setPartner(partner);
       if (partner) navigation.setOptions({ title: formatUserName(partner) });
     } catch (caught) {
       setError(caught as AppError);
@@ -90,6 +98,16 @@ export default function ConversationScreen() {
   }, [draft, id, send, toast]);
 
   const mine = useMemo(() => user?.id ?? '', [user]);
+  // La fiche peut être introuvable (compte supprimé ou suspendu) : on garde de
+  // quoi signaler ou bloquer avec le seul identifiant.
+  const person = useMemo(
+    () => ({
+      id: id ?? '',
+      firstName: partner?.firstName ?? '',
+      lastName: partner?.lastName ?? '',
+    }),
+    [id, partner],
+  );
   const headerHeight = useHeaderHeight();
 
   if (isLoading) return <LoadingSpinner fullScreen label="Chargement de la conversation…" />;
@@ -97,6 +115,20 @@ export default function ConversationScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <SafetyMenuButton
+              onPress={() =>
+                setSafety({
+                  subject: { user: person, targetType: 'user', targetId: null },
+                  step: 'menu',
+                })
+              }
+            />
+          ),
+        }}
+      />
       {/* Android aussi : depuis le SDK 54, l'app est bord à bord et Android ne
           redimensionne plus la fenêtre quand le clavier s'ouvre. Sans cette
           marge, le champ de saisie resterait caché sous le clavier. Le décalage
@@ -121,12 +153,25 @@ export default function ConversationScreen() {
           renderItem={({ item }) => {
             const isMine = item.senderId === mine;
             return (
-              <View style={[styles.bulle, isMine ? styles.bulleMienne : styles.bulleAutre]}>
+              <Pressable
+                // Un appui long sur un message reçu permet de le signaler.
+                onLongPress={
+                  isMine
+                    ? undefined
+                    : () =>
+                        setSafety({
+                          subject: { user: person, targetType: 'message', targetId: item.id },
+                          step: 'report',
+                        })
+                }
+                accessibilityHint={isMine ? undefined : 'Appui long pour signaler ce message'}
+                style={[styles.bulle, isMine ? styles.bulleMienne : styles.bulleAutre]}
+              >
                 <Text style={isMine ? styles.texteMien : styles.texteAutre}>{item.content}</Text>
                 <Text style={isMine ? styles.heureMienne : styles.heureAutre}>
                   {formatTime(item.createdAt)}
                 </Text>
-              </View>
+              </Pressable>
             );
           }}
           contentContainerStyle={styles.list}
@@ -167,6 +212,18 @@ export default function ConversationScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+      <SafetySheet
+        visible={safety !== null}
+        subject={safety?.subject ?? null}
+        initialStep={safety?.step}
+        isBlocked={partner?.isBlocked ?? false}
+        onClose={() => setSafety(null)}
+        onBlockChange={(blocked) => {
+          // Bloquer ferme la conversation : on ne peut plus y écrire.
+          if (blocked) router.back();
+          else if (partner) setPartner({ ...partner, isBlocked: false });
+        }}
+      />
     </SafeAreaView>
   );
 }

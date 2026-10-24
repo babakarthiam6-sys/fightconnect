@@ -125,6 +125,15 @@ export const ANNOUNCEMENT_KIND_LABELS: Record<string, string> = {
   fight: 'Combat',
 };
 
+export const REPORT_REASON_LABELS: Record<string, string> = {
+  harassment: 'Harcèlement, insultes',
+  fraud: 'Arnaque, paiement hors appli',
+  inappropriate: 'Contenu choquant',
+  fake_profile: 'Faux profil',
+  dangerous: 'Comportement dangereux',
+  other: 'Autre',
+};
+
 export const STATUS_LABELS: Record<string, string> = {
   pending: 'En attente',
   accepted: 'Acceptée',

@@ -18,6 +18,7 @@ Les données produites sont entièrement synthétiques.
 import argparse
 import asyncio
 import json
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,7 @@ from typing import Any
 import httpx
 from bson import ObjectId
 
+from app.config import get_settings
 from app.database import get_database
 from app.main import create_app
 
@@ -232,6 +234,28 @@ async def capture(mongodb_uri: str | None, mongodb_db: str) -> dict[str, Any]:
         captured["announcement_detail_owner"] = (
             await client.get(f"/announcements/{annonce_id}", headers=entete_luis)
         ).json()
+
+        # Sécurité : Ana bloque puis signale Maria ; Luis, administrateur le
+        # temps de la capture, voit le signalement.
+        captured["blocks_list"] = (
+            await client.post("/blocks", json={"user_id": maria["user"]["id"]}, headers=entete_ana)
+        ).json()
+        await client.post(
+            "/reports",
+            json={"user_id": maria["user"]["id"], "reason": "fake_profile", "details": "Palmarès inventé."},
+            headers=entete_ana,
+        )
+        # Luis n'est administrateur que pour cette lecture : les profils capturés
+        # plus haut restent ceux d'utilisateurs ordinaires.
+        os.environ["ADMIN_EMAILS"] = "luis@exemple.com"
+        get_settings.cache_clear()
+        try:
+            captured["moderation_reports"] = (
+                await client.get("/moderation/reports", headers=entete_luis)
+            ).json()
+        finally:
+            os.environ.pop("ADMIN_EMAILS", None)
+            get_settings.cache_clear()
 
         # Stripe n'est pas sollicité ici : le paiement abouti est inséré
         # directement, uniquement pour capturer la forme de l'historique.

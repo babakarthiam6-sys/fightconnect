@@ -34,6 +34,10 @@ const CLAUSES = [
       'Il vous appartient de disposer d’une assurance individuelle accident et d’une responsabilité civile couvrant la pratique des sports de combat.',
   },
   {
+    title: 'Conduite dans l’application',
+    body: 'Vous vous engagez à respecter les conditions d’utilisation : ni harcèlement, ni contenu sexuel, ni faux profil, ni paiement hors de l’application. Tout manquement signalé peut entraîner le retrait du contenu ou la suspension du compte.',
+  },
+  {
     title: 'Comportement',
     body:
       'Tout comportement dangereux, sous emprise de substances, ou contraire aux règles de la discipline entraîne la suspension du compte.',

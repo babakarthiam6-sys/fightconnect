@@ -34,7 +34,9 @@ export const signupSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema,
   dischargeAccepted: z.literal(true, {
-    errorMap: () => ({ message: 'Vous devez accepter la décharge de responsabilité.' }),
+    errorMap: () => ({
+      message: 'Vous devez accepter les conditions d’utilisation et la décharge.',
+    }),
   }),
 });
 

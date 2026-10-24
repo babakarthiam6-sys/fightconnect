@@ -96,6 +96,8 @@ export interface User extends SportProfile {
   payoutsEnabled: boolean;
   /** Jeton d'appareil pour les notifications. `null` sur le web. */
   expoPushToken: string | null;
+  /** Affiche l'écran des signalements. Le serveur revérifie à chaque appel. */
+  isAdmin: boolean;
 }
 
 /** Version allégée d'un utilisateur, telle qu'imbriquée dans une demande. */
@@ -117,6 +119,8 @@ export interface Partner extends SportProfile {
   avatarUrl: string | null;
   averageRating: number | null;
   ratingsCount: number;
+  /** Le lecteur a bloqué cette personne : la fiche propose de la débloquer. */
+  isBlocked: boolean;
 }
 
 export interface Booking {
@@ -313,4 +317,41 @@ export interface AnnouncementDraft {
   fighterRecord: string | null;
   weightKg: number | null;
   videoUrl: string | null;
+}
+
+/** Ce qu'on signale : la personne (son profil), ou l'un de ses contenus. */
+export type ReportTargetType = 'user' | 'message' | 'announcement' | 'announcement_reply';
+
+export type ReportReason =
+  | 'harassment'
+  | 'fraud'
+  | 'inappropriate'
+  | 'fake_profile'
+  | 'dangerous'
+  | 'other';
+
+export type ReportAction = 'dismiss' | 'remove_content' | 'suspend';
+
+/** Ce que l'on signale, et de qui. */
+export interface ReportSubject {
+  user: { id: string; firstName: string; lastName: string };
+  targetType: ReportTargetType;
+  targetId: string | null;
+}
+
+/** Un signalement, tel que l'administrateur le voit. */
+export interface Report {
+  id: string;
+  targetType: ReportTargetType;
+  targetId: string | null;
+  reason: ReportReason;
+  details: string | null;
+  excerpt: string | null;
+  status: 'open' | 'resolved';
+  resolution: ReportAction | null;
+  createdAt: string | null;
+  reporter: UserSummary | null;
+  reported: UserSummary | null;
+  reportedOpenReports: number;
+  reportedSuspended: boolean;
 }

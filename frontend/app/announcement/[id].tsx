@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useToast } from 'react-native-toast-notifications';
 
@@ -21,6 +21,7 @@ import Button from '@/components/Button';
 import ErrorView from '@/components/ErrorView';
 import Input from '@/components/Input';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SafetySheet, { SafetyMenuButton } from '@/components/SafetySheet';
 import { ANNOUNCEMENT_KIND_LABELS, COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { announcementService } from '@/services/announcement';
 import { confirm } from '@/utils/confirm';
@@ -34,7 +35,13 @@ import {
   formatUserName,
 } from '@/utils/formatting';
 import { announcementReplySchema, validate } from '@/utils/validation';
-import type { Announcement, AnnouncementReply, AppError, UserSummary } from '@/types';
+import type {
+  Announcement,
+  AnnouncementReply,
+  AppError,
+  ReportSubject,
+  UserSummary,
+} from '@/types';
 
 const PROVIDER_LABELS: Record<string, string> = {
   youtube: 'YouTube',
@@ -54,6 +61,9 @@ export default function AnnouncementScreen() {
   const [draft, setDraft] = useState('');
   const [draftError, setDraftError] = useState<string | undefined>();
   const [busy, setBusy] = useState<'reply' | 'close' | 'delete' | null>(null);
+  const [safety, setSafety] = useState<{ subject: ReportSubject; step: 'menu' | 'report' } | null>(
+    null,
+  );
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -142,6 +152,27 @@ export default function AnnouncementScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      {/* Sur l'annonce d'un autre : la signaler, ou bloquer son auteur. */}
+      {!announcement.isMine && author ? (
+        <Stack.Screen
+          options={{
+            headerRight: () => (
+              <SafetyMenuButton
+                onPress={() =>
+                  setSafety({
+                    subject: {
+                      user: author,
+                      targetType: 'announcement',
+                      targetId: announcement.id,
+                    },
+                    step: 'menu',
+                  })
+                }
+              />
+            ),
+          }}
+        />
+      ) : null}
       <KeyboardAvoidingView
         style={styles.flex}
         behavior="padding"
@@ -221,6 +252,16 @@ export default function AnnouncementScreen() {
                     reply={reply}
                     onProfile={(person) => router.push(`/partner/${person.id}`)}
                     onWrite={(person) => router.push(`/chat/${person.id}`)}
+                    onReport={(person) =>
+                      setSafety({
+                        subject: {
+                          user: person,
+                          targetType: 'announcement_reply',
+                          targetId: reply.id,
+                        },
+                        step: 'menu',
+                      })
+                    }
                   />
                 ))
               ) : (
@@ -299,6 +340,21 @@ export default function AnnouncementScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <SafetySheet
+        visible={safety !== null}
+        subject={safety?.subject ?? null}
+        initialStep={safety?.step}
+        isBlocked={false}
+        onClose={() => setSafety(null)}
+        onBlockChange={(blocked) => {
+          if (!blocked) return;
+          // L'auteur bloqué : son annonce n'existe plus pour nous. Une réponse
+          // bloquée : elle disparaît de la liste, qu'on recharge.
+          if (announcement.isMine) void load();
+          else router.back();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -383,10 +439,12 @@ function ReplyCard({
   reply,
   onProfile,
   onWrite,
+  onReport,
 }: {
   reply: AnnouncementReply;
   onProfile: (person: UserSummary) => void;
   onWrite: (person: UserSummary) => void;
+  onReport: (person: UserSummary) => void;
 }) {
   const person = reply.author;
   return (
@@ -406,6 +464,16 @@ function ReplyCard({
             <Text style={styles.priceValue}>{formatPrice(person.pricePerRound)}</Text>
             <Text style={styles.muted}>/round</Text>
           </View>
+        ) : null}
+        {person ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Signaler ou bloquer ${formatUserName(person)}`}
+            onPress={() => onReport(person)}
+            hitSlop={10}
+          >
+            <Ionicons name="ellipsis-vertical" size={18} color={COLORS.textMuted} />
+          </Pressable>
         ) : null}
       </View>
       <Text style={styles.replyMessage}>{reply.message}</Text>

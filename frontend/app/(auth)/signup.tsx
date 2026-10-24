@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,6 +15,7 @@ import { useToast } from 'react-native-toast-notifications';
 
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import { TERMS_URL } from '@/constants/config';
 import { COLORS, RADIUS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useDischargeStore } from '@/store/discharge';
@@ -171,7 +173,15 @@ export default function SignupScreen() {
               ) : null}
             </View>
             <Text style={styles.checkboxLabel}>
-              J’accepte la{' '}
+              J’accepte les{' '}
+              <Text
+                style={styles.link}
+                onPress={() => void Linking.openURL(TERMS_URL)}
+                suppressHighlighting
+              >
+                conditions d’utilisation
+              </Text>{' '}
+              et la{' '}
               <Text
                 style={styles.link}
                 onPress={() => router.push('/(auth)/discharge')}

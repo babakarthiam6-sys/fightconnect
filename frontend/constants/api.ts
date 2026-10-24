@@ -57,6 +57,14 @@ export const ENDPOINTS = {
     remove: (id: string) => `/videos/${id}`,
     order: '/videos/order',
   },
+  safety: {
+    blocks: '/blocks',
+    unblock: (userId: string) => `/blocks/${userId}`,
+    reports: '/reports',
+    adminReports: '/moderation/reports',
+    resolve: (reportId: string) => `/moderation/reports/${reportId}/resolve`,
+    unsuspend: (userId: string) => `/moderation/users/${userId}/unsuspend`,
+  },
   moderation: {
     reviews: '/moderation/reviews',
     userRisk: (userId: string) => `/moderation/user-risk/${userId}`,

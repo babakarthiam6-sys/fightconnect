@@ -34,6 +34,7 @@ const USER = {
   createdAt: null,
   payoutsEnabled: false,
   expoPushToken: null,
+  isAdmin: false,
   city: null,
   bio: null,
   style: null,

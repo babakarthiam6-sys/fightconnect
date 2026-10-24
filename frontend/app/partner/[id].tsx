@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import Avatar from '@/components/Avatar';
@@ -9,6 +9,7 @@ import Button from '@/components/Button';
 import ErrorView from '@/components/ErrorView';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import RatingStars from '@/components/RatingStars';
+import SafetySheet, { SafetyMenuButton } from '@/components/SafetySheet';
 import { VideoGallery } from '@/components/VideoGallery';
 import { COLORS, RADIUS, SHADOW, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { partnerService } from '@/services/partner';
@@ -29,6 +30,7 @@ export default function PartnerScreen() {
   const [partner, setPartner] = useState<Partner | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<AppError | null>(null);
+  const [safetyOpen, setSafetyOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -54,6 +56,9 @@ export default function PartnerScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <Stack.Screen
+        options={{ headerRight: () => <SafetyMenuButton onPress={() => setSafetyOpen(true)} /> }}
+      />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Avatar user={partner} size={128} />
@@ -69,9 +74,7 @@ export default function PartnerScreen() {
             <Text style={styles.ratingLabel}>
               {isNew ? 'Nouveau' : formatRating(partner.averageRating)}
             </Text>
-            <Text style={styles.meta}>
-              ({partner.ratingsCount} avis)
-            </Text>
+            <Text style={styles.meta}>({partner.ratingsCount} avis)</Text>
           </View>
 
           <View style={styles.priceTag}>
@@ -113,32 +116,56 @@ export default function PartnerScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <View style={styles.actions}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Écrire à ${formatUserName(partner)}`}
-            onPress={() => router.push(`/chat/${partner.id}`)}
-            style={({ pressed }) => [styles.discuter, pressed && styles.pressed]}
-            testID="partner-chat"
-          >
-            <Ionicons name="chatbubble" size={20} color={COLORS.primary} />
-          </Pressable>
+        {partner.isBlocked ? (
+          <>
+            <Text style={styles.unavailable}>
+              Vous avez bloqué cette personne : vous ne pouvez ni lui écrire ni la réserver.
+            </Text>
+            <Button
+              label="Débloquer"
+              variant="outline"
+              onPress={() => setSafetyOpen(true)}
+              testID="partner-unblock"
+            />
+          </>
+        ) : (
+          <>
+            <View style={styles.actions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Écrire à ${formatUserName(partner)}`}
+                onPress={() => router.push(`/chat/${partner.id}`)}
+                style={({ pressed }) => [styles.discuter, pressed && styles.pressed]}
+                testID="partner-chat"
+              >
+                <Ionicons name="chatbubble" size={20} color={COLORS.primary} />
+              </Pressable>
 
-          <Button
-            label="Réserver"
-            onPress={() => router.push(`/booking/${partner.id}`)}
-            disabled={!partner.available}
-            icon={<Ionicons name="calendar" size={18} color={COLORS.textInverse} />}
-            style={styles.reserver}
-            testID="partner-book"
-          />
-        </View>
-        {!partner.available ? (
-          <Text style={styles.unavailable}>
-            Ce partenaire s’est mis en pause. Il n’accepte pas de demande pour l’instant.
-          </Text>
-        ) : null}
+              <Button
+                label="Réserver"
+                onPress={() => router.push(`/booking/${partner.id}`)}
+                disabled={!partner.available}
+                icon={<Ionicons name="calendar" size={18} color={COLORS.textInverse} />}
+                style={styles.reserver}
+                testID="partner-book"
+              />
+            </View>
+            {!partner.available ? (
+              <Text style={styles.unavailable}>
+                Ce partenaire s’est mis en pause. Il n’accepte pas de demande pour l’instant.
+              </Text>
+            ) : null}
+          </>
+        )}
       </View>
+
+      <SafetySheet
+        visible={safetyOpen}
+        subject={{ user: partner, targetType: 'user', targetId: null }}
+        isBlocked={partner.isBlocked}
+        onClose={() => setSafetyOpen(false)}
+        onBlockChange={(blocked) => setPartner({ ...partner, isBlocked: blocked })}
+      />
     </SafeAreaView>
   );
 }

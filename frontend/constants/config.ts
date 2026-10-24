@@ -74,6 +74,7 @@ export function publicPageUrl(apiBaseUrl: string, path: string): string {
 }
 
 export const PRIVACY_POLICY_URL = publicPageUrl(API_BASE_URL, '/confidentialite');
+export const TERMS_URL = publicPageUrl(API_BASE_URL, '/conditions');
 
 export const STRIPE_PUBLISHABLE_KEY = resolve(
   process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY,
